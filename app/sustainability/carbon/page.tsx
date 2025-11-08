@@ -1,12 +1,9 @@
-import { Chat } from "@/components/chat";
-import { DEFAULT_MODEL } from "@/lib/constants";
+import { CarbonExperience } from "@/components/sustainability/carbon-experience"
 
-export default async function CarbonPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ modelId?: string }>;
-}) {
-  const params = await searchParams;
-  const modelId = params?.modelId ?? DEFAULT_MODEL;
-  return <Chat modelId={modelId} />;
+export default function CarbonPage() {
+  return (
+    <div className="w-full px-4 py-6 lg:px-10 lg:py-12">
+      <CarbonExperience />
+    </div>
+  )
 }
