@@ -16,7 +16,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements";
+import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements/reasoning";
+import { DynamicTemplateDocument, TemplateDocumentSkeleton } from "@/components/ai-elements/template";
 import {
   TextbookChapter,
   Exercise,
@@ -29,7 +30,17 @@ import {
   ArtifactRenderer,
   WebPreviewRenderer,
   HtmlPreviewRenderer,
+  GenericToolRenderer,
 } from "@/components/tool-renderers";
+import { ChartRenderer } from "@/components/chart-renderer";
+import { PythonOutputRenderer } from "@/components/python-output-renderer";
+import { SQLResultsRenderer } from "@/components/sql-results-renderer";
+import { DiagramRenderer } from "@/components/diagram-renderer";
+import {
+  SearchResultsRenderer,
+  FirecrawlResultsRenderer,
+  ParallelAgentResultsRenderer,
+} from "@/components/search-results-renderer";
 import { AnimatedLogo } from "@/components/animated-logo";
 import type {
   TextbookChapterPayload,
@@ -39,7 +50,15 @@ import type {
   KeyPointsPayload,
   MindMapPayload,
   CaseStudyPayload,
+  TemplateDocumentPayload,
 } from "@/types/ai-tool-output";
+import type { ChartToolOutput } from "@/lib/chart-tools";
+import type { SearchToolOutput } from "@/lib/exa-search-tools";
+import type { FirecrawlToolOutput } from "@/lib/firecrawl-tools";
+import type { ParallelAgentOutput } from "@/lib/parallel-ai-tools";
+import type { PythonToolOutput } from "@/lib/python-tools";
+import type { SqlToolOutput } from "@/lib/sql-tools";
+import type { CanvasToolOutput } from "@/lib/canvas-tools";
 
 function ModelSelectorHandler({
   modelId,
@@ -82,6 +101,7 @@ export function Chat({
 
   const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat({
     api: apiEndpoint,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 
   const hasMessages = messages.length > 0;
@@ -252,6 +272,193 @@ export function Chat({
                         }
                         break;
 
+                      case "tool-generateChart":
+                        if (part.state === "output-available") {
+                          return (
+                            <ChartRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as ChartToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Generating chart...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-webSearch":
+                        if (part.state === "output-available") {
+                          return (
+                            <SearchResultsRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as SearchToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Searching the web...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-scrapeWebsite":
+                        if (part.state === "output-available") {
+                          return (
+                            <FirecrawlResultsRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as FirecrawlToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Scraping website...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-runParallelAgent":
+                        if (part.state === "output-available") {
+                          return (
+                            <ParallelAgentResultsRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as ParallelAgentOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Running parallel agent...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-executePython":
+                        if (part.state === "output-available") {
+                          return (
+                            <PythonOutputRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as PythonToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Executing Python code...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-analyzeDataset":
+                        if (part.state === "output-available") {
+                          return (
+                            <PythonOutputRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as PythonToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Analyzing dataset...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-executeSQL":
+                        if (part.state === "output-available") {
+                          return (
+                            <SQLResultsRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as SqlToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Executing SQL query...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-describeTable":
+                        if (part.state === "output-available") {
+                          return (
+                            <SQLResultsRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as SqlToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Describing table...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-generateMermaidDiagram":
+                        if (part.state === "output-available") {
+                          return (
+                            <DiagramRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as CanvasToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Generating diagram...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-generateMermaidFlowchart":
+                        if (part.state === "output-available") {
+                          return (
+                            <DiagramRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as CanvasToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Generating flowchart...
+                            </div>
+                          );
+                        }
+                        break;
+
+                      case "tool-generateMermaidERDiagram":
+                        if (part.state === "output-available") {
+                          return (
+                            <DiagramRenderer
+                              key={`${m.id}-${i}`}
+                              data={part.output as CanvasToolOutput}
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <div key={`${m.id}-${i}`} className="text-muted-foreground text-sm">
+                              Generating ER diagram...
+                            </div>
+                          );
+                        }
+                        break;
+
                       case "tool-generateHtmlPreview":
                         if (part.state === "output-available") {
                           return (
@@ -416,6 +623,25 @@ export function Chat({
                           );
                         }
                         break;
+                      case "tool-renderTemplateDocument":
+                        if (part.state === "output-available") {
+                          return (
+                            <DynamicTemplateDocument
+                              key={`${m.id}-${i}`}
+                              template={part.output as TemplateDocumentPayload}
+                              isStreaming={
+                                status === "streaming" &&
+                                i === m.parts.length - 1 &&
+                                m.id === messages.at(-1)?.id
+                              }
+                            />
+                          );
+                        } else if (part.state === "input-available") {
+                          return (
+                            <TemplateDocumentSkeleton key={`${m.id}-${i}`} />
+                          );
+                        }
+                        break;
 
                       case "tool-generateMindMap":
                         if (part.state === "output-available") {
@@ -443,6 +669,25 @@ export function Chat({
                             </AlertDescription>
                           </Alert>
                         );
+
+                      default:
+                        // Handle any tool calls that don't have specific renderers
+                        if (part.type.startsWith("tool-") && "state" in part) {
+                          const toolName = part.type.replace("tool-", "");
+                          return (
+                            <GenericToolRenderer
+                              key={`${m.id}-${i}`}
+                              data={{
+                                toolName,
+                                state: part.state as "input-available" | "output-available" | "error",
+                                input: "args" in part ? (part.args as Record<string, unknown>) : undefined,
+                                output: "output" in part ? part.output : undefined,
+                                error: "errorText" in part ? (part.errorText as string) : undefined,
+                              }}
+                            />
+                          );
+                        }
+                        return null;
                     }
                   })}
                 </div>

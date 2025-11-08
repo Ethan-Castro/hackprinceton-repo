@@ -112,3 +112,9 @@
  GET /_next/static/chunks/app/page.js 404 in 134ms
  GET /_next/static/chunks/app/playground/page.js 404 in 135ms
  ✓ Compiled in 351ms (2353 modules)
+ ✓ Compiled in 1017ms (2349 modules)
+ ✓ Compiled in 2.4s (4723 modules)
+ ✓ Compiled in 538ms (4723 modules)
+ ✓ Compiled in 803ms (4723 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/ethancastro/vercel-ai-gateway-demo1/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/ethancastro/vercel-ai-gateway-demo1/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 861ms (2349 modules)

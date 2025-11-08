@@ -1,16 +1,16 @@
-# Cerebras Setup (via AI Gateway)
+# Cerebras Setup (Direct Provider)
 
-This guide explains how Cerebras models are used in this project via the Vercel AI Gateway. You can still use the direct `@ai-sdk/cerebras` provider for custom cases, but by default all requests are routed through the Gateway.
+This guide explains how Cerebras models are used in this project. Cerebras requests run through the direct `@ai-sdk/cerebras` provider, while non-Cerebras models continue to use the Vercel AI Gateway.
 
 ## Overview
 
 The Cerebras provider offers access to powerful language models with high-speed inference capabilities powered by Wafer-Scale Engines and CS-3 systems.
 
-**Setup Type:** Routed through Vercel AI Gateway (default)
+**Setup Type:** Direct `@ai-sdk/cerebras` provider (Cerebras models) + AI Gateway (other providers)
 
 ## Available Models
 
-The following Cerebras models are available in this project (gateway IDs):
+The following Cerebras models are available in this project (UI IDs):
 
 - `cerebras/llama3.1-8b` - Llama 3.1 8B model
 - `cerebras/llama-3.3-70b` - Llama 3.3 70B model
@@ -22,21 +22,29 @@ The following Cerebras models are available in this project (gateway IDs):
 
 ## Configuration Steps
 
-### 1. Configure AI Gateway ✅
+### 1. Configure Cerebras API Key ✅
 
-Add the Gateway API key to `.env.local`:
+Add your Cerebras API key to `.env.local`:
+
+```
+CEREBRAS_API_KEY=your_cerebras_api_key_here
+```
+
+### 2. Configure AI Gateway (for other providers) ✅
+
+Add the Gateway API key to `.env.local` if you want to use Anthropic, Google, or other providers:
 
 ```
 AI_GATEWAY_API_KEY=your_gateway_api_key_here
-# Optional (defaults to https://api.ai.vercel.com/v1):
-# AI_GATEWAY_BASE_URL=https://api.ai.vercel.com/v1
+# Optional (defaults to https://ai-gateway.vercel.sh/v1/ai):
+# AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1/ai
 ```
 
-### 2. Package Already Installed ✅
+### 3. Package Already Installed ✅
 
-The `@ai-sdk/cerebras` package is installed (optional). Default routing uses `@ai-sdk/gateway`.
+The `@ai-sdk/cerebras` package is installed and used automatically for Cerebras models.
 
-### 3. Start Using Cerebras Models
+### 4. Start Using Cerebras Models
 
 1. Restart your development server (if running):
    ```bash
@@ -52,16 +60,17 @@ The `@ai-sdk/cerebras` package is installed (optional). Default routing uses `@a
    - **cerebras/qwen-3-coder-480b** - Specialized for coding
    - And 4 more models...
 
-4. Start chatting to verify the integration works
+4. Start chatting to verify the integration works. Cerebras traffic will go directly to the Cerebras API.
 
 ## Model Capabilities
 
 All Cerebras models support:
 
-- ✅ Object Generation
-- ✅ Tool Usage
-- ✅ Tool Streaming
-- ❌ Image Input (not supported)
+- ✅ Object generation
+- ✅ Reasoning (for thinking models)
+- ✅ Markdown-formatted responses
+- ❌ Tool usage (disabled due to Cerebras API limitations with tool payloads)
+- ❌ Image input
 
 ## Notes
 
@@ -71,15 +80,22 @@ All Cerebras models support:
 
 ## How It Works
 
-This project routes all models (including Cerebras) through the **Vercel AI Gateway** by default.
-The chat routes use `@ai-sdk/gateway`, and model IDs are in the form `provider/model-id` (e.g., `cerebras/llama3.1-8b`).
+When a UI model id starts with `cerebras/`, the API strips the prefix and instantiates the model via:
+
+```ts
+import { cerebras } from "@ai-sdk/cerebras";
+
+const model = cerebras("llama3.1-8b");
+```
+
+Non-Cerebras models continue to be routed through the Vercel AI Gateway using `provider/model-id` strings (e.g., `anthropic/claude-sonnet-4.5`).
 
 ## Troubleshooting
 
 If you encounter issues:
 
-1. **API Key Error:** Verify `AI_GATEWAY_API_KEY` is set in `.env.local`
+1. **Missing Cerebras key:** Ensure `CEREBRAS_API_KEY` is set in `.env.local`
 2. **Model Not Found:** Ensure the model ID matches exactly (e.g., `cerebras/llama3.1-8b`)
-3. **Connection Issues:** Check your internet connection and Cerebras API status
+3. **Connection Issues:** Check your internet connection and [Cerebras API status](https://status.cerebras.ai/)
 4. **Server Not Updating:** Restart the dev server after environment variable changes
 

@@ -4,6 +4,42 @@ This project now includes AI Elements components for enhanced UI interactions wi
 
 ## Installed Components
 
+### 0. Dynamic Template Document
+Renders JSON-first textbooks, follow-up protocols, or multi-section playbooks with export + email actions. It powers the new AI template experience in both the chat interface and the Health plan wizard.
+
+```tsx
+import { DynamicTemplateDocument } from "@/components/ai-elements";
+import type { TemplateDocument } from "@/types/template-document";
+
+const template: TemplateDocument = {
+  type: "textbook",
+  title: "Newton's Third Law",
+  summary: "Immersive lesson with diagrams and checks.",
+  sections: [
+    {
+      accent: "Concept",
+      title: "Core Idea",
+      blocks: [
+        { type: "text", body: "For every action..." },
+        {
+          type: "checklist",
+          title: "Quick practice",
+          items: [{ label: "Explain momentum swap", checked: true }],
+        },
+      ],
+    },
+  ],
+};
+
+<DynamicTemplateDocument template={template} />;
+```
+
+**Highlights**
+- JSON contract shared across education + health use cases
+- Built-in loading skeleton (`TemplateDocumentSkeleton`) for streaming tools
+- Copy Markdown, download JSON/PDF, or open an email draft directly
+- Timeline, checklist, metrics, callout, resource, and quote block types
+
 ### 1. Shimmer
 An animated text shimmer component for creating eye-catching loading states and progressive reveal effects.
 
@@ -165,4 +201,3 @@ All components include:
 - `/components/ai-elements/plan.tsx` - Plan component
 - `/components/ai-elements/task.tsx` - Task component
 - `/components/ai-elements/index.ts` - Barrel export
-

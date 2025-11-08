@@ -198,3 +198,138 @@ export function HtmlPreviewRenderer({
     </div>
   );
 }
+
+export type GenericToolRendererData = {
+  toolName: string;
+  state: "input-available" | "output-available" | "error";
+  input?: Record<string, unknown>;
+  output?: unknown;
+  error?: string;
+};
+
+export function GenericToolRenderer({
+  data,
+}: {
+  data: GenericToolRendererData;
+}) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  const getStatusIcon = () => {
+    const iconClass = "h-4 w-4";
+    switch (data.state) {
+      case "input-available":
+        return <div className={`${iconClass} animate-spin rounded-full border-2 border-blue-500 border-t-transparent`} />;
+      case "output-available":
+        return <Check className={`${iconClass} text-green-500`} />;
+      case "error":
+        return <span className={`${iconClass} text-red-500 font-bold`}>✕</span>;
+    }
+  };
+
+  const getStatusText = () => {
+    switch (data.state) {
+      case "input-available":
+        return "Executing...";
+      case "output-available":
+        return "Completed";
+      case "error":
+        return "Error";
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (data.state) {
+      case "input-available":
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20";
+      case "output-available":
+        return "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20";
+      case "error":
+        return "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20";
+    }
+  };
+
+  // Format tool name for display (convert camelCase to Title Case)
+  const formatToolName = (name: string) => {
+    return name
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (str) => str.toUpperCase())
+      .trim();
+  };
+
+  return (
+    <div className={`my-4 rounded-lg border ${data.state === "error" ? "border-red-500/50" : "border-border"} bg-card p-4 shadow-sm transition-all duration-200`}>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 flex-1">
+          <span className="text-muted-foreground">🔧</span>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-semibold truncate">
+              {formatToolName(data.toolName)}
+            </h4>
+            <p className="text-xs text-muted-foreground">Tool Call</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded-md border ${getStatusColor()}`}>
+            <span className="flex items-center gap-1.5">
+              {getStatusIcon()}
+              {getStatusText()}
+            </span>
+          </span>
+          {(data.input || data.output || data.error) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-6 w-6 p-0"
+            >
+              {isExpanded ? "▼" : "▶"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="mt-3 space-y-3">
+          {data.input && Object.keys(data.input).length > 0 && (
+            <div className="space-y-1.5">
+              <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Input
+              </h5>
+              <div className="rounded-md bg-muted/50 p-3 text-xs font-mono overflow-x-auto">
+                <pre className="whitespace-pre-wrap break-words">
+                  {JSON.stringify(data.input, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {data.error && (
+            <div className="space-y-1.5">
+              <h5 className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                Error
+              </h5>
+              <div className="rounded-md bg-red-500/10 border border-red-500/20 p-3 text-xs">
+                {data.error}
+              </div>
+            </div>
+          )}
+
+          {data.output && data.state === "output-available" && (
+            <div className="space-y-1.5">
+              <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Output
+              </h5>
+              <div className="rounded-md bg-muted/50 p-3 text-xs font-mono overflow-x-auto">
+                <pre className="whitespace-pre-wrap break-words">
+                  {typeof data.output === "string"
+                    ? data.output
+                    : JSON.stringify(data.output, null, 2)}
+                </pre>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

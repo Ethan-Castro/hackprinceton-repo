@@ -1,10 +1,13 @@
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, type UIMessage, stepCountIs } from "ai";
 import {
+  CEREBRAS_MODELS,
   DEFAULT_MODEL,
   SUPPORTED_MODELS,
 } from "@/lib/constants";
+import { createCerebras } from "@ai-sdk/cerebras";
 import { gateway } from "@/lib/gateway";
 import { tools } from "@/lib/tools";
+import { queryWithPostgres } from "@/lib/neon";
 
 export const maxDuration = 60;
 
@@ -21,14 +24,24 @@ export async function POST(req: Request) {
     );
   }
 
-  // Route all models (including Cerebras) through the AI Gateway
-  const model = gateway(modelId);
+  const isCerebrasModel = CEREBRAS_MODELS.includes(modelId);
+  const cleanedModelId = isCerebrasModel
+    ? modelId.replace(/^cerebras\//, "")
+    : modelId;
+  const model = isCerebrasModel
+    ? createCerebras({
+        apiKey: process.env.CEREBRAS_API_KEY,
+      })(cleanedModelId)
+    : gateway(modelId);
+  const useTools = !isCerebrasModel;
 
-  const result = streamText({
-    model,
-    system: `You are an expert AI assistant specializing in software engineering, web development, and technical problem-solving. Your goal is to provide clear, accurate, and helpful responses while leveraging the tools available to you.
-
-## Response Formatting
+  const systemSections: string[] = [
+    `You are an expert AI assistant specializing in software engineering, web development, and technical problem-solving. Your goal is to provide clear, accurate, and helpful responses${
+      useTools
+        ? " while leveraging the available tools when they genuinely enhance the answer."
+        : ". If a request would normally rely on built-in tools, explain what the user should do manually instead."
+    }`,
+    `## Response Formatting
 
 - All your responses support **Markdown formatting** (including GitHub Flavored Markdown)
 - Use markdown to structure your responses with headings, lists, code blocks, tables, and emphasis
@@ -37,9 +50,26 @@ export async function POST(req: Request) {
   \`\`\`javascript
   const example = "code";
   \`\`\`
-- Use tables, lists, and formatting to make information easier to digest
+- Use tables, lists, and formatting to make information easier to digest`,
+  `## Best Practices
 
-## Available Tools
+1. Be concise but thorough—provide complete information without unnecessary verbosity.
+2. Format for readability using markdown.
+3. Provide context for code examples and recommendations.
+4. Focus on practical, working solutions and consider security implications.
+5. Recommend modern best practices and up-to-date approaches.
+6. When debugging, ask clarifying questions if needed.${
+      useTools
+        ? "\n7. Use tools strategically and only when they add clear value."
+        : "\n7. Outline manual steps when additional automation would be helpful."
+    }`,
+  ];
+
+  if (useTools) {
+    systemSections.splice(
+      2,
+      0,
+      `## Available Tools
 
 You have access to powerful tools for enhanced content presentation. Use these strategically to improve the user experience:
 
@@ -96,43 +126,74 @@ You have access to powerful tools for enhanced content presentation. Use these s
 **Parameters**:
 - \`html\`: Complete, self-contained HTML (include CSS in <style> and JS in <script> tags)
 - \`title\`: What you've created
-- \`description\`: Brief explanation
+- \`description\`: Brief explanation`
+    );
+  }
 
-## Example Tool Usage
+  const system = systemSections.join("\n\n");
 
-**Scenario**: User asks "How do I create a button in React?"
-**Response**: Provide a markdown-formatted explanation with inline code, then use \`displayArtifact\` for a complete working example component.
-
-**Scenario**: User asks "Show me the MDN docs for Array.map"
-**Response**: Explain the method with examples, optionally use \`displayWebPreview\` to show the actual MDN page.
-
-**Scenario**: User asks "Create a responsive card component"
-**Response**: Explain the approach, then use \`generateHtmlPreview\` to show a working demo they can interact with.
-
-## Best Practices
-
-1. **Be concise but thorough**: Provide complete information without unnecessary verbosity
-2. **Use tools strategically**: Only use tools when they genuinely enhance the user experience
-3. **Format for readability**: Use markdown effectively to structure responses
-4. **Provide context**: Explain your code examples and recommendations
-5. **Be practical**: Focus on working solutions and best practices
-6. **Error handling**: When helping debug, ask clarifying questions if needed
-7. **Security awareness**: Consider security implications in your suggestions
-8. **Modern practices**: Recommend current best practices and up-to-date approaches
-
-Remember: You're here to help users solve problems efficiently and learn effectively. Be helpful, clear, and professional.`,
+  const result = streamText({
+    model,
+    system,
     messages: convertToModelMessages(messages),
-    tools,
+    ...(useTools ? { tools, stopWhen: stepCountIs(10) } : {}),
     onStepFinish: ({ toolCalls, toolResults }) => {
+      if (!useTools) {
+        return;
+      }
       // Log tool usage for debugging
       if (toolCalls && toolCalls.length > 0) {
-        console.log("Tool calls:", toolCalls.map(tc => tc.toolName));
+        console.log("[Chat] Tool calls:", toolCalls.map(tc => ({
+          name: tc.toolName,
+          input: 'input' in tc ? tc.input : undefined
+        })));
       }
       if (toolResults && toolResults.length > 0) {
-        console.log("Tool results:", toolResults.map(tr => ({
+        console.log("[Chat] Tool results:", toolResults.map(tr => ({
           tool: tr.toolName,
           success: 'result' in tr
         })));
+      }
+    },
+    onFinish: async ({ response }) => {
+      // Capture generation ID from providerMetadata
+      try {
+        const metadata = response.providerMetadata;
+        if (metadata && 'generationId' in metadata) {
+          const generationId = metadata.generationId as string;
+
+          // Store generation info in database
+          await queryWithPostgres`
+            INSERT INTO generations (
+              generation_id,
+              model,
+              provider_name,
+              total_cost,
+              tokens_prompt,
+              tokens_completion,
+              latency,
+              generation_time,
+              is_byok,
+              streamed
+            ) VALUES (
+              ${generationId},
+              ${modelId},
+              ${'provider' in metadata ? String(metadata.provider) : null},
+              ${'cost' in metadata ? Number(metadata.cost) : null},
+              ${response.usage?.promptTokens ?? null},
+              ${response.usage?.completionTokens ?? null},
+              ${'latency' in metadata ? Number(metadata.latency) : null},
+              ${'generationTime' in metadata ? Number(metadata.generationTime) : null},
+              ${'isByok' in metadata ? Boolean(metadata.isByok) : false},
+              ${true}
+            )
+            ON CONFLICT (generation_id) DO NOTHING
+          `;
+
+          console.log(`[Chat] Captured generation ID: ${generationId}`);
+        }
+      } catch (error) {
+        console.error("[Chat] Error saving generation:", error);
       }
     },
     onError: (e) => {

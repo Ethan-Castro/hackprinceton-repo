@@ -60,6 +60,10 @@ const data = {
           url: "/education",
         },
         {
+          title: "v0 Clone Example",
+          url: "/examples/v0",
+        },
+        {
           title: "Course Builder",
           url: "/education/courses",
         },

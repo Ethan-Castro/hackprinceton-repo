@@ -21,6 +21,63 @@ User: "Create a 7-day meal plan for someone with diabetes"
 AI: Uses displayArtifact to generate a downloadable, well-formatted meal plan
 ```
 
+#### renderTemplateDocument
+Streams a fully-themed document that is rendered from JSON. Ideal for adaptive textbooks, follow-up protocols, or any experience that needs sections, checklists, and timelines without hand-written HTML.
+
+**JSON Contract:**
+```json
+{
+  "type": "health-protocol",
+  "title": "12-Week Heart Health Follow-up",
+  "summary": "High-touch cadence with clear escalation rules.",
+  "audience": "Member + Coach",
+  "tags": ["Health", "Follow-up"],
+  "status": { "label": "In progress", "state": "in-progress", "progress": 65 },
+  "metrics": [
+    { "label": "Sessions", "value": "4 per week", "helper": "Coach verified" }
+  ],
+  "sections": [
+    {
+      "accent": "Weekly Rhythm",
+      "title": "Macro focus",
+      "layout": "grid",
+      "blocks": [
+        {
+          "type": "timeline",
+          "title": "Week-by-week arc",
+          "steps": [
+            { "title": "Week 1", "detail": "Baseline labs", "status": "done" },
+            { "title": "Week 2", "detail": "Nutrition sprint", "status": "current" }
+          ]
+        },
+        {
+          "type": "checklist",
+          "title": "Daily follow-up",
+          "items": [
+            { "label": "AM readiness check", "checked": true },
+            { "label": "PM reflections", "note": "2 prompts" }
+          ]
+        }
+      ]
+    }
+  ],
+  "resources": [
+    { "title": "Coach handoff deck", "url": "https://example.com" }
+  ]
+}
+```
+
+**Why use it:**
+- Automatic progress badge + timeline
+- Clear “tool in progress” shimmer while output streams
+- Export buttons for JSON/PDF/Markdown + one-click email draft
+
+**Best practices:**
+1. Keep sections focused on a single idea; up to 4–5 per document
+2. Blend block types (`timeline`, `checklist`, `callout`, `resources`) so the UI feels rich
+3. Populate `status.progress` while tool runs so the user sees live state
+4. Use `type: "textbook"` for education flows and `type: "health-protocol"` for follow-ups
+
 #### displayWebPreview
 Shows live previews of websites and online resources.
 
@@ -179,7 +236,96 @@ User: "Check if I have access to this Google Doc"
 AI: Uses getGoogleDocMetadata to verify access
 ```
 
-### 6. MCP Tools (Optional)
+### 6. Presentation & Document Generation Tools
+
+#### generateGamma
+Generates professional presentations, documents, webpages, or social media content using Gamma AI.
+
+**Requirements**:
+- `GAMMA_API_KEY` environment variable must be set
+- The API key from https://gamma.app
+
+**Supported Formats**:
+- `presentation` - Slide decks (default)
+- `document` - Long-form documents
+- `webpage` - Interactive webpages
+- `social` - Social media graphics
+
+**Use cases**:
+- Create professional health and fitness presentations
+- Generate treatment plan documents
+- Create wellness webpages
+- Social media content about health topics
+- Visual summaries of research findings
+
+**Parameters**:
+- `inputText`: Text content to convert (1-100,000 characters)
+- `format`: Type of content (presentation, document, webpage, social)
+- `textMode`: How to process text (generate, condense, preserve)
+- `numCards`: Number of slides/sections (1-75)
+- `cardSplit`: How to divide content (auto, inputTextBreaks)
+- `additionalInstructions`: Extra specifications (max 2000 chars)
+
+**Example**:
+```
+User: "Create a presentation about diabetes management"
+AI: Uses generateGamma with:
+  - inputText: "Diabetes management strategies..."
+  - format: "presentation"
+  - numCards: 10
+Result: Generation ID and view URL for the Gamma
+```
+
+#### getGammaGeneration
+Gets details about a generated Gamma, including status and view/download URLs.
+
+**Use cases**:
+- Check generation status
+- Get view and download links
+- Track generation progress
+
+**Example**:
+```
+User: "Get the details of my generated presentation"
+AI: Uses getGammaGeneration to retrieve the generation details
+Result: View URL, download options, and current status
+```
+
+#### exportGamma
+Exports a Gamma generation to PDF or PPTX format for download.
+
+**Supported Formats**:
+- `pdf` - Portable Document Format
+- `pptx` - PowerPoint format
+
+**Use cases**:
+- Download presentations as PowerPoint
+- Export documents as PDFs
+- Share with others in standard formats
+
+**Example**:
+```
+User: "Export my presentation as a PDF"
+AI: Uses exportGamma to create a PDF
+Result: Download link for the PDF file
+```
+
+#### listGammaThemes
+Lists all available Gamma themes for customizing presentations.
+
+**Use cases**:
+- Browse available design themes
+- Find themes for specific topics
+- Understand customization options
+
+**Example**:
+```
+User: "What themes are available for health presentations?"
+AI: Uses listGammaThemes to list available designs
+Result: List of theme names and descriptions
+```
+
+### 7. MCP Tools (Optional)
 
 When MCP (Model Context Protocol) is configured, additional tools become available:
 

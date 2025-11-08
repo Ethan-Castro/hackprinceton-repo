@@ -13,6 +13,7 @@ import type { MarketAnalysis } from "@/components/ai-elements/business/MarketAna
 import type { PitchDeck } from "@/components/ai-elements/business/PitchDeck";
 import type { FinancialDashboard } from "@/components/ai-elements/business/FinancialDashboard";
 import type { CompetitorTable } from "@/components/ai-elements/business/CompetitorTable";
+import type { TemplateDocument } from "@/types/template-document";
 
 export type TextbookChapterPayload = ComponentProps<typeof TextbookChapter>;
 export type ExercisePayload = ComponentProps<typeof Exercise>;
@@ -20,6 +21,7 @@ export type DiagramPayload = ComponentProps<typeof Diagram>;
 export type CodeExamplePayload = ComponentProps<typeof CodeExample>;
 export type KeyPointsPayload = ComponentProps<typeof KeyPoints>;
 export type MindMapPayload = ComponentProps<typeof MindMap>;
+export type TemplateDocumentPayload = TemplateDocument;
 
 export type CaseStudyPayload = {
   title: string;

@@ -100,7 +100,7 @@ const WebPreview = React.forwardRef<HTMLDivElement, WebPreviewProps>(
         <div
           ref={ref}
           className={cn(
-            'flex flex-col rounded-lg border bg-card shadow-sm overflow-hidden transition-all duration-200 ease-out',
+            'flex size-full flex-col bg-card',
             className
           )}
           {...props}
@@ -128,7 +128,7 @@ const WebPreviewNavigation = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        'flex items-center gap-2 border-b bg-muted/30 px-3 py-2',
+        'flex items-center gap-1 border-b p-2 h-14',
         className
       )}
       {...props}

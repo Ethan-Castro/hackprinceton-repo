@@ -4,6 +4,21 @@ import { textbookTools } from './textbook-tools';
 import { businessTools } from './business-tools';
 import { arxivTools } from './arxiv-tools';
 import { googleDocsTools } from './google-docs-tools';
+import { gammaTools } from './gamma-tools';
+import { chartTools } from './chart-tools';
+import { exaTools } from './exa-search-tools';
+import { firecrawlTools } from './firecrawl-tools';
+import { parallelTools } from './parallel-ai-tools';
+import { pythonTools } from './python-tools';
+import { sqlTools } from './sql-tools';
+import { canvasTools } from './canvas-tools';
+import { medicalResearchTools } from './medical-research-tools';
+import { appointmentTools } from './appointment-tools';
+import { medicationTools } from './medication-tools';
+import { sendgridTools } from './sendgrid-tools';
+import { elevenlabsTools } from './elevenlabs-tools';
+import { healthMonitoringTools } from './health-monitoring-tools';
+import { providerInsuranceTools } from './provider-insurance-tools';
 
 /**
  * Tool for displaying content in an artifact container
@@ -148,10 +163,25 @@ export const tools = {
   displayArtifact,
   displayWebPreview,
   generateHtmlPreview,
+  ...chartTools,
+  ...exaTools,
+  ...firecrawlTools,
+  ...parallelTools,
+  ...pythonTools,
+  ...sqlTools,
+  ...canvasTools,
   ...textbookTools,
   ...businessTools,
   ...arxivTools,
   ...googleDocsTools,
+  ...gammaTools,
+  ...medicalResearchTools,
+  ...appointmentTools,
+  ...medicationTools,
+  ...sendgridTools,
+  ...elevenlabsTools,
+  ...healthMonitoringTools,
+  ...providerInsuranceTools,
 };
 
 

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline - AI Gateway</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+        "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 60px 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      margin: 20px;
+    }
+
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    p {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #f0f0f0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .status.checking::after {
+      content: " .";
+      animation: dots 1.5s steps(3, end) infinite;
+    }
+
+    @keyframes dots {
+      0%,
+      20% {
+        content: " .";
+      }
+      40% {
+        content: " ..";
+      }
+      60% {
+        content: " ...";
+      }
+    }
+
+    .suggestions {
+      text-align: left;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid #eee;
+    }
+
+    .suggestions h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .suggestions ul {
+      list-style: none;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .suggestions li {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .suggestions li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #667eea;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶</div>
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection.</p>
+
+    <div class="status checking">Checking connection</div>
+
+    <p>Many features are still available while offline:</p>
+
+    <div class="suggestions">
+      <h3>What you can do:</h3>
+      <ul>
+        <li>Read previously loaded conversations</li>
+        <li>Access your recent items</li>
+        <li>Browse templates</li>
+        <li>View exported documents</li>
+      </ul>
+    </div>
+
+    <button onclick="location.reload()">Try Again</button>
+
+    <script>
+      // Check for connection every 2 seconds
+      setInterval(function () {
+        fetch("/api/health", { method: "HEAD" })
+          .then(() => {
+            // Connection restored
+            location.reload();
+          })
+          .catch(() => {
+            // Still offline
+          });
+      }, 2000);
+    </script>
+  </div>
+</body>
+</html>

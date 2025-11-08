@@ -2,8 +2,15 @@ import { tool as createTool } from 'ai';
 import { z } from 'zod';
 import { ArXivClient } from '@deepagent/arxiv';
 
-// Initialize ArXiv client (no API key required)
-const arxivClient = new ArXivClient();
+// Lazy initialization - create client when needed (no API key required)
+let arxivClient: ArXivClient | null = null;
+
+function getArXivClient(): ArXivClient {
+  if (!arxivClient) {
+    arxivClient = new ArXivClient();
+  }
+  return arxivClient;
+}
 
 /**
  * Tool for searching ArXiv research papers
@@ -34,9 +41,10 @@ export const searchArXiv = createTool({
         throw new Error('Search query cannot be empty');
       }
 
+      const client = getArXivClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const results: any = await arxivClient.search({
-        query: query.trim(),
+      const results: any = await client.search({
+        searchQuery: query.trim(),
         maxResults,
         sortBy,
       });
@@ -85,10 +93,11 @@ export const getArXivPaper = createTool({
         throw new Error('Paper ID cannot be empty');
       }
 
+      const client = getArXivClient();
       // Search for the specific paper
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const resultsData: any = await arxivClient.search({
-        query: `id:${paperId.trim()}`,
+      const resultsData: any = await client.search({
+        searchQuery: `id:${paperId.trim()}`,
         maxResults: 1,
       });
 

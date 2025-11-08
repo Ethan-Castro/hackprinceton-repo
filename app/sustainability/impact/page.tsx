@@ -1,12 +1,9 @@
-import { Chat } from "@/components/chat";
-import { DEFAULT_MODEL } from "@/lib/constants";
+import { UsageBilling } from "@/components/usage-billing";
 
-export default async function ImpactPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ modelId?: string }>;
-}) {
-  const params = await searchParams;
-  const modelId = params?.modelId ?? DEFAULT_MODEL;
-  return <Chat modelId={modelId} />;
+export default function ImpactPage() {
+  return (
+    <div className="container mx-auto py-10 px-4">
+      <UsageBilling />
+    </div>
+  );
 }
