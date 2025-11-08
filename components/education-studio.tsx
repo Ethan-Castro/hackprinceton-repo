@@ -129,7 +129,7 @@ Keep tone encouraging, specific, and rich with visuals whenever possible.`;
 const hasToolOutput = (messages: ReturnType<typeof useChat>["messages"], tool: string) =>
   messages.some((message) =>
     message.parts?.some(
-      (part) => part.type === tool && part.state === "output-available"
+      (part) => part.type === tool && "state" in part && part.state === "output-available"
     )
   );
 
