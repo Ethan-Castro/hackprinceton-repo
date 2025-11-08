@@ -33,7 +33,7 @@ export const saveTrackerEntry = createTool({
   inputSchema: z.object({
     trackerId: z.string().min(1),
     date: z.string().datetime().optional(),
-    data: z.record(z.any()),
+    data: z.record(z.string(), z.any()),
   }),
   execute: async ({ trackerId, date, data }) => {
     const entry = await addEntry({
