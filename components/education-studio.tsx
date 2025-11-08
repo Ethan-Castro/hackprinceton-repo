@@ -446,9 +446,6 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
               .filter((message) => message.role === "assistant")
               .map((message) => (
                 <div key={message.id} className="rounded-3xl border bg-card shadow-border-medium p-5 space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(message.createdAt ?? Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </div>
                   {message.parts.map((part, index) => {
                     switch (part.type) {
                       case "text":
