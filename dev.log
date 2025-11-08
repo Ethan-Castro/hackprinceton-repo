@@ -1,0 +1,114 @@
+
+> ai-sdk-gateway-demo@0.1.0 dev /Users/ethancastro/vercel-ai-gateway-demo1
+> next dev
+
+   ▲ Next.js 15.3.1
+   - Local:        http://localhost:3000
+   - Network:      http://10.29.108.110:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1732ms
+ ○ Compiling /api/models ...
+ ✓ Compiled /api/models in 865ms (500 modules)
+[Models API] Fetching models from gateway...
+[Models API] Error fetching models: Error [GatewayResponseError]: Invalid error response format: Gateway request failed
+    at async GET (app/api/models/route.ts:9:22)
+   7 |     // Get all models from the gateway
+   8 |     console.log("[Models API] Fetching models from gateway...");
+>  9 |     const allModels = await gateway.getAvailableModels();
+     |                      ^
+  10 |     console.log(`[Models API] Gateway returned ${allModels.models.length} total models`);
+  11 |     
+  12 |     const allAvailableModels = allModels.models {
+  statusCode: 500,
+  type: 'response_error',
+  response: {},
+  validationError: Error [ZodError]: [
+    {
+      "expected": "object",
+      "code": "invalid_type",
+      "path": [
+        "error"
+      ],
+      "message": "Invalid input: expected object, received undefined"
+    }
+  ]
+      at async GET (app/api/models/route.ts:9:22)
+     7 |     // Get all models from the gateway
+     8 |     console.log("[Models API] Fetching models from gateway...");
+  >  9 |     const allModels = await gateway.getAvailableModels();
+       |                      ^
+    10 |     console.log(`[Models API] Gateway returned ${allModels.models.length} total models`);
+    11 |     
+    12 |     const allAvailableModels = allModels.models,
+  [cause]: Error [AI_APICallError]: Cannot connect to API: Client network socket disconnected before secure TLS connection was established
+      at async GET (app/api/models/route.ts:9:22)
+     7 |     // Get all models from the gateway
+     8 |     console.log("[Models API] Fetching models from gateway...");
+  >  9 |     const allModels = await gateway.getAvailableModels();
+       |                      ^
+    10 |     console.log(`[Models API] Gateway returned ${allModels.models.length} total models`);
+    11 |     
+    12 |     const allAvailableModels = allModels.models {
+    url: 'https://api.ai.vercel.com/v1/config',
+    requestBodyValues: {},
+    statusCode: undefined,
+    responseHeaders: undefined,
+    responseBody: undefined,
+    isRetryable: true,
+    data: undefined,
+    [cause]: [Error: Client network socket disconnected before secure TLS connection was established] {
+      code: 'ECONNRESET',
+      path: undefined,
+      host: 'api.ai.vercel.com',
+      port: 443,
+      localAddress: null
+    }
+  }
+}
+[Models API] Error details: Invalid error response format: Gateway request failed
+ GET /api/models 200 in 1570ms
+ ✓ Compiled in 153ms (132 modules)
+[Models API] Returning configured models...
+[Models API] Returning 12 models
+ GET /api/models 200 in 41ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1791ms (1082 modules)
+ GET / 200 in 2078ms
+ ○ Compiling /playground ...
+ ✓ Compiled /playground in 3s (4389 modules)
+ GET /playground 200 in 3642ms
+[Models API] Returning configured models...
+[Models API] Returning 12 models
+ GET /api/models 200 in 16ms
+ ✓ Compiled in 433ms (2103 modules)
+ GET /playground 200 in 21ms
+ ✓ Compiled in 303ms (2103 modules)
+ GET /playground 200 in 13ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 554ms (4393 modules)
+ GET /_next/static/css/app/layout.css?v=1762605138691 404 in 722ms
+ ✓ Compiled in 364ms (4407 modules)
+ GET /playground 200 in 58ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 896ms (4821 modules)
+ GET /playground 200 in 659ms
+ GET /playground 200 in 12ms
+ GET /_next/static/css/app/layout.css?v=1762605145114 404 in 94ms
+ GET /_next/static/css/app/layout.css?v=1762605143835 404 in 1470ms
+ ✓ Compiled in 274ms (2353 modules)
+ GET /playground 404 in 39ms
+ GET /playground 404 in 7ms
+ GET /playground 404 in 13ms
+ ✓ Compiled in 259ms (2353 modules)
+ GET /playground 404 in 30ms
+ GET /playground 404 in 18ms
+ GET /playground 200 in 366ms
+ GET /playground 200 in 71ms
+ GET /_next/static/css/app/layout.css?v=1762605161283 404 in 44ms
+ GET /_next/static/chunks/main-app.js?v=1762605161283 404 in 111ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 112ms
+ GET /_next/static/chunks/app/page.js 404 in 134ms
+ GET /_next/static/chunks/app/playground/page.js 404 in 135ms
+ ✓ Compiled in 351ms (2353 modules)

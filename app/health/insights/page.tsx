@@ -8,5 +8,5 @@ export default async function InsightsPage({
 }) {
   const params = await searchParams;
   const modelId = params?.modelId ?? DEFAULT_MODEL;
-  return <Chat modelId={modelId} />;
+  return <Chat modelId={modelId} apiEndpoint="/api/health-chat" />;
 }

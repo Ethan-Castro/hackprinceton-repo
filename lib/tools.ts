@@ -2,6 +2,8 @@ import { tool as createTool } from 'ai';
 import { z } from 'zod';
 import { textbookTools } from './textbook-tools';
 import { businessTools } from './business-tools';
+import { arxivTools } from './arxiv-tools';
+import { googleDocsTools } from './google-docs-tools';
 
 /**
  * Tool for displaying content in an artifact container
@@ -148,6 +150,8 @@ export const tools = {
   generateHtmlPreview,
   ...textbookTools,
   ...businessTools,
+  ...arxivTools,
+  ...googleDocsTools,
 };
 
 

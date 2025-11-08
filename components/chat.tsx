@@ -60,7 +60,13 @@ function ModelSelectorHandler({
   return <ModelSelector modelId={modelId} onModelChange={handleSelectChange} />;
 }
 
-export function Chat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
+export function Chat({
+  modelId = DEFAULT_MODEL,
+  apiEndpoint = "/api/chat"
+}: {
+  modelId: string;
+  apiEndpoint?: string;
+}) {
   const [input, setInput] = useState("");
   const [currentModelId, setCurrentModelId] = useState(modelId);
   const [category, setCategory] = useState("edu");
@@ -74,7 +80,9 @@ export function Chat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
     setCategory(newCategory);
   };
 
-  const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat();
+  const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat({
+    api: apiEndpoint,
+  } as any);
 
   const hasMessages = messages.length > 0;
 

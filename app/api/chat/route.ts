@@ -2,10 +2,8 @@ import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import {
   DEFAULT_MODEL,
   SUPPORTED_MODELS,
-  CEREBRAS_MODELS,
 } from "@/lib/constants";
 import { gateway } from "@/lib/gateway";
-import { cerebras } from "@/lib/cerebras";
 import { tools } from "@/lib/tools";
 
 export const maxDuration = 60;
@@ -23,9 +21,8 @@ export async function POST(req: Request) {
     );
   }
 
-  // Use direct Cerebras provider for Cerebras models, gateway for others
-  const isCerebrasModel = CEREBRAS_MODELS.includes(modelId);
-  const model = isCerebrasModel ? cerebras(modelId) : gateway(modelId);
+  // Route all models (including Cerebras) through the AI Gateway
+  const model = gateway(modelId);
 
   const result = streamText({
     model,
