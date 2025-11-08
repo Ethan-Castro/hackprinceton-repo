@@ -57,9 +57,9 @@ export const ModelSelector = memo(function ModelSelector({
 
       <SelectContent className="rounded-2xl border-0 shadow-border-medium bg-popover/95 backdrop-blur-sm animate-scale-in" align="start" sideOffset={4}>
         <SelectGroup>
-          <SelectLabel className="text-xs text-muted-foreground px-2 py-1">Models</SelectLabel>
+          <SelectLabel className="text-xs text-muted-foreground px-2 py-1 transition-colors duration-150">Models</SelectLabel>
           {models?.map((model) => (
-            <SelectItem key={model.id} value={model.id} className="rounded-lg transition-colors duration-150 ease-out">
+            <SelectItem key={model.id} value={model.id} className="rounded-lg hover:bg-accent/50 cursor-pointer">
               {model.label}
             </SelectItem>
           )) || []}

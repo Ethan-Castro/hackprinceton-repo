@@ -118,6 +118,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
   }
 
   /* Hide scrollbar while keeping functionality */
@@ -125,9 +131,15 @@
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
   }
-  
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
+  }
+
+  /* Better focus visibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 
@@ -135,19 +147,19 @@
   .animate-fade-in {
     animation: fade-in 200ms ease-out;
   }
-  
+
   .animate-slide-up {
     animation: slide-up 200ms ease-out;
   }
-  
+
   .animate-slide-down {
     animation: slide-down 150ms ease-out;
   }
-  
+
   .animate-scale-in {
     animation: scale-in 200ms ease-out;
   }
-  
+
   .animate-message-in {
     animation: message-in 300ms ease-out;
   }
@@ -157,20 +169,20 @@
       0 0 0 1px rgba(0, 0, 0, 0.08),
       0 1px 2px rgba(0, 0, 0, 0.12);
   }
-  
+
   .shadow-border-medium {
     box-shadow: 
       0 0 0 1px rgba(0, 0, 0, 0.08),
       0 2px 4px rgba(0, 0, 0, 0.12),
       0 1px 6px rgba(0, 0, 0, 0.05);
   }
-  
+
   .dark .shadow-border-small {
     box-shadow: 
       0 0 0 1px rgba(255, 255, 255, 0.1),
       0 1px 2px rgba(0, 0, 0, 0.4);
   }
-  
+
   .dark .shadow-border-medium {
     box-shadow: 
       0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -179,16 +191,17 @@
   }
 
   .glass-effect {
-    backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px) saturate(180%);
+    background: rgba(255, 255, 255, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 200ms ease-in-out;
   }
-  
+
   .dark .glass-effect {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
-  
+
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -197,7 +210,7 @@
       opacity: 1;
     }
   }
-  
+
   @keyframes slide-up {
     from {
       opacity: 0;
@@ -208,7 +221,7 @@
       transform: translateY(0);
     }
   }
-  
+
   @keyframes slide-down {
     from {
       opacity: 0;
@@ -219,7 +232,7 @@
       transform: translateY(0);
     }
   }
-  
+
   @keyframes scale-in {
     from {
       opacity: 0;
@@ -230,7 +243,7 @@
       transform: scale(1);
     }
   }
-  
+
   @keyframes message-in {
     from {
       opacity: 0;
@@ -243,13 +256,159 @@
       filter: blur(0);
     }
   }
-  
+
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-collapsible-content-height);
+    }
+  }
+
+  @keyframes collapsible-up {
+    from {
+      height: var(--radix-collapsible-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .animate-collapsible-down {
+    animation: collapsible-down 200ms ease-out;
+  }
+
+  .animate-collapsible-up {
+    animation: collapsible-up 200ms ease-out;
+  }
+
+  /* Prose styles for markdown rendering */
+  .prose {
+    @apply text-foreground leading-relaxed;
+  }
+
+  /* Remove default margins on first/last elements */
+  .prose :where(> :first-child):not(:where([class~="not-prose"] *)) {
+    @apply mt-0;
+  }
+
+  .prose :where(> :last-child):not(:where([class~="not-prose"] *)) {
+    @apply mb-0;
+  }
+
+  .prose :where(p):not(:where([class~="not-prose"] *)) {
+    @apply my-4 leading-relaxed;
+  }
+
+  .prose :where(h1):not(:where([class~="not-prose"] *)) {
+    @apply text-2xl font-bold mt-8 mb-4 leading-tight;
+  }
+
+  .prose :where(h2):not(:where([class~="not-prose"] *)) {
+    @apply text-xl font-bold mt-6 mb-3 leading-snug;
+  }
+
+  .prose :where(h3):not(:where([class~="not-prose"] *)) {
+    @apply text-lg font-semibold mt-5 mb-2 leading-snug;
+  }
+
+  .prose :where(h4):not(:where([class~="not-prose"] *)) {
+    @apply text-base font-semibold mt-4 mb-2;
+  }
+
+  .prose :where(ul):not(:where([class~="not-prose"] *)) {
+    @apply list-disc pl-6 my-4 space-y-2;
+  }
+
+  .prose :where(ol):not(:where([class~="not-prose"] *)) {
+    @apply list-decimal pl-6 my-4 space-y-2;
+  }
+
+  .prose :where(li):not(:where([class~="not-prose"] *)) {
+    @apply leading-relaxed;
+  }
+
+  .prose :where(li > ul, li > ol):not(:where([class~="not-prose"] *)) {
+    @apply my-2;
+  }
+
+  .prose :where(code):not(:where([class~="not-prose"] *)) {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono before:content-none after:content-none;
+    transition: background-color 150ms ease-in-out;
+  }
+
+  .prose :where(pre):not(:where([class~="not-prose"] *)) {
+    @apply bg-muted p-4 rounded-lg overflow-x-auto my-4;
+    transition: background-color 150ms ease-in-out;
+  }
+
+  .prose :where(pre code):not(:where([class~="not-prose"] *)) {
+    @apply bg-transparent p-0 text-sm;
+  }
+
+  .prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+    @apply border-l-4 border-muted-foreground/30 pl-4 italic my-4 text-muted-foreground;
+  }
+
+  .prose :where(a):not(:where([class~="not-prose"] *)) {
+    @apply text-primary underline underline-offset-2 decoration-primary/50 hover:decoration-primary hover:text-primary/90;
+    transition: all 150ms ease-in-out;
+  }
+
+  .prose :where(strong):not(:where([class~="not-prose"] *)) {
+    @apply font-semibold text-foreground;
+  }
+
+  .prose :where(em):not(:where([class~="not-prose"] *)) {
+    @apply italic;
+  }
+
+  .prose :where(hr):not(:where([class~="not-prose"] *)) {
+    @apply border-border my-8;
+  }
+
+  .prose :where(table):not(:where([class~="not-prose"] *)) {
+    @apply w-full border-collapse my-4 text-sm;
+  }
+
+  .prose :where(thead):not(:where([class~="not-prose"] *)) {
+    @apply border-b-2 border-border;
+  }
+
+  .prose :where(th):not(:where([class~="not-prose"] *)) {
+    @apply border border-border px-3 py-2 bg-muted font-semibold text-left;
+  }
+
+  .prose :where(td):not(:where([class~="not-prose"] *)) {
+    @apply border border-border px-3 py-2;
+  }
+
+  .prose :where(tbody tr):not(:where([class~="not-prose"] *)) {
+    @apply border-b border-border;
+  }
+
+  .prose :where(img):not(:where([class~="not-prose"] *)) {
+    @apply rounded-lg my-4;
+  }
+
+  /* Dark mode adjustments */
+  .dark .prose :where(code):not(:where([class~="not-prose"] *)) {
+    @apply bg-muted/50;
+  }
+
+  .dark .prose :where(pre):not(:where([class~="not-prose"] *)) {
+    @apply bg-muted/30;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-fade-in,
     .animate-slide-up,
     .animate-slide-down,
     .animate-scale-in,
-    .animate-message-in {
+    .animate-message-in,
+    .animate-collapsible-down,
+    .animate-collapsible-up {
       animation: fade-in 200ms ease-out;
     }
   }

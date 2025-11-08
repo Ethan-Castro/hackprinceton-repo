@@ -1,18 +1,25 @@
 import { useState, useEffect, useCallback } from "react";
 import type { DisplayModel } from "@/lib/display-model";
-import type { GatewayLanguageModelEntry } from "@ai-sdk/gateway";
-import { SUPPORTED_MODELS } from "@/lib/constants";
+import { SUPPORTED_MODELS, CEREBRAS_MODELS } from "@/lib/constants";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MILLIS = 5000;
 
-function buildModelList(models: GatewayLanguageModelEntry[]): DisplayModel[] {
+function buildModelList(models: Array<{ id: string; name: string }>): DisplayModel[] {
   return models
     .filter((model) => SUPPORTED_MODELS.includes(model.id))
     .map((model) => ({
       id: model.id,
-      label: model.name,
-    }));
+      label: model.name || model.id, // Fallback to ID if name is missing
+    }))
+    .sort((a, b) => {
+      // Sort Cerebras models first, then gateway models
+      const aIsCerebras = CEREBRAS_MODELS.includes(a.id);
+      const bIsCerebras = CEREBRAS_MODELS.includes(b.id);
+      if (aIsCerebras && !bIsCerebras) return -1;
+      if (!aIsCerebras && bIsCerebras) return 1;
+      return a.label.localeCompare(b.label);
+    });
 }
 
 export function useAvailableModels() {

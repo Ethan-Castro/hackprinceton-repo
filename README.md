@@ -1,5 +1,26 @@
 A simple [Next.js](https://nextjs.org) chatbot app to demonstrate the use of the Vercel AI Gateway with the [AI SDK](https://sdk.vercel.ai).
 
+## Supported Providers
+
+This demo supports multiple AI providers including:
+- Amazon (Nova models)
+- Anthropic (Claude)
+- Cerebras (Llama, GPT-OSS, Qwen models) - [Setup Guide](./CEREBRAS_SETUP.md)
+- Google (Gemini, Gemma)
+- Meta (Llama)
+- Mistral
+- OpenAI (GPT models)
+- xAI (Grok)
+
+## AI Elements Components
+
+This project includes AI Elements UI components for enhanced chat experiences:
+- **Shimmer** - Animated loading states for streaming content
+- **Plan** - Collapsible execution plans with streaming support
+- **Task** - Task lists with progress indicators
+
+See [AI_ELEMENTS.md](./AI_ELEMENTS.md) for detailed documentation and usage examples.
+
 ## Getting Started
 
 ### One-time setup
@@ -14,6 +35,20 @@ A simple [Next.js](https://nextjs.org) chatbot app to demonstrate the use of the
 ### Usage
 1. Install packages with `pnpm i` (or `npm i` or `yarn i`) and run the development server with `vc dev`
 1. Open http://localhost:3000 to try the chatbot
+
+## Health Coach (Generative UI + Neo4j)
+
+A health-focused experience is available at `/health` with:
+- Advice chat, report understanding, deep research, fitness ebook planning, and personal trackers.
+
+### Setup
+1. Configure environment variables (see `env.example`):
+   - `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`
+2. Install dependencies:
+   - `neo4j-driver` (database)
+   - `pdf-parse` (PDF extraction)
+   - `tesseract.js` (image OCR)
+3. Start the app and visit `/health`.
 
 ### FAQ
 

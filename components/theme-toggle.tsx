@@ -33,9 +33,9 @@ export function ThemeToggle() {
       className="h-9 w-9 shadow-border-small hover:shadow-border-medium bg-background/80 backdrop-blur-sm border-0 hover:bg-background hover:scale-[1.02] transition-all duration-150 ease"
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4" />
+        <Sun className="h-4 w-4 transition-transform duration-200 ease-out hover:rotate-90" />
       ) : (
-        <Moon className="h-4 w-4" />
+        <Moon className="h-4 w-4 transition-transform duration-200 ease-out hover:rotate-12" />
       )}
     </Button>
   );
