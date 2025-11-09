@@ -116,13 +116,13 @@ export const addMedication = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO medications (
             id, name, dosage, frequency, reason, start_date, end_date,
             prescribed_by, pharmacy, refills_remaining, side_effects, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           medicationId,
           name,
           dosage,
@@ -199,11 +199,11 @@ export const logMedicationTaken = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO medication_entries (id, medication_id, taken_at, taken, notes)
           VALUES ($1, $2, $3, $4, $5)
         `;
-        await query(query, [entryId, medicationId, takenAt, taken, notes || ""]);
+        await query(sqlQuery, [entryId, medicationId, takenAt, taken, notes || ""]);
       } catch (dbError) {
         console.warn("Database insert failed:", dbError);
       }
@@ -242,24 +242,24 @@ export const listMedications = createTool({
   }),
   execute: async ({ activeOnly, reason }): Promise<MedicationResult> => {
     try {
-      let query = "SELECT * FROM medications";
+      let sqlQuery = "SELECT * FROM medications";
       const params: unknown[] = [];
 
       if (activeOnly) {
-        query += " WHERE (end_date IS NULL OR end_date > NOW()::date)";
+        sqlQuery += " WHERE (end_date IS NULL OR end_date > NOW()::date)";
       }
 
       if (reason) {
         params.push(`%${reason}%`);
-        query += activeOnly
+        sqlQuery += activeOnly
           ? ` AND reason ILIKE $1`
           : ` WHERE reason ILIKE $1`;
       }
 
-      query += " ORDER BY start_date DESC";
+      sqlQuery += " ORDER BY start_date DESC";
 
       try {
-        const result = await query(query, params);
+        const result = await query(sqlQuery, params);
         const medications: Medication[] = (result as any[]).map((row: any) => ({
           id: row.id,
           name: row.name,
@@ -316,7 +316,7 @@ export const getMedicationAdherence = createTool({
   }),
   execute: async ({ medicationId, daysBack }): Promise<MedicationResult> => {
     try {
-      const query = `
+      const sqlQuery = `
         SELECT
           COUNT(*) as total,
           SUM(CASE WHEN taken THEN 1 ELSE 0 END) as taken,
@@ -327,7 +327,7 @@ export const getMedicationAdherence = createTool({
       `;
 
       try {
-        const result = (await query(query, [medicationId])) as any[];
+        const result = (await query(sqlQuery, [medicationId])) as any[];
         const data = result[0];
         const adherenceRate = data?.adherence_rate || 0;
 
@@ -405,14 +405,14 @@ export const removeMedication = createTool({
   }),
   execute: async ({ medicationId, endDate, reason }): Promise<MedicationResult> => {
     try {
-      const query = `
+      const sqlQuery = `
         UPDATE medications
         SET end_date = $1, notes = CONCAT(notes, $2)
         WHERE id = $3
       `;
 
       try {
-        await query(query, [
+        await query(sqlQuery, [
           endDate || new Date().toISOString().split("T")[0],
           reason ? `\nStopped: ${reason}` : "",
           medicationId,

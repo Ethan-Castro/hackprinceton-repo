@@ -121,13 +121,13 @@ export const addHealthcareProvider = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO healthcare_providers (
             id, name, specialty, license_number, phone, email,
             website, office_location, accepting_new_patients, languages, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           providerId,
           name,
           specialty,
@@ -181,7 +181,7 @@ export const listHealthcareProviders = createTool({
     acceptingNewPatients,
   }): Promise<ProviderInsuranceResult> => {
     try {
-      let query = "SELECT * FROM healthcare_providers";
+      let sqlQuery = "SELECT * FROM healthcare_providers";
       const params: unknown[] = [];
       const conditions: string[] = [];
 
@@ -196,13 +196,13 @@ export const listHealthcareProviders = createTool({
       }
 
       if (conditions.length > 0) {
-        query += " WHERE " + conditions.join(" AND ");
+        sqlQuery += " WHERE " + conditions.join(" AND ");
       }
 
-      query += " ORDER BY name ASC";
+      sqlQuery += " ORDER BY name ASC";
 
       try {
-        const result = await query(query, params);
+        const result = await query(sqlQuery, params);
         const providers: HealthcareProvider[] = (result as any[]).map(
           (row: any) => ({
             id: row.id,
@@ -320,14 +320,14 @@ export const addInsurancePlan = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO insurance_plans (
             id, provider, plan, policy_number, member_id, group_number,
             coverage_type, start_date, end_date, copay, deductible,
             out_of_pocket_max, coverage, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           insuranceId,
           provider,
           plan,
@@ -377,14 +377,14 @@ export const listInsurancePlans = createTool({
   }),
   execute: async ({ activeOnly }): Promise<ProviderInsuranceResult> => {
     try {
-      let query = "SELECT * FROM insurance_plans";
+      let sqlQuery = "SELECT * FROM insurance_plans";
       if (activeOnly) {
-        query += " WHERE (end_date IS NULL OR end_date > NOW()::date)";
+        sqlQuery += " WHERE (end_date IS NULL OR end_date > NOW()::date)";
       }
-      query += " ORDER BY start_date DESC";
+      sqlQuery += " ORDER BY start_date DESC";
 
       try {
-        const result = await query(query);
+        const result = await query(sqlQuery);
         const insurances: Insurance[] = (result as any[]).map((row: any) => ({
           id: row.id,
           provider: row.provider,

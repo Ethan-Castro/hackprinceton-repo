@@ -151,6 +151,159 @@ const SCHEMA_DEFINITIONS = {
     );
   `,
 
+  // Healthcare Providers - store healthcare provider information
+  healthcare_providers: `
+    CREATE TABLE IF NOT EXISTS healthcare_providers (
+      id VARCHAR(255) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      specialty VARCHAR(100),
+      license_number VARCHAR(255),
+      phone VARCHAR(20),
+      email VARCHAR(255),
+      website VARCHAR(255),
+      office_location TEXT,
+      accepting_new_patients BOOLEAN DEFAULT true,
+      languages JSONB,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Insurance Plans - store insurance plan details
+  insurance_plans: `
+    CREATE TABLE IF NOT EXISTS insurance_plans (
+      id VARCHAR(255) PRIMARY KEY,
+      provider VARCHAR(255) NOT NULL,
+      plan VARCHAR(255) NOT NULL,
+      policy_number VARCHAR(255) NOT NULL,
+      member_id VARCHAR(255) NOT NULL,
+      group_number VARCHAR(255),
+      coverage_type VARCHAR(50) NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE,
+      copay DECIMAL(10, 2),
+      deductible DECIMAL(10, 2),
+      out_of_pocket_max DECIMAL(10, 2),
+      coverage JSONB,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Medications - track medications
+  medications: `
+    CREATE TABLE IF NOT EXISTS medications (
+      id VARCHAR(255) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      dosage VARCHAR(100) NOT NULL,
+      frequency VARCHAR(255) NOT NULL,
+      reason VARCHAR(255) NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE,
+      prescribed_by VARCHAR(255),
+      pharmacy VARCHAR(255),
+      refills_remaining INTEGER DEFAULT 0,
+      side_effects JSONB,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Medication Entries - log medication doses taken
+  medication_entries: `
+    CREATE TABLE IF NOT EXISTS medication_entries (
+      id VARCHAR(255) PRIMARY KEY,
+      medication_id VARCHAR(255) NOT NULL REFERENCES medications(id) ON DELETE CASCADE,
+      taken_at TIMESTAMP NOT NULL,
+      taken BOOLEAN NOT NULL DEFAULT true,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Appointments - schedule and track appointments
+  appointments: `
+    CREATE TABLE IF NOT EXISTS appointments (
+      id VARCHAR(255) PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      provider_name VARCHAR(255),
+      appointment_date DATE NOT NULL,
+      appointment_time TIME,
+      duration INTEGER,
+      location TEXT,
+      type VARCHAR(100),
+      notes TEXT,
+      reminder_minutes_before INTEGER DEFAULT 1440,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Vital Signs - log blood pressure, heart rate, temperature, oxygen, weight
+  vital_signs: `
+    CREATE TABLE IF NOT EXISTS vital_signs (
+      id VARCHAR(255) PRIMARY KEY,
+      recorded_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      systolic INTEGER,
+      diastolic INTEGER,
+      heart_rate INTEGER,
+      temperature DECIMAL(5, 1),
+      oxygen_saturation INTEGER,
+      weight DECIMAL(6, 2),
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Activities - track physical activities and exercise
+  activities: `
+    CREATE TABLE IF NOT EXISTS activities (
+      id VARCHAR(255) PRIMARY KEY,
+      activity_date DATE NOT NULL,
+      activity_type VARCHAR(255) NOT NULL,
+      duration INTEGER NOT NULL,
+      calories INTEGER,
+      intensity VARCHAR(50),
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Nutrition Logs - track meals and nutrition information
+  nutrition_logs: `
+    CREATE TABLE IF NOT EXISTS nutrition_logs (
+      id VARCHAR(255) PRIMARY KEY,
+      meal_date DATE NOT NULL,
+      meal_type VARCHAR(50) NOT NULL,
+      description TEXT NOT NULL,
+      estimated_calories INTEGER,
+      protein DECIMAL(8, 2),
+      carbs DECIMAL(8, 2),
+      fat DECIMAL(8, 2),
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // Health Goals - store health goals and targets
+  health_goals: `
+    CREATE TABLE IF NOT EXISTS health_goals (
+      id VARCHAR(255) PRIMARY KEY,
+      goal_type VARCHAR(255) NOT NULL,
+      target_value DECIMAL(10, 2) NOT NULL,
+      unit VARCHAR(50) NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE,
+      progress DECIMAL(10, 2),
+      status VARCHAR(50) DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
   // Indexes for common queries
   indexes: `
     CREATE INDEX IF NOT EXISTS idx_trackers_user_id ON trackers(user_id);
@@ -169,6 +322,23 @@ const SCHEMA_DEFINITIONS = {
     CREATE INDEX IF NOT EXISTS idx_chat_ownership_v0_chat_id ON chat_ownership(v0_chat_id);
     CREATE INDEX IF NOT EXISTS idx_anonymous_chat_log_ip ON anonymous_chat_log(ip_address);
     CREATE INDEX IF NOT EXISTS idx_anonymous_chat_log_created_at ON anonymous_chat_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_healthcare_providers_specialty ON healthcare_providers(specialty);
+    CREATE INDEX IF NOT EXISTS idx_healthcare_providers_name ON healthcare_providers(name);
+    CREATE INDEX IF NOT EXISTS idx_insurance_plans_provider ON insurance_plans(provider);
+    CREATE INDEX IF NOT EXISTS idx_insurance_plans_start_date ON insurance_plans(start_date);
+    CREATE INDEX IF NOT EXISTS idx_medications_name ON medications(name);
+    CREATE INDEX IF NOT EXISTS idx_medications_start_date ON medications(start_date);
+    CREATE INDEX IF NOT EXISTS idx_medication_entries_medication_id ON medication_entries(medication_id);
+    CREATE INDEX IF NOT EXISTS idx_medication_entries_taken_at ON medication_entries(taken_at);
+    CREATE INDEX IF NOT EXISTS idx_appointments_appointment_date ON appointments(appointment_date);
+    CREATE INDEX IF NOT EXISTS idx_appointments_provider_name ON appointments(provider_name);
+    CREATE INDEX IF NOT EXISTS idx_vital_signs_recorded_at ON vital_signs(recorded_at);
+    CREATE INDEX IF NOT EXISTS idx_activities_activity_date ON activities(activity_date);
+    CREATE INDEX IF NOT EXISTS idx_activities_activity_type ON activities(activity_type);
+    CREATE INDEX IF NOT EXISTS idx_nutrition_logs_meal_date ON nutrition_logs(meal_date);
+    CREATE INDEX IF NOT EXISTS idx_nutrition_logs_meal_type ON nutrition_logs(meal_type);
+    CREATE INDEX IF NOT EXISTS idx_health_goals_status ON health_goals(status);
+    CREATE INDEX IF NOT EXISTS idx_health_goals_goal_type ON health_goals(goal_type);
   `,
 };
 
@@ -285,6 +455,15 @@ export async function resetDatabase(): Promise<{
       'chat_history',
       'generations',
       'users',
+      'medication_entries',
+      'medications',
+      'appointments',
+      'vital_signs',
+      'activities',
+      'nutrition_logs',
+      'health_goals',
+      'insurance_plans',
+      'healthcare_providers',
     ];
 
     for (const table of tables) {

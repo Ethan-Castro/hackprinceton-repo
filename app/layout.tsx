@@ -1,4 +1,5 @@
-import type { Metadata, Viewport } from "next";
+"use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -7,6 +8,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { CommandPalette } from "@/components/navigation/CommandPalette";
 import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "next-auth/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,26 +20,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "AI Gateway",
-  description: "Your personal AI-powered assistant for health, business, education, and more",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "AI Gateway",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  viewportFit: "cover",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -46,39 +28,44 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <title>AI Gateway</title>
+        <meta name="description" content="Your personal AI-powered assistant for health, business, education, and more" />
         {/* PWA Meta Tags */}
         <meta name="theme-color" content="#4285f4" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="AI Gateway" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" type="image/png" href="/icons/icon-192.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-              {children}
-            </SidebarInset>
-          </SidebarProvider>
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset>
+                {children}
+              </SidebarInset>
+            </SidebarProvider>
 
-          {/* Command Palette */}
-          <CommandPalette />
+            {/* Command Palette */}
+            <CommandPalette />
 
-          {/* Onboarding */}
-          <OnboardingManager />
+            {/* Onboarding */}
+            <OnboardingManager />
 
-          {/* Toast Notifications */}
-          <Toaster position="top-right" />
-        </ThemeProvider>
+            {/* Toast Notifications */}
+            <Toaster position="top-right" />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

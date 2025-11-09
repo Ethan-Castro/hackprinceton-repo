@@ -104,6 +104,141 @@ CREATE TABLE IF NOT EXISTS chat_history (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Healthcare Providers table (for health tools)
+CREATE TABLE IF NOT EXISTS healthcare_providers (
+  id VARCHAR(255) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  specialty VARCHAR(100),
+  license_number VARCHAR(255),
+  phone VARCHAR(20),
+  email VARCHAR(255),
+  website VARCHAR(255),
+  office_location TEXT,
+  accepting_new_patients BOOLEAN DEFAULT true,
+  languages JSONB,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Insurance Plans table (for health tools)
+CREATE TABLE IF NOT EXISTS insurance_plans (
+  id VARCHAR(255) PRIMARY KEY,
+  provider VARCHAR(255) NOT NULL,
+  plan VARCHAR(255) NOT NULL,
+  policy_number VARCHAR(255) NOT NULL,
+  member_id VARCHAR(255) NOT NULL,
+  group_number VARCHAR(255),
+  coverage_type VARCHAR(50) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  copay DECIMAL(10, 2),
+  deductible DECIMAL(10, 2),
+  out_of_pocket_max DECIMAL(10, 2),
+  coverage JSONB,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Medications table (for medication tracking tools)
+CREATE TABLE IF NOT EXISTS medications (
+  id VARCHAR(255) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  dosage VARCHAR(100) NOT NULL,
+  frequency VARCHAR(255) NOT NULL,
+  reason VARCHAR(255) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  prescribed_by VARCHAR(255),
+  pharmacy VARCHAR(255),
+  refills_remaining INTEGER DEFAULT 0,
+  side_effects JSONB,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Medication Entries table (for adherence tracking)
+CREATE TABLE IF NOT EXISTS medication_entries (
+  id VARCHAR(255) PRIMARY KEY,
+  medication_id VARCHAR(255) NOT NULL REFERENCES medications(id) ON DELETE CASCADE,
+  taken_at TIMESTAMP NOT NULL,
+  taken BOOLEAN NOT NULL DEFAULT true,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Appointments table (for appointment management)
+CREATE TABLE IF NOT EXISTS appointments (
+  id VARCHAR(255) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  provider_name VARCHAR(255),
+  appointment_date DATE NOT NULL,
+  appointment_time TIME,
+  duration INTEGER,
+  location TEXT,
+  type VARCHAR(100),
+  notes TEXT,
+  reminder_minutes_before INTEGER DEFAULT 1440,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Vital Signs table (for health monitoring)
+CREATE TABLE IF NOT EXISTS vital_signs (
+  id VARCHAR(255) PRIMARY KEY,
+  recorded_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  systolic INTEGER,
+  diastolic INTEGER,
+  heart_rate INTEGER,
+  temperature DECIMAL(5, 1),
+  oxygen_saturation INTEGER,
+  weight DECIMAL(6, 2),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Activities table (for exercise tracking)
+CREATE TABLE IF NOT EXISTS activities (
+  id VARCHAR(255) PRIMARY KEY,
+  activity_date DATE NOT NULL,
+  activity_type VARCHAR(255) NOT NULL,
+  duration INTEGER NOT NULL,
+  calories INTEGER,
+  intensity VARCHAR(50),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Nutrition Logs table (for meal tracking)
+CREATE TABLE IF NOT EXISTS nutrition_logs (
+  id VARCHAR(255) PRIMARY KEY,
+  meal_date DATE NOT NULL,
+  meal_type VARCHAR(50) NOT NULL,
+  description TEXT NOT NULL,
+  estimated_calories INTEGER,
+  protein DECIMAL(8, 2),
+  carbs DECIMAL(8, 2),
+  fat DECIMAL(8, 2),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Health Goals table (for goal tracking)
+CREATE TABLE IF NOT EXISTS health_goals (
+  id VARCHAR(255) PRIMARY KEY,
+  goal_type VARCHAR(255) NOT NULL,
+  target_value DECIMAL(10, 2) NOT NULL,
+  unit VARCHAR(50) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE,
+  progress DECIMAL(10, 2),
+  status VARCHAR(50) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_trackers_user_id ON trackers(user_id);
 CREATE INDEX IF NOT EXISTS idx_tracker_entries_tracker_id ON tracker_entries(tracker_id);
@@ -111,6 +246,23 @@ CREATE INDEX IF NOT EXISTS idx_tracker_entries_recorded_at ON tracker_entries(re
 CREATE INDEX IF NOT EXISTS idx_chat_history_session_id ON chat_history(session_id);
 CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at);
 CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category);
+CREATE INDEX IF NOT EXISTS idx_healthcare_providers_specialty ON healthcare_providers(specialty);
+CREATE INDEX IF NOT EXISTS idx_healthcare_providers_name ON healthcare_providers(name);
+CREATE INDEX IF NOT EXISTS idx_insurance_plans_provider ON insurance_plans(provider);
+CREATE INDEX IF NOT EXISTS idx_insurance_plans_start_date ON insurance_plans(start_date);
+CREATE INDEX IF NOT EXISTS idx_medications_name ON medications(name);
+CREATE INDEX IF NOT EXISTS idx_medications_start_date ON medications(start_date);
+CREATE INDEX IF NOT EXISTS idx_medication_entries_medication_id ON medication_entries(medication_id);
+CREATE INDEX IF NOT EXISTS idx_medication_entries_taken_at ON medication_entries(taken_at);
+CREATE INDEX IF NOT EXISTS idx_appointments_appointment_date ON appointments(appointment_date);
+CREATE INDEX IF NOT EXISTS idx_appointments_provider_name ON appointments(provider_name);
+CREATE INDEX IF NOT EXISTS idx_vital_signs_recorded_at ON vital_signs(recorded_at);
+CREATE INDEX IF NOT EXISTS idx_activities_activity_date ON activities(activity_date);
+CREATE INDEX IF NOT EXISTS idx_activities_activity_type ON activities(activity_type);
+CREATE INDEX IF NOT EXISTS idx_nutrition_logs_meal_date ON nutrition_logs(meal_date);
+CREATE INDEX IF NOT EXISTS idx_nutrition_logs_meal_type ON nutrition_logs(meal_type);
+CREATE INDEX IF NOT EXISTS idx_health_goals_status ON health_goals(status);
+CREATE INDEX IF NOT EXISTS idx_health_goals_goal_type ON health_goals(goal_type);
 ```
 
 #### Option C: Initialize Programmatically
@@ -150,6 +302,7 @@ npm run dev
 
 ### Tables Overview
 
+#### Core Tables
 | Table | Purpose | Key Fields |
 |-------|---------|-----------|
 | `comments` | Demo comments storage | id, comment, created_at |
@@ -158,6 +311,19 @@ npm run dev
 | `tracker_entries` | Health data points | id, tracker_id, value, notes, recorded_at |
 | `templates` | Stored document templates | id, name, category, template_data (JSONB), variables (JSONB) |
 | `chat_history` | Conversation history | id, session_id, role, content, model, metadata (JSONB) |
+
+#### Health System Tables (35 Health Tools)
+| Table | Purpose | Key Fields |
+|-------|---------|-----------|
+| `healthcare_providers` | Healthcare provider contacts | id, name, specialty, license_number, phone, email, website, office_location, accepting_new_patients, languages (JSONB) |
+| `insurance_plans` | Insurance plan information | id, provider, plan, policy_number, member_id, group_number, coverage_type, start_date, end_date, copay, deductible, out_of_pocket_max, coverage (JSONB) |
+| `medications` | Medication prescriptions | id, name, dosage, frequency, reason, start_date, end_date, prescribed_by, pharmacy, refills_remaining, side_effects (JSONB) |
+| `medication_entries` | Medication adherence logs | id, medication_id (FK), taken_at, taken, notes |
+| `appointments` | Appointment scheduling | id, title, provider_name, appointment_date, appointment_time, duration, location, type, notes, reminder_minutes_before |
+| `vital_signs` | Blood pressure, heart rate, temperature, oxygen, weight | id, recorded_at, systolic, diastolic, heart_rate, temperature, oxygen_saturation, weight, notes |
+| `activities` | Exercise and physical activity | id, activity_date, activity_type, duration, calories, intensity, notes |
+| `nutrition_logs` | Meal and nutrition tracking | id, meal_date, meal_type, description, estimated_calories, protein, carbs, fat, notes |
+| `health_goals` | Health targets and goals | id, goal_type, target_value, unit, start_date, end_date, progress, status |
 
 ### Connection Pooling
 

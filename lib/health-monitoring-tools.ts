@@ -120,13 +120,13 @@ export const logVitalSigns = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO vital_signs (
             id, recorded_at, systolic, diastolic, heart_rate,
             temperature, oxygen_saturation, weight, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           vitalSignId,
           recordedAt,
           systolic || null,
@@ -223,12 +223,12 @@ export const logActivity = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO activities (
             id, activity_date, activity_type, duration, calories, intensity, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           activityId,
           activityDate,
           activityType,
@@ -322,13 +322,13 @@ export const logNutrition = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO nutrition_logs (
             id, meal_date, meal_type, description, estimated_calories,
             protein, carbs, fat, notes
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           nutritionId,
           mealDate,
           mealType,
@@ -403,12 +403,12 @@ export const setHealthGoal = createTool({
 
       // Store in database
       try {
-        const query = `
+        const sqlQuery = `
           INSERT INTO health_goals (
             id, goal_type, target_value, unit, start_date, end_date, status
           ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
-        await query(query, [
+        await query(sqlQuery, [
           goalId,
           goalType,
           targetValue,
@@ -479,13 +479,13 @@ export const getHealthMetricsReport = createTool({
 
       // Fetch vital signs
       try {
-        const query = `
+        const sqlQuery = `
           SELECT AVG(systolic) as avg_systolic, AVG(diastolic) as avg_diastolic,
                  AVG(heart_rate) as avg_heart_rate, AVG(weight) as avg_weight
           FROM vital_signs
           WHERE recorded_at >= NOW() - INTERVAL '${daysBack} days'
         `;
-        const result = (await query(query)) as any[];
+        const result = (await query(sqlQuery)) as any[];
         const data = result[0];
 
         if (data?.avg_systolic) {

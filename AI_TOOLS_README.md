@@ -44,6 +44,11 @@ Three AI tools defined with Zod schemas:
 - Enhanced system prompt explaining when and how to use each tool
 - Proper error handling
 
+#### Agent Orchestration (`lib/agents/*`)
+- `lib/agents/chat-agent.ts` and `lib/agents/health-agent.ts` wrap the AI SDK `Experimental_Agent` class
+- Each helper resolves the correct model (Cerebras vs Gateway), injects the shared system prompts, and wires in the relevant tools
+- API routes reuse these helpers so the same agent configuration can power REST endpoints, streaming responses, or future UI surfaces without duplicating logic
+
 #### Chat Component (`components/chat.tsx`)
 - Renders tool outputs as React components
 - Three renderer components:
@@ -240,5 +245,4 @@ For issues or questions:
 2. Check linter: `pnpm run lint`
 3. Review console logs in browser dev tools
 4. Refer to AI SDK documentation: https://sdk.vercel.ai/docs
-
 

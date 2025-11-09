@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,85 @@ interface Message {
   createdAt: string;
 }
 
+interface SavedChat {
+  id: string;
+  title: string;
+  previewUrl?: string | null;
+  updatedAt?: string | null;
+}
+
+function normalizeMessageContent(content: any): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        if (item && typeof item === "object") {
+          if ("text" in item && typeof item.text === "string") {
+            return item.text;
+          }
+          if ("content" in item && typeof item.content === "string") {
+            return item.content;
+          }
+        }
+
+        try {
+          return JSON.stringify(item);
+        } catch {
+          return "";
+        }
+      })
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  if (content && typeof content === "object") {
+    if ("text" in content && typeof content.text === "string") {
+      return content.text;
+    }
+    if ("content" in content && typeof content.content === "string") {
+      return content.content;
+    }
+  }
+
+  if (content == null) {
+    return "";
+  }
+
+  try {
+    return JSON.stringify(content);
+  } catch {
+    return String(content);
+  }
+}
+
+function transformApiMessages(apiMessages: any[]): Message[] {
+  return apiMessages
+    .filter(
+      (msg: any) => msg && (msg.role === "user" || msg.role === "assistant")
+    )
+    .map((msg: any) => ({
+      id:
+        typeof msg.id === "string" && msg.id.length > 0
+          ? msg.id
+          : `${msg.role}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      role: msg.role as "user" | "assistant",
+      content: normalizeMessageContent(msg.content),
+      createdAt:
+        typeof msg.createdAt === "string" ? msg.createdAt : new Date().toISOString(),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+}
+
 interface V0ChatProps {
   className?: string;
 }
@@ -29,15 +108,137 @@ export function V0Chat({ className }: V0ChatProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
+  const [loadingSavedChats, setLoadingSavedChats] = useState(false);
+  const [loadingChatDetail, setLoadingChatDetail] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const fetchSavedChats = useCallback(async () => {
+    if (status !== "authenticated") {
+      setSavedChats([]);
+      return;
+    }
+
+    setLoadingSavedChats(true);
+    try {
+      const response = await fetch("/api/textbook-studio/chats");
+      if (!response.ok) {
+        throw new Error("Failed to load saved chats");
+      }
+
+      const data = await response.json();
+      const chats = Array.isArray(data.chats) ? data.chats : [];
+
+      const mappedChats: SavedChat[] = chats
+        .filter((chat: any) => chat && typeof chat.id === "string")
+        .map((chat: any) => {
+          const firstUserMessage = Array.isArray(chat.messages)
+            ? chat.messages.find((msg: any) => msg.role === "user")
+            : null;
+          const fallbackTitle =
+            firstUserMessage && firstUserMessage.content
+              ? normalizeMessageContent(firstUserMessage.content)
+              : "";
+
+          return {
+            id: chat.id,
+            title:
+              typeof chat.title === "string" && chat.title.length > 0
+                ? chat.title
+                : typeof chat.name === "string" && chat.name.length > 0
+                ? chat.name
+                : fallbackTitle.length > 0
+                ? fallbackTitle.slice(0, 60)
+                : `Chat ${chat.id}`,
+            previewUrl:
+              typeof chat.demo === "string"
+                ? chat.demo
+                : typeof chat.previewUrl === "string"
+                ? chat.previewUrl
+                : null,
+            updatedAt:
+              typeof chat.updatedAt === "string"
+                ? chat.updatedAt
+                : typeof chat.createdAt === "string"
+                ? chat.createdAt
+                : null,
+          };
+        });
+
+      // Sort newest first by updatedAt if available
+      mappedChats.sort((a, b) => {
+        if (a.updatedAt && b.updatedAt) {
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        }
+        return 0;
+      });
+
+      setSavedChats(mappedChats);
+    } catch (err) {
+      console.error(err);
+      setSavedChats([]);
+    } finally {
+      setLoadingSavedChats(false);
+    }
+  }, [status]);
+
+  const loadChat = useCallback(
+    async (targetChatId: string) => {
+      if (!targetChatId || loadingChatDetail) {
+        return;
+      }
+
+      setChatId(targetChatId);
+      setError(null);
+      setLoadingChatDetail(true);
+
+      try {
+        const response = await fetch(
+          `/api/textbook-studio/chats/${encodeURIComponent(targetChatId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to load chat");
+        }
+
+        const chatData = data.chat || data.response || {};
+        const chatMessages = transformApiMessages(chatData.messages || []);
+
+        setMessages(chatMessages);
+
+        if (chatData.demo || chatData.previewUrl) {
+          setPreviewUrl(chatData.demo || chatData.previewUrl || null);
+        } else {
+          const matchedChat = savedChats.find(
+            (chat) => chat.id === targetChatId
+          );
+          setPreviewUrl(matchedChat?.previewUrl || null);
+        }
+      } catch (err: any) {
+        console.error("Error loading chat:", err);
+        setError(err.message || "Failed to load chat");
+      } finally {
+        setLoadingChatDetail(false);
+      }
+    },
+    [savedChats, loadingChatDetail]
+  );
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    void fetchSavedChats();
+  }, [fetchSavedChats]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,24 +292,28 @@ export function V0Chat({ className }: V0ChatProps) {
       }
 
       // Update preview URL if available
-      if (chatData?.demo) {
-        setPreviewUrl(chatData.demo);
+      if (chatData?.demo || chatData?.previewUrl) {
+        setPreviewUrl(chatData.demo || chatData.previewUrl);
       }
 
       // Add assistant messages from the response
-      const chatMessages = chatData?.messages || [];
-      const assistantMessages = chatMessages
-        .filter((msg: any) => msg.role === "assistant")
-        .map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          createdAt: msg.createdAt,
-        }));
+      const chatMessages = transformApiMessages(chatData?.messages || []);
+      const assistantMessages = chatMessages.filter(
+        (msg) => msg.role === "assistant"
+      );
 
       if (assistantMessages.length > 0) {
-        setMessages((prev) => [...prev, ...assistantMessages]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((msg) => msg.id));
+          const newMessages = assistantMessages.filter(
+            (msg) => !existingIds.has(msg.id)
+          );
+          return newMessages.length > 0 ? [...prev, ...newMessages] : prev;
+        });
       }
+
+      // Refresh saved chats to include the new or updated chat
+      void fetchSavedChats();
     } catch (err: any) {
       console.error("Error sending message:", err);
       setError(err.message || "Failed to send message");
@@ -122,6 +327,8 @@ export function V0Chat({ className }: V0ChatProps) {
     setChatId(null);
     setPreviewUrl(null);
     setError(null);
+    // Refresh saved chats so ordering reflects activity
+    void fetchSavedChats();
   };
 
   if (status === "loading") {
@@ -152,6 +359,41 @@ export function V0Chat({ className }: V0ChatProps) {
             )}
           </div>
         </div>
+
+        {status === "authenticated" && (
+          <div className="border-b bg-muted/50 px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Saved Chats
+              </h3>
+              {(loadingSavedChats || loadingChatDetail) && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            {savedChats.length > 0 ? (
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {savedChats.map((chat) => (
+                  <Button
+                    key={chat.id}
+                    variant={chatId === chat.id ? "default" : "outline"}
+                    size="sm"
+                    className="whitespace-nowrap"
+                    onClick={() => loadChat(chat.id)}
+                    disabled={loadingChatDetail && chatId === chat.id}
+                  >
+                    {chat.title}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              !loadingSavedChats && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Start a conversation to see it saved here.
+                </p>
+              )
+            )}
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
@@ -221,6 +463,12 @@ export function V0Chat({ className }: V0ChatProps) {
                   Generating content...
                 </div>
               )}
+              {loadingChatDetail && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading saved chat...
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -239,10 +487,13 @@ export function V0Chat({ className }: V0ChatProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Describe what you want to create..."
-              disabled={loading}
+              disabled={loading || loadingChatDetail}
               className="flex-1"
             />
-            <Button type="submit" disabled={loading || !input.trim()}>
+            <Button
+              type="submit"
+              disabled={loading || loadingChatDetail || !input.trim()}
+            >
               <SendIcon className="h-4 w-4" />
             </Button>
           </form>

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         apiKey: process.env.CEREBRAS_API_KEY,
       })(cleanedModelId)
     : gateway(modelId);
-  const useTools = !isCerebrasModel;
+  const useTools = true; // All models support tools
 
   // Merge all tools: base tools + business tools
   const allTools = useTools

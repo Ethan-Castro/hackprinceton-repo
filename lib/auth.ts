@@ -145,8 +145,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/textbook-studio/auth/login",
-    error: "/textbook-studio/auth/error",
+    signIn: "/auth/login",
+    error: "/auth/login",
   },
   session: {
     strategy: "jwt",

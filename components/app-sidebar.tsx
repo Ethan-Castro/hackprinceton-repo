@@ -60,6 +60,10 @@ const data = {
           url: "/education",
         },
         {
+          title: "v0 Studio",
+          url: "/education/studio",
+        },
+        {
           title: "v0 Clone Example",
           url: "/examples/v0",
         },
@@ -87,6 +91,10 @@ const data = {
           url: "/health",
         },
         {
+          title: "v0 Studio",
+          url: "/health/studio",
+        },
+        {
           title: "Medical Records",
           url: "/health/records",
         },
@@ -110,6 +118,10 @@ const data = {
           url: "/business",
         },
         {
+          title: "v0 Studio",
+          url: "/business/studio",
+        },
+        {
           title: "Analytics",
           url: "/business/analytics",
         },
@@ -128,6 +140,10 @@ const data = {
       url: "#",
       icon: Leaf,
       items: [
+        {
+          title: "v0 Studio",
+          url: "/sustainability/studio",
+        },
         {
           title: "Carbon Tracking",
           url: "/sustainability/carbon",
