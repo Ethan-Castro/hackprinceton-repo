@@ -50,10 +50,10 @@ InlineCitationText.displayName = "InlineCitationText"
 
 // InlineCitationCard component (HoverCard wrapper)
 const InlineCitationCard = React.forwardRef<
-  React.ElementRef<typeof HoverCard>,
+  HTMLDivElement,
   React.ComponentProps<typeof HoverCard>
 >(({ ...props }, ref) => {
-  return <HoverCard {...props} />
+  return <div ref={ref}><HoverCard {...props} /></div>
 })
 InlineCitationCard.displayName = "InlineCitationCard"
 

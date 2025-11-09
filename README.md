@@ -98,17 +98,32 @@ See [AI_ELEMENTS.md](./AI_ELEMENTS.md) for detailed documentation and usage exam
 
 1. Clone this repository
 2. Install dependencies:
+   ```bash
    pnpm install
-   3. Copy environment variables:
+   ```
+3. Copy environment variables:
+   ```bash
    cp env.example .env.local
-   4. Configure your environment variables (see [Environment Variables](#-environment-variables))
+   ```
+4. Configure your environment variables (see [Environment Variables](#-environment-variables))
 5. Link to Vercel project (if using Vercel):
+   ```bash
    vc link
-   ### Running Locally
+   ```
+
+### Running Locally
 
 **Recommended (with Vercel CLI):**
-vc dev**Alternative (standard Next.js):**
-pnpm devThen open [http://localhost:3000](http://localhost:3000) in your browser.
+```bash
+vc dev
+```
+
+**Alternative (standard Next.js):**
+```bash
+pnpm dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 > **Note**: If using `pnpm dev` instead of `vc dev`, you'll need to run `vc env pull` periodically to fetch the OIDC authentication token (expires every 12h). The `vc dev` command handles this automatically.
 
@@ -117,7 +132,8 @@ pnpm devThen open [http://localhost:3000](http://localhost:3000) in your browser
 Copy `env.example` to `.env.local` and configure the following:
 
 ### Required
-sh
+
+```bash
 # Vercel AI Gateway (required)
 AI_GATEWAY_API_KEY=your_gateway_api_key_here
 
@@ -126,8 +142,12 @@ V0_API_KEY=your_v0_api_key_here
 
 # NextAuth (required for authentication)
 NEXTAUTH_SECRET=your_nextauth_secret_here
-NEXTAUTH_URL=http://localhost:3000### Optional (Feature-Specific)
-ash
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### Optional (Feature-Specific)
+
+```bash
 # Cerebras (for Cerebras models & carbon comparisons)
 CEREBRAS_API_KEY=your_cerebras_api_key_here
 
@@ -164,7 +184,10 @@ GOOGLE_CREDENTIALS_PATH=/path/to/service-account-key.json
 # MCP (for Model Context Protocol)
 MCP_TRANSPORT=http
 MCP_SERVER_URL=your_mcp_server_url
-MCP_API_KEY=your_mcp_api_keySee `env.example` for complete configuration options.
+MCP_API_KEY=your_mcp_api_key
+```
+
+See `env.example` for complete configuration options.
 
 ## 📚 Documentation
 
@@ -201,3 +224,116 @@ MCP_API_KEY=your_mcp_api_keySee `env.example` for complete configuration options
 - [Cerebras Troubleshooting](./CEREBRAS_SETUP.md)
 
 ## 🏗️ Project Structure
+
+```
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── business/          # Business studio pages
+│   ├── education/         # Education studio pages
+│   ├── health/            # Health coach pages
+│   ├── sustainability/    # Sustainability studio pages
+│   ├── textbook-studio/   # Textbook studio pages
+│   └── v0-clone/          # v0 clone interface
+├── components/            # React components
+│   ├── ai-elements/      # AI Elements UI components
+│   ├── ui/               # shadcn/ui components
+│   └── ...               # Feature-specific components
+├── lib/                   # Utility functions and configurations
+├── hooks/                 # React hooks
+├── types/                 # TypeScript type definitions
+└── public/                # Static assets
+```
+
+## 🧪 Testing
+
+Run type checking:
+```bash
+pnpm type-check
+```
+
+Run linting:
+```bash
+pnpm lint
+```
+
+Test tools integration:
+```bash
+pnpm test:tools
+```
+
+## 🚢 Deployment
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import the repository in [Vercel](https://vercel.com/new)
+3. Configure environment variables in the Vercel dashboard
+4. Deploy!
+
+The project is optimized for Vercel deployment with:
+- Serverless API routes
+- Edge runtime support
+- Automatic environment variable management
+- OIDC token auto-refresh
+
+## 🔒 Authentication
+
+The application supports multiple authentication strategies:
+
+- **Anonymous** - No account required (limited features)
+- **Guest** - Session-based temporary accounts
+- **Registered** - Full account with persistence
+
+See [AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md) for detailed setup instructions.
+
+## 📊 Database Features
+
+### PostgreSQL (Neon)
+
+Used for:
+- User authentication and sessions
+- Chat history and projects
+- Usage tracking and billing
+- General data persistence
+
+### Neo4j
+
+Used for:
+- Health trackers and relationships
+- Graph-based data storage
+- Complex relationship queries
+
+See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for setup instructions.
+
+## 🤝 Contributing
+
+Contributions are welcome! This repository is maintained by the [Vercel](https://vercel.com) team and community contributors.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+See [LICENSE](./LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Vercel AI SDK](https://sdk.vercel.ai)
+- [Vercel AI Gateway](https://vercel.com/docs/ai-gateway)
+- [v0.dev](https://v0.dev)
+- [shadcn/ui](https://ui.shadcn.com)
+- All the AI providers and tool integrations
+
+## 📞 Support
+
+- Check existing [documentation](./) files
+- Review [troubleshooting guides](./GPT_OSS_120B_TROUBLESHOOTING.md)
+- Open an issue on GitHub
+
+---
+
+**Built with ❤️ by the Vercel team and community**

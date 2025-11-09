@@ -62,12 +62,12 @@ type ContextProps = React.ComponentProps<typeof HoverCard> & {
 }
 
 const Context = React.forwardRef<
-  React.ElementRef<typeof HoverCard>,
+  HTMLDivElement,
   ContextProps
 >(({ maxTokens, usedTokens, usage, modelId, children, ...props }, ref) => {
   return (
     <ContextContext.Provider value={{ maxTokens, usedTokens, usage, modelId }}>
-      <HoverCard {...props}>
+      <HoverCard {...props} ref={ref}>
         {children}
       </HoverCard>
     </ContextContext.Provider>

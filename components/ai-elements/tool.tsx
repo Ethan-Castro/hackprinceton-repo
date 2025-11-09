@@ -101,7 +101,7 @@ Tool.displayName = "Tool"
 
 // ToolHeader component
 interface ToolHeaderProps
-  extends React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Trigger> {
+  extends Omit<React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Trigger>, "type"> {
   type: ToolUIPart["type"]
   state: ToolUIPart["state"]
 }
