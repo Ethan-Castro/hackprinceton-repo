@@ -1,78 +1,203 @@
-A simple [Next.js](https://nextjs.org) chatbot app to demonstrate the use of the Vercel AI Gateway with the [AI SDK](https://sdk.vercel.ai).
+# Vercel AI Gateway Demo
+
+A comprehensive Next.js application demonstrating the power of the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) with the [Vercel AI SDK](https://sdk.vercel.ai). This project showcases multi-provider AI integration, domain-specific studios, voice capabilities, and advanced tooling.
 
 ## 🚀 Live Demo
 
 **Production URL**: [https://vercel.com/ethan-6436s-projects/augment-hack](https://vercel.com/ethan-6436s-projects/augment-hack)
 
-## Supported Providers
+## ✨ Features
 
-This demo supports multiple AI providers including:
-- Amazon (Nova models)
-- Anthropic (Claude)
-- Cerebras (Llama, GPT-OSS, Qwen models) - [Setup Guide](./CEREBRAS_SETUP.md)
-- Google (Gemini, Gemma)
-- Meta (Llama)
-- Mistral
-- OpenAI (GPT models)
-- xAI (Grok)
+### Core Capabilities
 
-## 🎙️ Voice Features (NEW!)
+- **Multi-Provider AI Support** - Seamlessly switch between multiple AI providers
+- **Voice Integration** - Text-to-speech and speech-to-text with ElevenLabs
+- **AI Elements Components** - Rich UI components for enhanced chat experiences
+- **Domain-Specific Studios** - Specialized AI interfaces for different use cases
+- **Tool Integration** - MCP, code execution, web scraping, and more
+- **Authentication** - NextAuth integration with multiple auth strategies
+- **Database Integration** - PostgreSQL (Neon) and Neo4j support
 
-**ElevenLabs TTS & STT Integration**
+### Available Studios & Features
+
+| Feature | Route | Description |
+|---------|-------|-------------|
+| **Main Chat** | `/` | General-purpose AI chatbot |
+| **Education Studio** | `/education/studio` | Generate quizzes, lessons, and learning apps |
+| **Health Coach** | `/health` | Health advice, report analysis, fitness planning |
+| **Business Studio** | `/business/studio` | Analytics dashboards, CRM tools, business reports |
+| **Sustainability Studio** | `/sustainability/studio` | Carbon tracking, ESG reports, impact analysis |
+| **Business Analyst** | `/business-analyst` | Data analysis with Python code execution |
+| **v0 Clone** | `/v0-clone` | Generic UI generation interface |
+| **Textbook Studio** | `/textbook-studio` | Educational content creation platform |
+| **Playground** | `/playground` | Experimental features and testing |
+
+## 🎯 Supported AI Providers
+
+This demo supports multiple AI providers through the Vercel AI Gateway:
+
+- **Amazon** - Nova models
+- **Anthropic** - Claude models
+- **Cerebras** - Llama, GPT-OSS, Qwen models ([Setup Guide](./CEREBRAS_SETUP.md))
+- **Google** - Gemini, Gemma models
+- **Meta** - Llama models
+- **Mistral** - Mistral models
+- **OpenAI** - GPT models
+- **xAI** - Grok models
+
+## 🎙️ Voice Features
+
+**ElevenLabs Integration**
 - **Voice Input**: Click the microphone icon to speak your questions
 - **Text-to-Speech**: Hover over AI responses and click the speaker icon to hear them read aloud
 - [Quick Start Guide](./ELEVENLABS_QUICK_START.md) | [Full Documentation](./ELEVENLABS_INTEGRATION.md)
 
-## AI Elements Components
+## 🧩 AI Elements Components
 
-This project includes AI Elements UI components for enhanced chat experiences:
+Enhanced UI components for better chat experiences:
+
 - **Shimmer** - Animated loading states for streaming content
 - **Plan** - Collapsible execution plans with streaming support
 - **Task** - Task lists with progress indicators
+- **Artifact** - Display code, documents, and structured content
+- **WebPreview** - Live web page previews with navigation
 
 See [AI_ELEMENTS.md](./AI_ELEMENTS.md) for detailed documentation and usage examples.
 
-## Getting Started
+## 🛠️ Tools & Integrations
 
-### One-time setup
+### Available Tools
+
+- **Code Execution** - Python code execution via E2B (NumPy, Pandas, Matplotlib)
+- **Web Search** - Exa Search API integration
+- **Web Scraping** - Firecrawl API for website content extraction
+- **Google Docs** - Read and extract content from Google Docs
+- **ArXiv** - Research paper search and retrieval
+- **Gamma** - Presentation and document generation
+- **MCP Integration** - Model Context Protocol support
+- **Database Tools** - PostgreSQL and Neo4j integrations
+
+### Tool Documentation
+
+- [AI Tools README](./AI_TOOLS_README.md)
+- [Manual Tools Setup](./MANUAL_TOOLS_SETUP.md)
+- [MCP Integration](./MCP_INTEGRATION.md)
+- [Complete Tools Integration](./COMPLETE_TOOLS_INTEGRATION.md)
+
+## 📦 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- pnpm (recommended) or npm/yarn
+- [Vercel CLI](https://vercel.com/docs/cli) (for `vc dev`)
+
+### One-Time Setup
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-gateway-demo)
 
-1. Clone this repository with the Deploy button above
-1. Install the [Vercel CLI](https://vercel.com/docs/cli) if you don't already have it
-1. Clone the repository you created above: `git clone <repo-url>`
-1. Link it to a Vercel project: `vc link` or `vc deploy`
-
-### Usage
-1. Install packages with `pnpm i` (or `npm i` or `yarn i`) and run the development server with `vc dev`
-1. Open http://localhost:3000 to try the chatbot
-
-## Health Coach (Generative UI + Neo4j)
-
-A health-focused experience is available at `/health` with:
-- Advice chat, report understanding, deep research, fitness ebook planning, and personal trackers.
-
-### Setup
-1. Configure environment variables (see `env.example`):
-   - `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD`
+1. Clone this repository
 2. Install dependencies:
-   - `neo4j-driver` (database)
-   - `pdf-parse` (PDF extraction)
-   - `tesseract.js` (image OCR)
-3. Start the app and visit `/health`.
+   pnpm install
+   3. Copy environment variables:
+   cp env.example .env.local
+   4. Configure your environment variables (see [Environment Variables](#-environment-variables))
+5. Link to Vercel project (if using Vercel):
+   vc link
+   ### Running Locally
 
-### FAQ
+**Recommended (with Vercel CLI):**
+vc dev**Alternative (standard Next.js):**
+pnpm devThen open [http://localhost:3000](http://localhost:3000) in your browser.
 
-1. If you prefer running your local development server directly rather than using `vc dev`, you'll need to run `vc env pull` to fetch the project's OIDC authentication token locally
-   1. the token expires every 12h, so you'll need to re-run this command periodically.
-   1. if you use `vc dev` it will auto-refresh the token for you, so you don't need to fetch it manually
-1. If you're linking to an existing, older project, you may need to enable the OIDC token feature in your project settings.
-   1. visit the project settings page (rightmost tab in your project's dashboard)
-   1. search for 'OIDC' in settings
-   1. toggle the button under "Secure Backend Access with OIDC Federation" to Enabled and click the "Save" button
+> **Note**: If using `pnpm dev` instead of `vc dev`, you'll need to run `vc env pull` periodically to fetch the OIDC authentication token (expires every 12h). The `vc dev` command handles this automatically.
 
-## Authors
+## 🔐 Environment Variables
 
-This repository is maintained by the [Vercel](https://vercel.com) team and community contributors. 
+Copy `env.example` to `.env.local` and configure the following:
 
-Contributions are welcome! Feel free to open issues or submit pull requests to enhance functionality or fix bugs.
+### Required
+sh
+# Vercel AI Gateway (required)
+AI_GATEWAY_API_KEY=your_gateway_api_key_here
+
+# v0 API Key (required for studios)
+V0_API_KEY=your_v0_api_key_here
+
+# NextAuth (required for authentication)
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=http://localhost:3000### Optional (Feature-Specific)
+ash
+# Cerebras (for Cerebras models & carbon comparisons)
+CEREBRAS_API_KEY=your_cerebras_api_key_here
+
+# Neo4j (for health trackers and graph storage)
+NEO4J_URI=bolt+s://your-instance.databases.neo4j.io
+NEO4J_USERNAME=your_username
+NEO4J_PASSWORD=your_password
+
+# Neon PostgreSQL (for database features)
+DATABASE_URL=postgresql://user:password@host-pooler.region.aws.neon.tech/database?sslmode=require
+
+# E2B (for Python code execution)
+E2B_API_KEY=your_e2b_api_key_here
+
+# ElevenLabs (for voice features)
+ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+
+# Exa Search (for web search)
+EXA_API_KEY=your_exa_api_key_here
+
+# Firecrawl (for web scraping)
+FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+
+# Gamma (for presentations)
+GAMMA_API_KEY=sk-gamma-your-api-key-here
+
+# SendGrid (for email notifications)
+SENDGRID_API_KEY=your_sendgrid_api_key_here
+SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+
+# Google Docs (for document reading)
+GOOGLE_CREDENTIALS_PATH=/path/to/service-account-key.json
+
+# MCP (for Model Context Protocol)
+MCP_TRANSPORT=http
+MCP_SERVER_URL=your_mcp_server_url
+MCP_API_KEY=your_mcp_api_keySee `env.example` for complete configuration options.
+
+## 📚 Documentation
+
+### Quick Start Guides
+
+- [Getting Started with Database](./GETTING_STARTED_DATABASE.md)
+- [Quick Start Auth](./QUICK_START_AUTH.md)
+- [Studio Quick Start](./STUDIO_QUICK_START.md)
+- [ElevenLabs Quick Start](./ELEVENLABS_QUICK_START.md)
+- [GPT OSS 120B Quick Start](./GPT_OSS_120B_QUICK_START.md)
+
+### Setup Guides
+
+- [Cerebras Setup](./CEREBRAS_SETUP.md)
+- [Database Setup](./DATABASE_SETUP.md)
+- [Neon DB Integration](./NEON_DB_INTEGRATION.md)
+- [Storage Setup](./STORAGE_SETUP.md)
+- [Authentication Setup](./AUTHENTICATION_SETUP.md)
+- [v0 SDK Setup](./V0_SDK_SETUP.md)
+
+### Feature Documentation
+
+- [AI Elements](./AI_ELEMENTS.md)
+- [AI Tools](./AI_TOOLS_README.md)
+- [v0 Clone](./V0_CLONE_README.md)
+- [v0 Studio](./V0_STUDIO_README.md)
+- [Textbook Studio](./TEXTBOOK_STUDIO_SETUP.md)
+- [Health Chat Tools](./HEALTH_CHAT_TOOLS.md)
+- [MCP Integration](./MCP_INTEGRATION.md)
+
+### Troubleshooting
+
+- [GPT OSS 120B Troubleshooting](./GPT_OSS_120B_TROUBLESHOOTING.md)
+- [Cerebras Troubleshooting](./CEREBRAS_SETUP.md)
+
+## 🏗️ Project Structure
