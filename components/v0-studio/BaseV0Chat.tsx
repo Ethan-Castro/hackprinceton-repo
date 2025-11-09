@@ -295,7 +295,7 @@ export function BaseV0Chat({
     setError(null);
 
     try {
-      // Use Cerebras API for UI generation
+      // Use Cerebras GPT-OSS-120B for UI generation (free & fast)
       const response = await fetch("/api/cerebras-ui-gen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -317,7 +317,7 @@ export function BaseV0Chat({
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
-      let assistantMessageId = `assistant-${Date.now()}`;
+      const assistantMessageId = `assistant-${Date.now()}`;
 
       // Add initial assistant message
       setMessages((prev) => [
@@ -606,7 +606,7 @@ export function BaseV0Chat({
                   Your generated code will appear here
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Describe what you want to build and I'll generate React +
+                  Describe what you want to build and I&rsquo;ll generate React +
                   Tailwind code for you
                 </p>
               </div>

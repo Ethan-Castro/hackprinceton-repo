@@ -22,14 +22,58 @@ export async function POST(req: Request) {
 
   const result = agent.stream({
     messages: convertToModelMessages(messages),
-    onFinish: async ({ response }) => {
-      // Capture generation ID from providerMetadata
-      try {
-        const metadata = response.providerMetadata;
-        if (metadata && 'generationId' in metadata) {
-          const generationId = metadata.generationId as string;
+  });
 
-          // Store generation info in database
+  const providerMetadataPromise = result.providerMetadata;
+  const usagePromise = result.usage;
+
+  result.response
+    .then(async () => {
+      try {
+        const metadata = await providerMetadataPromise;
+        const metadataRecord = metadata as Record<string, unknown> | undefined;
+        if (metadataRecord && typeof metadataRecord.generationId === "string") {
+          const generationId = metadataRecord.generationId;
+          const providerValue = metadataRecord.provider;
+          const costValue = metadataRecord.cost;
+          const latencyValue = metadataRecord.latency;
+          const generationTimeValue = metadataRecord.generationTime;
+          const isByokValue = metadataRecord.isByok;
+
+          const providerName =
+            typeof providerValue === "string"
+              ? providerValue
+              : providerValue != null
+                ? String(providerValue)
+                : null;
+          const totalCost =
+            typeof costValue === "number"
+              ? costValue
+              : costValue != null
+                ? Number(costValue)
+                : null;
+          const latency =
+            typeof latencyValue === "number"
+              ? latencyValue
+              : latencyValue != null
+                ? Number(latencyValue)
+                : null;
+          const generationTime =
+            typeof generationTimeValue === "number"
+              ? generationTimeValue
+              : generationTimeValue != null
+                ? Number(generationTimeValue)
+                : null;
+          const isByok =
+            typeof isByokValue === "boolean"
+              ? isByokValue
+              : Boolean(isByokValue);
+
+          const usage = await usagePromise;
+
+          const promptTokens = usage?.inputTokens ?? null;
+          const completionTokens = usage?.outputTokens ?? null;
+
           await queryWithPostgres`
             INSERT INTO generations (
               generation_id,
@@ -45,13 +89,13 @@ export async function POST(req: Request) {
             ) VALUES (
               ${generationId},
               ${modelId},
-              ${'provider' in metadata ? String(metadata.provider) : null},
-              ${'cost' in metadata ? Number(metadata.cost) : null},
-              ${response.usage?.promptTokens ?? null},
-              ${response.usage?.completionTokens ?? null},
-              ${'latency' in metadata ? Number(metadata.latency) : null},
-              ${'generationTime' in metadata ? Number(metadata.generationTime) : null},
-              ${'isByok' in metadata ? Boolean(metadata.isByok) : false},
+              ${providerName},
+              ${totalCost},
+              ${promptTokens},
+              ${completionTokens},
+              ${latency},
+              ${generationTime},
+              ${isByok},
               ${true}
             )
             ON CONFLICT (generation_id) DO NOTHING
@@ -62,11 +106,10 @@ export async function POST(req: Request) {
       } catch (error) {
         console.error("[Chat] Error saving generation:", error);
       }
-    },
-    onError: (e) => {
-      console.error("Error while streaming.", e);
-    },
-  });
+    })
+    .catch((error) => {
+      console.error("Error while streaming.", error);
+    });
 
   return result.toUIMessageStreamResponse({
     sendReasoning: supportsReasoning,

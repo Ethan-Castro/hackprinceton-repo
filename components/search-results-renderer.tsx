@@ -18,7 +18,7 @@ export function SearchResultsRenderer({ data }: { data: SearchToolOutput }) {
           <CardTitle>Web Search Results</CardTitle>
         </div>
         <CardDescription>
-          Found {totalResults} results for "{query}"
+          Found {totalResults} results for &ldquo;{query}&rdquo;
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

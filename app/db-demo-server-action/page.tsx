@@ -22,11 +22,20 @@ async function createComment(formData: FormData) {
 
     // Insert the comment from the form into the Postgres database
     const rows = await sql`INSERT INTO comments (comment) VALUES (${comment}) RETURNING *`;
+    const insertedRow =
+      Array.isArray(rows)
+        ? rows[0]
+        : typeof rows === 'object' &&
+            rows !== null &&
+            'rows' in rows &&
+            Array.isArray((rows as { rows?: unknown[] }).rows)
+          ? (rows as { rows?: unknown[] }).rows?.[0]
+          : null;
 
     return {
       success: true,
       message: 'Comment created successfully',
-      data: rows[0] ?? null,
+      data: insertedRow ?? null,
     };
   } catch (error) {
     console.error('Database error:', error);
@@ -127,4 +136,3 @@ export default async function DbDemoServerActionPage() {
     </div>
   );
 }
-

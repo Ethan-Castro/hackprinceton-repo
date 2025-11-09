@@ -27,6 +27,7 @@ export function useAvailableModels() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [providers, setProviders] = useState<{ cerebras: boolean; gateway: boolean } | null>(null);
 
   const fetchModels = useCallback(
     async (isRetry: boolean = false) => {
@@ -43,6 +44,7 @@ export function useAvailableModels() {
         const data = await response.json();
         const newModels = buildModelList(data.models);
         setModels(newModels);
+        setProviders(data.meta?.providers ?? null);
         setError(null);
         setRetryCount(0);
         setIsLoading(false);
@@ -50,6 +52,7 @@ export function useAvailableModels() {
         setError(
           err instanceof Error ? err : new Error("Failed to fetch models")
         );
+        setProviders(null);
         if (retryCount < MAX_RETRIES) {
           setRetryCount((prev) => prev + 1);
           setIsLoading(true);
@@ -74,5 +77,5 @@ export function useAvailableModels() {
     }
   }, [retryCount, fetchModels]);
 
-  return { models, isLoading, error };
+  return { models, isLoading, error, providers };
 }

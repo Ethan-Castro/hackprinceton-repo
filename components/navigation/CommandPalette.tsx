@@ -207,7 +207,7 @@ export function CommandPalette() {
               <div className="overflow-hidden p-1 text-foreground">
                 {filteredCommands.length === 0 ? (
                   <div className="py-6 text-center text-sm">
-                    No results found for "{searchValue}"
+                    No results found for &ldquo;{searchValue}&rdquo;
                   </div>
                 ) : (
                   <>

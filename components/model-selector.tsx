@@ -1,8 +1,6 @@
 "use client";
 
-import { useAvailableModels } from "@/lib/hooks/use-available-models";
 import { Loader2, ChevronDown } from "lucide-react";
-import { DEFAULT_MODEL } from "@/lib/constants";
 import {
   Select,
   SelectContent,
@@ -13,17 +11,23 @@ import {
   SelectLabel,
 } from "@/components/ui/select";
 import { memo } from "react";
+import type { DisplayModel } from "@/lib/display-model";
 
 type ModelSelectorProps = {
   modelId: string;
   onModelChange: (modelId: string) => void;
+  models: DisplayModel[];
+  isLoading: boolean;
+  error: Error | null;
 };
 
 export const ModelSelector = memo(function ModelSelector({
-  modelId = DEFAULT_MODEL,
+  modelId,
   onModelChange,
+  models,
+  isLoading,
+  error,
 }: ModelSelectorProps) {
-  const { models, isLoading, error } = useAvailableModels();
 
   return (
     <Select

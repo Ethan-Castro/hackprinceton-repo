@@ -27,7 +27,22 @@ import {
   KeyPoints,
   CodeExample,
 } from "@/components/ai-elements/textbook";
-import { Reasoning, ReasoningTrigger, ReasoningContent } from "@/components/ai-elements";
+import {
+  ChainOfThought,
+  ChainOfThoughtContent,
+  ChainOfThoughtHeader,
+  ChainOfThoughtSearchResult,
+  ChainOfThoughtSearchResults,
+  ChainOfThoughtStep,
+  Reasoning,
+  ReasoningTrigger,
+  ReasoningContent,
+  Response,
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from "@/components/ai-elements";
 import {
   ArtifactRenderer,
   WebPreviewRenderer,
@@ -38,8 +53,6 @@ import type {
   WebPreviewRendererData,
   HtmlPreviewRendererData,
 } from "@/components/tool-renderers";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { AnimatedLogo } from "@/components/animated-logo";
 import type {
   TextbookChapterPayload,
@@ -49,6 +62,14 @@ import type {
   KeyPointsPayload,
   CodeExamplePayload,
 } from "@/types/ai-tool-output";
+import { useModelManager } from "@/lib/hooks/use-model-manager";
+import { ProvidersWarning } from "@/components/providers-warning";
+import {
+  extractSourcesFromParts,
+  getPartText,
+  parseChainOfThoughtPart,
+  type MessagePart,
+} from "@/lib/ai-elements-helpers";
 
 const learningStyles = [
   { value: "visual", label: "Visual / Spatial" },
@@ -137,7 +158,14 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState<GeneratorForm>(defaultForm);
-  const [selectedModel, setSelectedModel] = useState(modelId || DEFAULT_MODEL);
+  const {
+    currentModelId: selectedModel,
+    setCurrentModelId,
+    models,
+    modelsLoading,
+    modelsError,
+    providers,
+  } = useModelManager(modelId);
   const [formError, setFormError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -145,6 +173,7 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
   const { messages, status, sendMessage, stop, error, setMessages } = chat;
 
   const isStreaming = status === "streaming";
+  const modelsUnavailable = !modelsLoading && models.length === 0;
 
   const progress = useMemo<Record<FeatureKey, boolean>>(
     () => ({
@@ -164,7 +193,7 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
   }, [messages]);
 
   const handleModelChange = (newModelId: string) => {
-    setSelectedModel(newModelId);
+    setCurrentModelId(newModelId);
     const params = new URLSearchParams(searchParams ? searchParams.toString() : undefined);
     params.set("modelId", newModelId);
     const nextQuery = params.toString();
@@ -182,6 +211,10 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
     event.preventDefault();
     if (!form.topic.trim()) {
       setFormError("Add a topic so we know what to teach.");
+      return;
+    }
+    if (modelsUnavailable) {
+      setFormError("Configure an AI provider to enable content generation.");
       return;
     }
     setFormError(null);
@@ -213,12 +246,19 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
                 Open Playground
               </Button>
             </Link>
-            <ModelSelector modelId={selectedModel} onModelChange={handleModelChange} />
+            <ModelSelector
+              modelId={selectedModel}
+              onModelChange={handleModelChange}
+              models={models}
+              isLoading={modelsLoading}
+              error={modelsError}
+            />
             <ThemeToggle />
           </div>
         </div>
       </header>
 
+      <ProvidersWarning providers={providers} className="max-w-6xl mx-auto px-4 mt-4" />
       <main className="max-w-6xl mx-auto px-4 py-10 space-y-10">
         <section className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
           <form
@@ -350,7 +390,7 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
             )}
 
             <div className="flex flex-wrap items-center gap-3 pt-4">
-              <Button type="submit" disabled={isStreaming} className="px-6">
+              <Button type="submit" disabled={isStreaming || modelsUnavailable} className="px-6">
                 {isStreaming ? "Designing your lesson..." : "Generate learning kit"}
               </Button>
               <Button
@@ -447,106 +487,211 @@ export function EducationStudio({ modelId = DEFAULT_MODEL }: { modelId: string }
               .map((message) => (
                 <div key={message.id} className="rounded-3xl border bg-card shadow-border-medium p-5 space-y-4">
                   {message.parts.map((part, index) => {
-                    switch (part.type) {
-                      case "text":
+                    const partKey = `${message.id}-${index}`;
+                    const partType = part.type as string;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const anyPart = part as any;
+                    switch (partType) {
+                      case "text": {
+                        const textContent = getPartText(part as MessagePart);
+
+                        if (!textContent) {
+                          return null;
+                        }
+
                         return (
-                          <div key={`${message.id}-${index}`} className="prose prose-sm dark:prose-invert max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
-                          </div>
+                          <Response key={partKey}>{textContent}</Response>
                         );
+                      }
+
+                      case "chain-of-thought": {
+                        const firstChainIndex = message.parts.findIndex(
+                          (chainPart) => (chainPart.type as string) === "chain-of-thought"
+                        );
+
+                        if (index !== firstChainIndex) {
+                          return null;
+                        }
+
+                        const chainData = parseChainOfThoughtPart(part as MessagePart);
+
+                        if (!chainData) {
+                          return null;
+                        }
+
+                        return (
+                          <ChainOfThought key={partKey} className="my-3" defaultOpen>
+                            <ChainOfThoughtHeader>
+                              {chainData.title ?? "Chain of Thought"}
+                            </ChainOfThoughtHeader>
+                            <ChainOfThoughtContent>
+                              {chainData.steps.length > 0 ? (
+                                chainData.steps.map((step, stepIndex) => (
+                                  <ChainOfThoughtStep
+                                    key={`${partKey}-step-${stepIndex}`}
+                                    label={step.label}
+                                    description={step.description}
+                                    status={step.status}
+                                  />
+                                ))
+                              ) : chainData.text ? (
+                                <Response className="text-sm">
+                                  {chainData.text}
+                                </Response>
+                              ) : null}
+                              {chainData.searchResults.length > 0 && (
+                                <ChainOfThoughtSearchResults>
+                                  {chainData.searchResults.map((result, resultIndex) => (
+                                    <ChainOfThoughtSearchResult
+                                      key={`${partKey}-result-${resultIndex}`}
+                                    >
+                                      {result}
+                                    </ChainOfThoughtSearchResult>
+                                  ))}
+                                </ChainOfThoughtSearchResults>
+                              )}
+                            </ChainOfThoughtContent>
+                          </ChainOfThought>
+                        );
+                      }
+
+                      case "source":
+                      case "source-url": {
+                        const firstSourceIndex = message.parts.findIndex(
+                          (sourcePart) =>
+                            (sourcePart.type as string) === "source-url" ||
+                            (sourcePart.type as string) === "source"
+                        );
+
+                        if (index !== firstSourceIndex) {
+                          return null;
+                        }
+
+                        const sources = extractSourcesFromParts(
+                          (message.parts ?? []) as MessagePart[]
+                        );
+
+                        if (sources.length === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <Sources key={partKey} className="my-2">
+                            <SourcesTrigger count={sources.length} />
+                            <SourcesContent>
+                              {sources.map((sourceItem, sourceIndex) => (
+                                <Source
+                                  key={`${partKey}-source-${sourceIndex}`}
+                                  href={sourceItem.url}
+                                  title={sourceItem.description ?? sourceItem.title ?? sourceItem.url}
+                                >
+                                  {sourceItem.title ?? sourceItem.url}
+                                </Source>
+                              ))}
+                            </SourcesContent>
+                          </Sources>
+                        );
+                      }
+
                       case "reasoning":
                         return (
-                          <Reasoning key={`${message.id}-${index}`} className="w-full">
+                          <Reasoning key={partKey} className="w-full">
                             <ReasoningTrigger />
-                            <ReasoningContent>{part.text}</ReasoningContent>
+                            <ReasoningContent>
+                              {typeof anyPart.text === "string" ? (
+                                <Response>{anyPart.text}</Response>
+                              ) : (
+                                anyPart.text
+                              )}
+                            </ReasoningContent>
                           </Reasoning>
                         );
                       case "tool-displayArtifact":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <ArtifactRenderer
-                              key={`${message.id}-${index}`}
-                              data={part.output as ArtifactRendererData}
+                          <ArtifactRenderer
+                              key={partKey}
+                              data={anyPart.output as ArtifactRendererData}
                             />
                           );
                         }
                         break;
                       case "tool-displayWebPreview":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <WebPreviewRenderer
-                              key={`${message.id}-${index}`}
-                              data={part.output as WebPreviewRendererData}
+                          <WebPreviewRenderer
+                              key={partKey}
+                              data={anyPart.output as WebPreviewRendererData}
                             />
                           );
                         }
                         break;
                       case "tool-generateHtmlPreview":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <HtmlPreviewRenderer
-                              key={`${message.id}-${index}`}
-                              data={part.output as HtmlPreviewRendererData}
+                          <HtmlPreviewRenderer
+                              key={partKey}
+                              data={anyPart.output as HtmlPreviewRendererData}
                             />
                           );
                         }
                         break;
                       case "tool-generateTextbookChapter":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <TextbookChapter
-                              key={`${message.id}-${index}`}
-                              {...(part.output as TextbookChapterPayload)}
+                          <TextbookChapter
+                              key={partKey}
+                              {...(anyPart.output as TextbookChapterPayload)}
                             />
                           );
                         }
                         break;
                       case "tool-generateDiagram":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <Diagram
-                              key={`${message.id}-${index}`}
-                              {...(part.output as DiagramPayload)}
+                          <Diagram
+                              key={partKey}
+                              {...(anyPart.output as DiagramPayload)}
                             />
                           );
                         }
                         break;
                       case "tool-generateMindMap":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <MindMap
-                              key={`${message.id}-${index}`}
-                              {...(part.output as MindMapPayload)}
+                          <MindMap
+                              key={partKey}
+                              {...(anyPart.output as MindMapPayload)}
                             />
                           );
                         }
                         break;
                       case "tool-generateExercises":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <Exercise
-                              key={`${message.id}-${index}`}
-                              {...(part.output as ExercisePayload)}
+                          <Exercise
+                              key={partKey}
+                              {...(anyPart.output as ExercisePayload)}
                             />
                           );
                         }
                         break;
                       case "tool-generateKeyPoints":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <KeyPoints
-                              key={`${message.id}-${index}`}
-                              {...(part.output as KeyPointsPayload)}
+                          <KeyPoints
+                              key={partKey}
+                              {...(anyPart.output as KeyPointsPayload)}
                             />
                           );
                         }
                         break;
                       case "tool-generateCodeExample":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
-                            <CodeExample
-                              key={`${message.id}-${index}`}
-                              {...(part.output as CodeExamplePayload)}
+                          <CodeExample
+                              key={partKey}
+                              {...(anyPart.output as CodeExamplePayload)}
                             />
                           );
                         }

@@ -12,6 +12,13 @@ This demo supports multiple AI providers including:
 - OpenAI (GPT models)
 - xAI (Grok)
 
+## 🎙️ Voice Features (NEW!)
+
+**ElevenLabs TTS & STT Integration**
+- **Voice Input**: Click the microphone icon to speak your questions
+- **Text-to-Speech**: Hover over AI responses and click the speaker icon to hear them read aloud
+- [Quick Start Guide](./ELEVENLABS_QUICK_START.md) | [Full Documentation](./ELEVENLABS_INTEGRATION.md)
+
 ## AI Elements Components
 
 This project includes AI Elements UI components for enhanced chat experiences:

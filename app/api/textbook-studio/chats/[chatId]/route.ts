@@ -15,11 +15,11 @@ import { v0 } from "v0-sdk";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const chatId = params.chatId;
+    const { chatId } = await params;
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -60,11 +60,11 @@ export async function GET(
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: { chatId: string } }
+  { params }: { params: Promise<{ chatId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const chatId = params.chatId;
+    const { chatId } = await params;
     const { message } = await req.json();
 
     if (!message) {

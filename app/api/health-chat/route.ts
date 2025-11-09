@@ -28,14 +28,14 @@ export async function POST(req: Request) {
 
   const result = agent.stream({
     messages: convertToModelMessages(messages),
-    onFinish: async () => {
-      await closeResources();
-    },
-    onError: (e) => {
-      console.error("Error while streaming (health chat).", e);
-      void closeResources();
-    },
   });
+
+  result.response
+    .then(closeResources)
+    .catch((e) => {
+      console.error("Error while streaming (health chat).", e);
+      return closeResources();
+    });
 
   return result.toUIMessageStreamResponse({
     sendReasoning: supportsReasoning,

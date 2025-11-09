@@ -59,7 +59,7 @@ export function OnboardingFlow({ open, onComplete }: OnboardingFlowProps) {
               <DialogDescription>
                 {step === 'category' && 'Choose your primary focus area'}
                 {step === 'preferences' && 'Select your preferences'}
-                {step === 'complete' && "You're all set!"}
+                {step === 'complete' && "You\u2019re all set!"}
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -123,7 +123,7 @@ export function OnboardingFlow({ open, onComplete }: OnboardingFlowProps) {
                         <Label htmlFor="auto" className="cursor-pointer flex-1">
                           <p className="font-medium text-sm">Auto (Recommended)</p>
                           <p className="text-xs text-muted-foreground">
-                            We'll choose the best model for each task
+                            We&rsquo;ll choose the best model for each task
                           </p>
                         </Label>
                       </div>
@@ -159,7 +159,7 @@ export function OnboardingFlow({ open, onComplete }: OnboardingFlowProps) {
                 <div>
                   <h3 className="font-semibold mb-2">All Set!</h3>
                   <p className="text-sm text-muted-foreground">
-                    You're ready to explore. You can start by:
+                    You&rsquo;re ready to explore. You can start by:
                   </p>
                 </div>
                 <ul className="text-sm text-left space-y-2 bg-muted p-3 rounded">

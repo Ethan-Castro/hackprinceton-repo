@@ -153,6 +153,10 @@ const data = {
           url: "/sustainability/impact",
         },
         {
+          title: "Workflow",
+          url: "/sustainability/workflow",
+        },
+        {
           title: "Green Initiatives",
           url: "/sustainability/initiatives",
         },

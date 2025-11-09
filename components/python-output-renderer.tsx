@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { PythonToolOutput, PythonExecutionResult } from "@/lib/python-tools";
-import { AlertCircle, CheckCircle2, Code2, Image, Terminal, ChevronDown } from "lucide-react";
+import { AlertCircle, CheckCircle2, Code2, Image as ImageIcon, Terminal, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 export function PythonOutputRenderer({ data }: { data: PythonToolOutput }) {
@@ -101,7 +101,7 @@ export function PythonOutputRenderer({ data }: { data: PythonToolOutput }) {
                   expandedSection === "plots" ? "rotate-180" : ""
                 }`}
               />
-              <Image className="h-4 w-4" />
+              <ImageIcon className="h-4 w-4" />
               Plots ({result.plots.length})
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">

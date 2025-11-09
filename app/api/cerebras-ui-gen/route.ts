@@ -1,6 +1,6 @@
 /**
  * Cerebras UI Generation API
- * Uses Qwen 2.5 235B Instruct to generate React + Tailwind components
+ * Uses GPT-OSS-120B to generate React + Tailwind components
  * Replaces v0.dev API for cost-effective UI generation
  */
 
@@ -11,6 +11,9 @@ import { createCerebras } from "@ai-sdk/cerebras";
 const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
+
+// Use GPT-OSS-120B for all UI generation
+const UI_GEN_MODEL = "gpt-oss-120b";
 
 // Comprehensive v0-style system prompt for React component generation
 const V0_STYLE_SYSTEM_PROMPT = `You are an expert React developer specializing in creating beautiful, functional UI components using React, TypeScript, and Tailwind CSS.
@@ -98,6 +101,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { message, systemPrompt, conversationHistory } = body;
 
+    console.log("[Cerebras UI Gen] Request received");
+    console.log("[Cerebras UI Gen] Model:", UI_GEN_MODEL);
+    console.log("[Cerebras UI Gen] Message length:", message?.length);
+    console.log("[Cerebras UI Gen] Has conversation history:", !!conversationHistory);
+
     if (!message || typeof message !== "string") {
       return new Response(
         JSON.stringify({ error: "Message is required and must be a string" }),
@@ -124,18 +132,22 @@ export async function POST(req: NextRequest) {
       content: message,
     });
 
-    // Generate React component using Cerebras Qwen 235B
+    // Generate React component using Cerebras GPT-OSS-120B
+    console.log("[Cerebras UI Gen] Starting generation with", UI_GEN_MODEL);
+    
     const result = streamText({
-      model: cerebras("qwen-3-235b-a22b-instruct-2507"),
+      model: cerebras(UI_GEN_MODEL),
       system: combinedSystemPrompt,
       messages,
       temperature: 0.7, // Balanced creativity and consistency
-      maxTokens: 4096, // Allow for complex components
+      maxOutputTokens: 4096, // Allow for complex components
       onError: (error) => {
-        console.error("[Cerebras UI Gen] Error:", error);
+        console.error("[Cerebras UI Gen] Streaming Error:", error);
       },
     });
 
+    console.log("[Cerebras UI Gen] Returning stream response");
+    
     // Return streaming response
     return result.toTextStreamResponse();
   } catch (error: any) {

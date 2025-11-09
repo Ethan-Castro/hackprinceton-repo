@@ -6,10 +6,10 @@ This guide explains how to use the Gamma API integration for generating professi
 
 Gamma is an AI-powered platform for creating beautiful, professional presentations and documents. The integration provides four tools:
 
-1. **generateGamma** - Create presentations, documents, webpages, or social content
-2. **getGammaGeneration** - Check status and get download links
-3. **exportGamma** - Export to PDF or PPTX format
-4. **listGammaThemes** - View available design themes
+1. **generateGamma** - Create presentations, documents, webpages, or social content with comprehensive customization options
+2. **getGammaGeneration** - Check status and get view/download URLs
+3. **listGammaThemes** - View available design themes with pagination support
+4. **listGammaFolders** - View available workspace folders for organizing gammas
 
 ## Setup
 
@@ -53,13 +53,14 @@ AI will:
 ### Export to PDF
 
 ```typescript
-User: "Export my fitness presentation as a PDF"
+User: "Create a fitness presentation and export as PDF"
 
 AI will:
-1. Get the generation ID from the previous step
-2. Use exportGamma to convert to PDF
-3. Return a download link
-4. User can download the PDF
+1. Use generateGamma with exportAs: "pdf"
+2. Return generation ID
+3. Check status with getGammaGeneration
+4. When completed, return both viewUrl and downloadUrl
+5. User can view online or download the PDF
 ```
 
 ### Check Available Themes
@@ -77,14 +78,51 @@ AI will:
 
 ### generateGamma
 
+**Core Parameters:**
+
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| inputText | string | required | Content to convert (1-100,000 chars) |
+| inputText | string | required | Content to convert (1-100,000 chars). Can include image URLs. |
 | format | enum | presentation | Type: presentation, document, webpage, social |
-| textMode | enum | generate | generate, condense, or preserve input text |
-| numCards | number | 10 | Number of slides/sections (1-75) |
-| cardSplit | enum | auto | How to divide: auto or inputTextBreaks |
+| textMode | enum | generate | generate (expand), condense (summarize), or preserve (keep exact) |
+| numCards | number | 10 | Number of slides/sections (1-60 Pro, 1-75 Ultra) |
+| cardSplit | enum | auto | auto (AI decides) or inputTextBreaks (use \n---\n breaks) |
+| themeId | string | optional | Theme ID from listGammaThemes |
 | additionalInstructions | string | optional | Extra specifications (max 2000 chars) |
+| folderIds | array | optional | Array of folder IDs to organize the gamma |
+| exportAs | enum | optional | Export format: pdf or pptx (get download link when complete) |
+
+**Text Options:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| textAmount | enum | Amount of text per card: brief, medium, detailed, extensive |
+| textTone | string | Tone/voice (e.g., "professional, inspiring") - max 500 chars |
+| textAudience | string | Target audience (e.g., "outdoor enthusiasts") - max 500 chars |
+| textLanguage | string | Language code (e.g., "en", "es", "fr") - supports 60+ languages |
+
+**Image Options:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| imageSource | enum | Source: aiGenerated, pictographic, unsplash, giphy, webAllImages, webFreeToUse, webFreeToUseCommercially, placeholder, noImages |
+| imageModel | string | AI model (e.g., "imagen-4-pro", "flux-1-pro") - only for aiGenerated |
+| imageStyle | string | Style description (e.g., "photorealistic") - only for aiGenerated |
+
+**Card Options:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| cardDimensions | string | Aspect ratio. Presentation: fluid/16x9/4x3, Document: fluid/pageless/letter/a4, Social: 1x1/4x5/9x16 |
+
+**Sharing Options:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| workspaceAccess | enum | Access for workspace: noAccess, view, comment, edit, fullAccess |
+| externalAccess | enum | Access for external users: noAccess, view, comment, edit |
+| shareWithEmails | array | Email addresses to share with |
+| emailAccess | enum | Access level for emails: view, comment, edit, fullAccess |
 
 ### getGammaGeneration
 
@@ -92,18 +130,27 @@ AI will:
 |-----------|------|-------------|
 | generationId | string | ID of the Gamma to retrieve |
 
-Returns: status, format, view URL, download URL
-
-### exportGamma
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| generationId | string | ID of the Gamma to export |
-| exportFormat | enum | pdf or pptx |
+Returns: status (pending/completed/failed), format, viewUrl (when completed), downloadUrl (if exportAs was used), title
 
 ### listGammaThemes
 
-No parameters required. Returns available themes.
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| query | string (optional) | Search themes by name (case-insensitive) |
+| limit | number (optional) | Number of themes per page (max 50) |
+| after | string (optional) | Cursor token for next page (from previous response) |
+
+Returns: themes array with id, name, type (standard/custom), colorKeywords, toneKeywords, hasMore, nextCursor
+
+### listGammaFolders
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| query | string (optional) | Search folders by name (case-insensitive) |
+| limit | number (optional) | Number of folders per page (max 50) |
+| after | string (optional) | Cursor token for next page (from previous response) |
+
+Returns: folders array with id and name, hasMore, nextCursor
 
 ## Supported Formats
 
@@ -206,13 +253,14 @@ Step 4: Generation Complete
 Returns: generationId, viewUrl
 User can view at: https://gamma.app/view/[generationId]
 
-Step 5: Export (Optional)
-User: "Export as PDF"
-AI calls: exportGamma({
-  generationId: "[id]",
-  exportFormat: "pdf"
-})
-Returns: downloadUrl for PDF
+Step 5: Export (Optional - can also be done during generation)
+Option A - Export during generation:
+Use exportAs parameter in generateGamma
+Returns: downloadUrl when status is completed
+
+Option B - Export existing gamma:
+Export functionality is built into the Gamma app
+User can manually export from https://gamma.app/view/[generationId]
 
 Step 6: Download
 User downloads the professional PDF presentation

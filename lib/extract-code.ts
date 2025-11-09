@@ -139,7 +139,11 @@ root.render(
   };
 
   // Compress and encode for CodeSandbox API
-  const compressed = btoa(JSON.stringify(parameters));
+  // Use Unicode-safe encoding to handle special characters
+  const jsonString = JSON.stringify(parameters);
+  const compressed = typeof window !== 'undefined'
+    ? btoa(unescape(encodeURIComponent(jsonString)))
+    : Buffer.from(jsonString).toString('base64');
   return `https://codesandbox.io/api/v1/sandboxes/define?parameters=${compressed}`;
 }
 
@@ -236,8 +240,11 @@ export default defineConfig({
     files,
   };
 
-  // Encode for StackBlitz API
-  const compressed = btoa(JSON.stringify(project));
+  // Encode for StackBlitz API with Unicode-safe encoding
+  const jsonString = JSON.stringify(project);
+  const compressed = typeof window !== 'undefined'
+    ? btoa(unescape(encodeURIComponent(jsonString)))
+    : Buffer.from(jsonString).toString('base64');
   return `https://stackblitz.com/edit/vitejs-vite-${Date.now()}?file=src/App.tsx&embed=1&hideNavigation=1`;
 }
 

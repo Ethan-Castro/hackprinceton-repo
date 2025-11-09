@@ -13,8 +13,19 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import {
+  ChainOfThought,
+  ChainOfThoughtContent,
+  ChainOfThoughtHeader,
+  ChainOfThoughtSearchResult,
+  ChainOfThoughtSearchResults,
+  ChainOfThoughtStep,
+  Response,
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from "@/components/ai-elements";
 import {
   BusinessPlan,
   FinancialDashboard,
@@ -37,13 +48,28 @@ import type {
   MarketingPlanPayload,
   RevenueModelPayload,
 } from "@/types/ai-tool-output";
+import type { DisplayModel } from "@/lib/display-model";
+import { useModelManager } from "@/lib/hooks/use-model-manager";
+import { ProvidersWarning } from "@/components/providers-warning";
+import {
+  extractSourcesFromParts,
+  getPartText,
+  parseChainOfThoughtPart,
+  type MessagePart,
+} from "@/lib/ai-elements-helpers";
 
 function ModelSelectorHandler({
   modelId,
   onModelIdChange,
+  models,
+  modelsLoading,
+  modelsError,
 }: {
   modelId: string;
   onModelIdChange: (newModelId: string) => void;
+  models: DisplayModel[];
+  modelsLoading: boolean;
+  modelsError: Error | null;
 }) {
   const router = useRouter();
 
@@ -54,12 +80,27 @@ function ModelSelectorHandler({
     router.push(`/business?${params.toString()}`);
   };
 
-  return <ModelSelector modelId={modelId} onModelChange={handleSelectChange} />;
+  return (
+    <ModelSelector
+      modelId={modelId}
+      onModelChange={handleSelectChange}
+      models={models}
+      isLoading={modelsLoading}
+      error={modelsError}
+    />
+  );
 }
 
 export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
   const [input, setInput] = useState("");
-  const [currentModelId, setCurrentModelId] = useState(modelId);
+  const {
+    currentModelId,
+    setCurrentModelId,
+    models,
+    modelsLoading,
+    modelsError,
+    providers,
+  } = useModelManager(modelId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleModelIdChange = (newModelId: string) => {
@@ -69,6 +110,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
   const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat();
 
   const hasMessages = messages.length > 0;
+  const modelsUnavailable = !modelsLoading && models.length === 0;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -121,19 +163,24 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
               <p className="text-lg text-slate-600 dark:text-slate-400 max-w-md mx-auto">
                 Strategic planning, market analysis, financial projections, and competitive intelligence
               </p>
+              <ProvidersWarning providers={providers} className="mt-6 text-left" />
             </div>
             <div className="w-full animate-slide-up" style={{ animationDelay: '100ms' }}>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (!input.trim() || modelsUnavailable) return;
                   sendMessage({ text: input }, { body: { modelId: currentModelId } });
                   setInput("");
                 }}
               >
                 <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-lg border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-out hover:shadow-xl">
                   <ModelSelectorHandler
-                    modelId={modelId}
+                    modelId={currentModelId}
                     onModelIdChange={handleModelIdChange}
+                    models={models}
+                    modelsLoading={modelsLoading}
+                    modelsError={modelsError}
                   />
                   <div className="flex flex-1 items-center">
                     <Input
@@ -145,6 +192,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                       className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-150"
                       onKeyDown={(e) => {
                         if (e.metaKey && e.key === "Enter") {
+                          if (!input.trim() || modelsUnavailable) return;
                           sendMessage(
                             { text: input },
                             { body: { modelId: currentModelId } },
@@ -152,13 +200,14 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                           setInput("");
                         }
                       }}
+                      disabled={modelsUnavailable}
                     />
                     <Button
                       type="submit"
                       size="icon"
                       variant="ghost"
                       className="h-9 w-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all duration-150"
-                      disabled={!input.trim()}
+                      disabled={!input.trim() || modelsUnavailable}
                     >
                       <SendIcon className="h-4 w-4" />
                     </Button>
@@ -176,12 +225,18 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                 ].map((suggestion) => (
                   <button
                     key={suggestion}
+                    type="button"
                     onClick={() => {
+                      if (modelsUnavailable) return;
                       setInput(suggestion);
                       sendMessage({ text: suggestion }, { body: { modelId: currentModelId } });
                       setInput("");
                     }}
-                    className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 hover:scale-105 transition-all duration-150"
+                    disabled={modelsUnavailable}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 hover:scale-105 transition-all duration-150",
+                      modelsUnavailable && "opacity-60 cursor-not-allowed hover:scale-100",
+                    )}
                   >
                     {suggestion}
                   </button>
@@ -194,6 +249,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
 
       {hasMessages && (
         <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full animate-fade-in overflow-hidden">
+          <ProvidersWarning providers={providers} className="px-4 md:px-8 mt-4 mb-0" />
           <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 hide-scrollbar">
             <div className="flex flex-col gap-4 md:gap-6 pb-4">
               {messages.map((m, messageIndex) => (
@@ -207,28 +263,124 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                   )}
                 >
                   {m.parts.map((part, i) => {
-                    switch (part.type) {
-                      case "text":
+                    const partKey = `${m.id}-${i}`;
+                    const partType = part.type as string;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const anyPart = part as any;
+                    switch (partType) {
+                      case "text": {
+                        const textContent = getPartText(part as MessagePart);
+
+                        if (!textContent) {
+                          return null;
+                        }
+
                         return (
-                          <div key={`${m.id}-${i}`} className="prose prose-sm dark:prose-invert max-w-none prose-headings:text-slate-900 dark:prose-headings:text-slate-100">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {part.text}
-                            </ReactMarkdown>
-                          </div>
+                          <Response key={partKey}>{textContent}</Response>
                         );
+                      }
+
+                      case "chain-of-thought": {
+                        const firstChainIndex = m.parts.findIndex(
+                          (chainPart) => (chainPart.type as string) === "chain-of-thought"
+                        );
+
+                        if (i !== firstChainIndex) {
+                          return null;
+                        }
+
+                        const chainData = parseChainOfThoughtPart(part as MessagePart);
+
+                        if (!chainData) {
+                          return null;
+                        }
+
+                        return (
+                          <ChainOfThought key={partKey} className="my-3" defaultOpen>
+                            <ChainOfThoughtHeader>
+                              {chainData.title ?? "Strategy Breakdown"}
+                            </ChainOfThoughtHeader>
+                            <ChainOfThoughtContent>
+                              {chainData.steps.length > 0 ? (
+                                chainData.steps.map((step, stepIndex) => (
+                                  <ChainOfThoughtStep
+                                    key={`${partKey}-step-${stepIndex}`}
+                                    label={step.label}
+                                    description={step.description}
+                                    status={step.status}
+                                  />
+                                ))
+                              ) : chainData.text ? (
+                                <Response className="text-sm">
+                                  {chainData.text}
+                                </Response>
+                              ) : null}
+                              {chainData.searchResults.length > 0 && (
+                                <ChainOfThoughtSearchResults>
+                                  {chainData.searchResults.map((result, resultIndex) => (
+                                    <ChainOfThoughtSearchResult
+                                      key={`${partKey}-result-${resultIndex}`}
+                                    >
+                                      {result}
+                                    </ChainOfThoughtSearchResult>
+                                  ))}
+                                </ChainOfThoughtSearchResults>
+                              )}
+                            </ChainOfThoughtContent>
+                          </ChainOfThought>
+                        );
+                      }
+
+                      case "source":
+                      case "source-url": {
+                        const firstSourceIndex = m.parts.findIndex(
+                          (sourcePart) =>
+                            (sourcePart.type as string) === "source-url" ||
+                            (sourcePart.type as string) === "source"
+                        );
+
+                        if (i !== firstSourceIndex) {
+                          return null;
+                        }
+
+                        const sources = extractSourcesFromParts(
+                          (m.parts ?? []) as MessagePart[]
+                        );
+
+                        if (sources.length === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <Sources key={partKey} className="my-2">
+                            <SourcesTrigger count={sources.length} />
+                            <SourcesContent>
+                              {sources.map((sourceItem, sourceIndex) => (
+                                <Source
+                                  key={`${partKey}-source-${sourceIndex}`}
+                                  href={sourceItem.url}
+                                  title={sourceItem.description ?? sourceItem.title ?? sourceItem.url}
+                                >
+                                  {sourceItem.title ?? sourceItem.url}
+                                </Source>
+                              ))}
+                            </SourcesContent>
+                          </Sources>
+                        );
+                      }
 
                       // Business tool renderers
                       case "tool-generateBusinessPlan":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <BusinessPlan
-                              key={`${m.id}-${i}`}
-                              {...(part.output as BusinessPlanPayload)}
+                              key={partKey}
+                              {...(anyPart.output as BusinessPlanPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                               Generating comprehensive business plan...
                             </div>
@@ -237,16 +389,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateFinancialProjections":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <FinancialProjections
-                              key={`${m.id}-${i}`}
-                              {...(part.output as FinancialProjectionsPayload)}
+                              key={partKey}
+                              {...(anyPart.output as FinancialProjectionsPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
                               Calculating financial projections...
                             </div>
@@ -255,16 +407,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateSWOTAnalysis":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <SWOTMatrix
-                              key={`${m.id}-${i}`}
-                              {...(part.output as SWOTMatrixPayload)}
+                              key={partKey}
+                              {...(anyPart.output as SWOTMatrixPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-slate-600 border-t-transparent rounded-full"></div>
                               Analyzing strengths, weaknesses, opportunities, and threats...
                             </div>
@@ -273,16 +425,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateBusinessModelCanvas":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <BusinessModelCanvas
-                              key={`${m.id}-${i}`}
-                              {...(part.output as BusinessModelCanvasPayload)}
+                              key={partKey}
+                              {...(anyPart.output as BusinessModelCanvasPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                               Creating business model canvas...
                             </div>
@@ -291,16 +443,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateMarketAnalysis":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <MarketAnalysis
-                              key={`${m.id}-${i}`}
-                              {...(part.output as MarketAnalysisPayload)}
+                              key={partKey}
+                              {...(anyPart.output as MarketAnalysisPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
                               Conducting market analysis...
                             </div>
@@ -309,16 +461,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generatePitchDeck":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <PitchDeck
-                              key={`${m.id}-${i}`}
-                              {...(part.output as PitchDeckPayload)}
+                              key={partKey}
+                              {...(anyPart.output as PitchDeckPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                               Creating pitch deck presentation...
                             </div>
@@ -327,16 +479,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateFinancialDashboard":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <FinancialDashboard
-                              key={`${m.id}-${i}`}
-                              {...(part.output as FinancialDashboardPayload)}
+                              key={partKey}
+                              {...(anyPart.output as FinancialDashboardPayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
                               Building financial dashboard...
                             </div>
@@ -345,11 +497,11 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateMarketingPlan":
-                        if (part.state === "output-available") {
-                          const data = part.output as MarketingPlanPayload;
+                        if (anyPart.state === "output-available") {
+                          const data = anyPart.output as MarketingPlanPayload;
                           return (
                             <div
-                              key={`${m.id}-${i}`}
+                              key={partKey}
                               className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden"
                             >
                               <div className="bg-gradient-to-r from-purple-900 to-blue-900 p-6">
@@ -391,9 +543,9 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                               </div>
                             </div>
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-purple-600 border-t-transparent rounded-full"></div>
                               Developing marketing plan...
                             </div>
@@ -402,16 +554,16 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateCompetitorAnalysis":
-                        if (part.state === "output-available") {
+                        if (anyPart.state === "output-available") {
                           return (
                             <CompetitorTable
-                              key={`${m.id}-${i}`}
-                              {...(part.output as CompetitorTablePayload)}
+                              key={partKey}
+                              {...(anyPart.output as CompetitorTablePayload)}
                             />
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-orange-600 border-t-transparent rounded-full"></div>
                               Analyzing competitive landscape...
                             </div>
@@ -420,11 +572,11 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                         break;
 
                       case "tool-generateRevenueModel":
-                        if (part.state === "output-available") {
-                          const data = part.output as RevenueModelPayload;
+                        if (anyPart.state === "output-available") {
+                          const data = anyPart.output as RevenueModelPayload;
                           return (
                             <div
-                              key={`${m.id}-${i}`}
+                              key={partKey}
                               className="flex flex-col rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden"
                             >
                               <div className="bg-gradient-to-r from-green-900 to-emerald-900 p-6">
@@ -472,9 +624,9 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                               </div>
                             </div>
                           );
-                        } else if (part.state === "input-available") {
+                        } else if (anyPart.state === "input-available") {
                           return (
-                            <div key={`${m.id}-${i}`} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+                            <div key={partKey} className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
                               <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
                               Designing revenue model...
                             </div>
@@ -484,7 +636,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
 
                       case "tool-error":
                         return (
-                          <Alert key={`${m.id}-${i}`} variant="destructive" className="my-2">
+                          <Alert key={partKey} variant="destructive" className="my-2">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription>
                               <strong>Error:</strong> {"errorText" in part ? part.errorText : "An error occurred while executing the tool"}
@@ -538,6 +690,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!input.trim() || modelsUnavailable) return;
               sendMessage({ text: input }, { body: { modelId: currentModelId } });
               setInput("");
             }}
@@ -545,8 +698,11 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
           >
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm shadow-lg border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-out hover:shadow-xl">
               <ModelSelectorHandler
-                modelId={modelId}
+                modelId={currentModelId}
                 onModelIdChange={handleModelIdChange}
+                models={models}
+                modelsLoading={modelsLoading}
+                modelsError={modelsError}
               />
               <div className="flex flex-1 items-center">
                 <Input
@@ -557,6 +713,7 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                   className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium transition-all duration-150"
                   onKeyDown={(e) => {
                     if (e.metaKey && e.key === "Enter") {
+                      if (!input.trim() || modelsUnavailable) return;
                       sendMessage(
                         { text: input },
                         { body: { modelId: currentModelId } },
@@ -564,13 +721,14 @@ export function BusinessChat({ modelId = DEFAULT_MODEL }: { modelId: string }) {
                       setInput("");
                     }
                   }}
+                  disabled={modelsUnavailable}
                 />
                 <Button
                   type="submit"
                   size="icon"
                   variant="ghost"
                   className="h-9 w-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all duration-150"
-                  disabled={!input.trim() || status === "streaming"}
+                  disabled={!input.trim() || status === "streaming" || modelsUnavailable}
                 >
                   <SendIcon className="h-4 w-4" />
                 </Button>

@@ -9,6 +9,7 @@ import { AlertCircle, SendIcon, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { extractReactCode, createCodeSandboxUrl } from "@/lib/extract-code";
 
 interface Message {
   id: string;
@@ -56,57 +57,87 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
     setError(null);
 
     try {
-      let endpoint: string;
-      let body: any;
-
-      if (chatId) {
-        // Continue existing chat
-        endpoint = `/api/textbook-studio/chats/${chatId}`;
-        body = { message: input };
-      } else {
-        // Create new chat with generic system prompt
-        endpoint = "/api/textbook-studio/chats";
-        body = {
-          message: input,
-        };
-      }
-
-      const response = await fetch(endpoint, {
+      // Use Cerebras GPT-OSS-120B for UI generation (free & fast)
+      console.log("[V0 Clone] Sending request to GPT-OSS-120B...");
+      
+      const response = await fetch("/api/cerebras-ui-gen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          message: input,
+          conversationHistory: messages
+            .slice(-4) // Keep last 2 exchanges for context
+            .map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+        }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to send message");
+        const errorText = await response.text();
+        console.error("[V0 Clone] API Error:", errorText);
+        throw new Error("Failed to generate UI");
       }
 
-      // Update chat ID if this was a new chat
-      const chatData = data.chat || data.response;
-      if (!chatId && chatData?.id) {
-        setChatId(chatData.id);
+      // Stream the response
+      console.log("[V0 Clone] Streaming response...");
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let generatedCode = "";
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          generatedCode += chunk;
+        }
       }
 
-      // Update preview URL if available
-      if (chatData?.demo) {
-        setPreviewUrl(chatData.demo);
-      }
+      console.log("[V0 Clone] Generated code length:", generatedCode.length);
+      console.log("[V0 Clone] First 200 chars:", generatedCode.substring(0, 200));
 
-      // Add assistant messages from the response
-      const chatMessages = chatData?.messages || [];
-      const assistantMessages = chatMessages
-        .filter((msg: any) => msg.role === "assistant")
-        .map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          createdAt: msg.createdAt,
-        }));
+      // Extract React code from the response
+      const extractedCode = extractReactCode(generatedCode);
+      console.log("[V0 Clone] Extracted code:", extractedCode ? `${extractedCode.length} chars` : "null");
+      
+      if (extractedCode) {
+        // Generate CodeSandbox preview URL
+        console.log("[V0 Clone] Creating CodeSandbox URL...");
+        try {
+          const sandboxUrl = createCodeSandboxUrl(
+            extractedCode,
+            `GPT-OSS-120B UI - ${new Date().toLocaleTimeString()}`
+          );
+          console.log("[V0 Clone] CodeSandbox URL:", sandboxUrl);
+          setPreviewUrl(sandboxUrl);
 
-      if (assistantMessages.length > 0) {
-        setMessages((prev) => [...prev, ...assistantMessages]);
+          // Add assistant response with code preview
+          const assistantMessage: Message = {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: `✨ **Generated with GPT-OSS-120B**\n\nYour UI is ready! Check the live preview on the right →\n\n<details>\n<summary>📝 View Source Code (${extractedCode.length} chars)</summary>\n\n\`\`\`tsx\n${extractedCode}\n\`\`\`\n</details>`,
+            createdAt: new Date().toISOString(),
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+        } catch (urlError) {
+          console.error("[V0 Clone] CodeSandbox URL Error:", urlError);
+          throw new Error("Failed to create preview URL");
+        }
+      } else {
+        console.warn("[V0 Clone] No code extracted from response");
+        
+        // No code found, show the raw response
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: `⚠️ Could not extract code from response.\n\n**Raw Response:**\n\n${generatedCode.substring(0, 1000)}${generatedCode.length > 1000 ? "..." : ""}`,
+          createdAt: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (err: any) {
       console.error("Error sending message:", err);
