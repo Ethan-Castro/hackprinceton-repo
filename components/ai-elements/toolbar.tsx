@@ -12,7 +12,7 @@ interface ToolbarProps extends Omit<React.ComponentProps<typeof NodeToolbar>, 'p
 
 export function Toolbar({ children, className, position, ...props }: ToolbarProps) {
   return (
-    <NodeToolbar position={position ?? 'bottom'} {...props}>
+    <NodeToolbar position={position ?? ('bottom' as const)} {...props}>
       <div className={cn('flex gap-1 rounded-lg border bg-card p-1 shadow-lg', className)}>
         {children}
       </div>
