@@ -61,18 +61,15 @@ type ContextProps = React.ComponentProps<typeof HoverCard> & {
   modelId?: ModelId
 }
 
-const Context = React.forwardRef<
-  HTMLDivElement,
-  ContextProps
->(({ maxTokens, usedTokens, usage, modelId, children, ...props }, ref) => {
+const Context = ({ maxTokens, usedTokens, usage, modelId, children, ...props }: ContextProps) => {
   return (
     <ContextContext.Provider value={{ maxTokens, usedTokens, usage, modelId }}>
-      <HoverCard {...props} ref={ref}>
+      <HoverCard {...props}>
         {children}
       </HoverCard>
     </ContextContext.Provider>
   )
-})
+}
 Context.displayName = "Context"
 
 // Trigger component
@@ -238,7 +235,7 @@ type UsageComponentProps = React.ComponentProps<"div"> & {
 const ContextInputUsage = React.forwardRef<HTMLDivElement, UsageComponentProps>(
   ({ children, className, ...props }, ref) => {
     const { usage, modelId } = useContextValue()
-    const tokens = usage?.promptTokens ?? 0
+    const tokens = (usage as any)?.promptTokens ?? 0
 
     if (children) {
       return (
@@ -270,7 +267,7 @@ ContextInputUsage.displayName = "ContextInputUsage"
 const ContextOutputUsage = React.forwardRef<HTMLDivElement, UsageComponentProps>(
   ({ children, className, ...props }, ref) => {
     const { usage, modelId } = useContextValue()
-    const tokens = usage?.completionTokens ?? 0
+    const tokens = (usage as any)?.completionTokens ?? 0
 
     if (children) {
       return (
@@ -305,7 +302,7 @@ const ContextReasoningUsage = React.forwardRef<
 >(({ children, className, ...props }, ref) => {
   const { usage, modelId } = useContextValue()
   const tokens =
-    (usage?.experimental_completionTokensDetails as any)?.reasoningTokens ?? 0
+    ((usage as any)?.experimental_completionTokensDetails as any)?.reasoningTokens ?? 0
 
   if (tokens === 0) {
     return null
@@ -344,7 +341,7 @@ const ContextCacheUsage = React.forwardRef<HTMLDivElement, UsageComponentProps>(
   ({ children, className, ...props }, ref) => {
     const { usage, modelId } = useContextValue()
     const tokens =
-      (usage?.experimental_promptTokensDetails as any)?.cachedTokens ?? 0
+      ((usage as any)?.experimental_promptTokensDetails as any)?.cachedTokens ?? 0
 
     if (tokens === 0) {
       return null
@@ -409,10 +406,10 @@ const ContextContentFooter = React.forwardRef<
   const totalCost = calculateCost({
     model: modelId,
     usage: {
-      input: usage.promptTokens ?? 0,
-      output: usage.completionTokens ?? 0,
+      input: (usage as any).promptTokens ?? 0,
+      output: (usage as any).completionTokens ?? 0,
       cache_read:
-        (usage.experimental_promptTokensDetails as any)?.cachedTokens ?? 0,
+        ((usage as any).experimental_promptTokensDetails as any)?.cachedTokens ?? 0,
     },
   })
 
