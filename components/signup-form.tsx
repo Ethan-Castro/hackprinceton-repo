@@ -103,9 +103,9 @@ export function SignupForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">AI Gateway</span>
+              <span className="sr-only">Augment</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome to AI Gateway</h1>
+            <h1 className="text-xl font-bold">Welcome to Augment</h1>
             <FieldDescription>
               Already have an account?{" "}
               <a href="/auth/login" className="text-primary hover:underline">

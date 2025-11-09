@@ -69,7 +69,6 @@ import {
   FirecrawlResultsRenderer,
   ParallelAgentResultsRenderer,
 } from "@/components/search-results-renderer";
-import { AnimatedLogo } from "@/components/animated-logo";
 import type {
   TextbookChapterPayload,
   ExercisePayload,
@@ -291,9 +290,11 @@ export function Chat({
       {!hasMessages && (
         <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 animate-fade-in">
           <div className="w-full max-w-2xl text-center space-y-8 md:space-y-12">
-            <div className="animate-slide-up">
-              <AnimatedLogo />
-            </div>
+            <h1 className="text-3xl md:text-6xl font-light tracking-tight text-foreground animate-slide-up">
+              <span className="font-mono font-semibold tracking-tight bg-foreground text-background px-4 py-3 rounded-2xl shadow-border-medium">
+                Augment
+              </span>
+            </h1>
             <ProvidersWarning providers={providers} />
             <div className="w-full animate-slide-up" style={{ animationDelay: '100ms' }}>
               <form
@@ -1014,7 +1015,7 @@ export function Chat({
             <div className="flex flex-row gap-2">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <AlertDescription className="dark:text-red-400 text-red-600">
-                {error.message.startsWith("AI Gateway requires a valid credit card") ? <div>AI Gateway requires a valid credit card on file to service requests. Please visit your <Link className="underline underline-offset-4" href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card" target="_noblank">dashboard</Link> to add a card and unlock your free credits.</div> : "An error occurred while generating the response."}
+                {error.message.startsWith("AI Gateway requires a valid credit card") ? <div>Augment requires a valid credit card on file to service requests. Please visit your <Link className="underline underline-offset-4" href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card" target="_noblank">dashboard</Link> to add a card and unlock your free credits.</div> : "An error occurred while generating the response."}
               </AlertDescription>
             </div>
             <Button

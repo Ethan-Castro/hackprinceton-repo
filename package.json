@@ -2,6 +2,7 @@
   "name": "ai-sdk-gateway-demo",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://vercel.com/ethan-6436s-projects/augment-hack",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

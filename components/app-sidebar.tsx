@@ -26,26 +26,26 @@ import {
 // This is sample data.
 const data = {
   user: {
-    name: "User",
-    email: "user@example.com",
+    name: "Hacker",
+    email: "hackr@hackprinceton.hack",
     avatar: "/avatars/user.jpg",
   },
   teams: [
     {
-      name: "AI Gateway",
+      name: "Augment",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: "Hacker",
     },
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "General",
       url: "/playground",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "Chat Interface",
+          title: "General Chat",
           url: "/playground",
         },
       ],
@@ -60,24 +60,8 @@ const data = {
           url: "/education",
         },
         {
-          title: "v0 Studio",
+          title: "Build Activities",
           url: "/education/studio",
-        },
-        {
-          title: "v0 Clone Example",
-          url: "/examples/v0",
-        },
-        {
-          title: "Course Builder",
-          url: "/education/courses",
-        },
-        {
-          title: "Quiz Generator",
-          url: "/education/quizzes",
-        },
-        {
-          title: "Study Assistant",
-          url: "/education/study",
         },
       ],
     },
@@ -91,20 +75,12 @@ const data = {
           url: "/health",
         },
         {
-          title: "v0 Studio",
+          title: "Build Accountability",
           url: "/health/studio",
         },
         {
           title: "Medical Records",
           url: "/health/records",
-        },
-        {
-          title: "Treatment Plans",
-          url: "/health/treatment",
-        },
-        {
-          title: "Health Insights",
-          url: "/health/insights",
         },
       ],
     },
@@ -118,20 +94,8 @@ const data = {
           url: "/business",
         },
         {
-          title: "v0 Studio",
+          title: "Build Solutions",
           url: "/business/studio",
-        },
-        {
-          title: "Analytics",
-          url: "/business/analytics",
-        },
-        {
-          title: "Reports",
-          url: "/business/reports",
-        },
-        {
-          title: "Strategy",
-          url: "/business/strategy",
         },
       ],
     },
@@ -141,12 +105,16 @@ const data = {
       icon: Leaf,
       items: [
         {
-          title: "v0 Studio",
-          url: "/sustainability/studio",
+          title: "AI Energy Resources",
+          url: "/sustainability/ai-energy-resources",
         },
         {
           title: "Carbon Tracking",
           url: "/sustainability/carbon",
+        },
+        {
+          title: "Develop Tools",
+          url: "/sustainability/studio",
         },
         {
           title: "Impact Reports",
@@ -155,14 +123,6 @@ const data = {
         {
           title: "Workflow",
           url: "/sustainability/workflow",
-        },
-        {
-          title: "Green Initiatives",
-          url: "/sustainability/initiatives",
-        },
-        {
-          title: "ESG Metrics",
-          url: "/sustainability/esg",
         },
       ],
     },

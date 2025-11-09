@@ -295,85 +295,85 @@ export function BaseV0Chat({
     setError(null);
 
     try {
-      // Use Cerebras GPT-OSS-120B for UI generation (free & fast)
-      const response = await fetch("/api/cerebras-ui-gen", {
+      console.log("[BaseV0Chat] Sending request to /api/v0-chat");
+      console.log("[BaseV0Chat] Message:", userMessage);
+      console.log("[BaseV0Chat] Chat ID:", chatId);
+
+      // Use v0 SDK for professional UI generation
+      const response = await fetch("/api/v0-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          systemPrompt: systemPrompt,
-          conversationHistory: messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
+          chatId: chatId,
         }),
       });
 
+      console.log("[BaseV0Chat] Response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to generate component");
+        const errorData = await response.json();
+        console.error("[BaseV0Chat] API error:", errorData);
+        throw new Error(errorData.details || errorData.error || "Failed to generate component");
       }
 
-      // Stream the response
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-      const assistantMessageId = `assistant-${Date.now()}`;
+      const data = await response.json();
+      console.log("[BaseV0Chat] Response data:", data);
 
-      // Add initial assistant message
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantMessageId,
-          role: "assistant",
-          content: "",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        fullText += chunk;
-
-        // Update assistant message with streaming content
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastIndex = updated.length - 1;
-          if (updated[lastIndex].id === assistantMessageId) {
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: fullText,
-            };
-          }
-          return updated;
-        });
+      // Update chat ID if this was a new chat
+      if (!chatId && data.id) {
+        console.log("[BaseV0Chat] Setting chat ID:", data.id);
+        setChatId(data.id);
       }
 
-      // Extract and validate code
-      const extracted = extractReactCode(fullText);
-      if (extracted && extracted.isValid) {
-        setGeneratedCode(extracted.code);
+      // Update preview URL with v0 demo link
+      if (data.demo) {
+        console.log("[BaseV0Chat] Setting preview URL:", data.demo);
+        setPreviewUrl(data.demo);
+      } else {
+        console.warn("[BaseV0Chat] No demo URL in response");
+      }
 
-        // Create CodeSandbox URL for preview
-        const sandboxUrl = createCodeSandboxUrl(extracted.code);
-        setPreviewUrl(sandboxUrl);
-
-        // Validate code quality
-        const validation = validateCode(extracted.code);
-        if (validation.warnings.length > 0) {
-          console.warn("Code warnings:", validation.warnings);
+      // Extract code from files if available
+      if (data.files && data.files.length > 0) {
+        console.log("[BaseV0Chat] Found", data.files.length, "files");
+        const mainFile = data.files.find((f: any) => 
+          f.name?.includes('App') || f.name?.includes('page') || f.name?.includes('index')
+        ) || data.files[0];
+        
+        if (mainFile?.content) {
+          console.log("[BaseV0Chat] Setting generated code from:", mainFile.name);
+          setGeneratedCode(mainFile.content);
         }
       } else {
-        setError(
-          "Generated response doesn't contain valid React code. Please try rephrasing your request."
-        );
+        console.warn("[BaseV0Chat] No files in response");
       }
+
+      // Add assistant response message
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: "Generated new app preview. Check the preview panel!",
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      console.log("[BaseV0Chat] Added assistant message");
+
     } catch (err: any) {
-      console.error("Error generating component:", err);
-      setError(err.message || "Failed to generate component");
+      console.error("[BaseV0Chat] Error generating component:", err);
+      const errorMessage = err.message || "Failed to generate component";
+      setError(errorMessage);
+      
+      // Add error message to chat
+      const errorChatMessage: ChatMessage = {
+        id: `assistant-error-${Date.now()}`,
+        role: "assistant",
+        content: `Sorry, there was an error: ${errorMessage}`,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorChatMessage]);
     } finally {
+      console.log("[BaseV0Chat] Setting loading to false");
       setLoading(false);
     }
   };
@@ -536,83 +536,54 @@ export function BaseV0Chat({
       </div>
 
       {/* Preview Panel */}
-      <div className="w-1/2 flex flex-col bg-muted/30">
-        {/* Header with actions */}
-        <div className="border-b p-4 bg-background flex items-center justify-between">
-          <h3 className="font-semibold">Generated Code</h3>
-          {generatedCode && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const success = await copyToClipboard(generatedCode);
-                  if (success) {
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }
-                }}
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy Code
-                  </>
+      <div className="w-1/2 flex flex-col bg-card">
+        <WebPreview>
+          <WebPreviewNavigation>
+            <WebPreviewUrl
+              readOnly
+              placeholder="Your app will appear here..."
+              value={previewUrl || ""}
+            />
+            {previewUrl && (
+              <div className="flex gap-2 ml-auto">
+                {generatedCode && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const success = await copyToClipboard(generatedCode);
+                      if (success) {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Code
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
-              {previewUrl && (
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   onClick={() => window.open(previewUrl, "_blank")}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Open in CodeSandbox
+                  Open in New Tab
                 </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Code display or empty state */}
-        <div className="flex-1 overflow-auto">
-          {generatedCode ? (
-            <SyntaxHighlighter
-              language="typescript"
-              style={vscDarkPlus}
-              showLineNumbers
-              customStyle={{
-                margin: 0,
-                height: "100%",
-                fontSize: "14px",
-              }}
-            >
-              {generatedCode}
-            </SyntaxHighlighter>
-          ) : (
-            <div className="flex h-full items-center justify-center text-center p-8">
-              <div className="space-y-2 max-w-sm">
-                {icon && (
-                  <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                    {icon}
-                  </div>
-                )}
-                <p className="text-lg font-medium">
-                  Your generated code will appear here
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Describe what you want to build and I&rsquo;ll generate React +
-                  Tailwind code for you
-                </p>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </WebPreviewNavigation>
+          <WebPreviewBody src={previewUrl || undefined} />
+        </WebPreview>
       </div>
     </div>
   );

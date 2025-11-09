@@ -1,6 +1,6 @@
-export const DEFAULT_MODEL = "cerebras/llama3.1-8b";
+export const DEFAULT_MODEL = "cerebras/gpt-oss-120b";
 
-// Cerebras models (via AI Gateway)
+// Cerebras models (via Vercel AI Gateway)
 export const CEREBRAS_MODELS = [
   "cerebras/llama3.1-8b",
   "cerebras/llama-3.3-70b",

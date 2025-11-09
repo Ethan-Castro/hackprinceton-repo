@@ -151,7 +151,7 @@ export function UsageBilling() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight mb-2">Usage & Billing</h2>
         <p className="text-muted-foreground">
-          Monitor your AI Gateway credit balance, track usage, and retrieve detailed generation information.
+          Monitor your Augment credit balance, track usage, and retrieve detailed generation information.
         </p>
       </div>
 
@@ -178,7 +178,7 @@ export function UsageBilling() {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Remaining AI Gateway credits
+              Remaining Augment credits
             </p>
           </CardContent>
         </Card>

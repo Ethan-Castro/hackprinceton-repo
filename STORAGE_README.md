@@ -1,6 +1,6 @@
 # 🗄️ Storage Setup Complete
 
-Your AI Gateway application is now fully configured for persistent data storage using **Neon PostgreSQL**.
+Your Augment application is now fully configured for persistent data storage using **Neon PostgreSQL**.
 
 ## What's Been Set Up
 

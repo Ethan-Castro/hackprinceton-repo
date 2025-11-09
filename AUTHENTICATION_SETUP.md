@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Gateway now features **optional authentication** with Neon PostgreSQL database storage. Users can:
+Augment now features **optional authentication** with Neon PostgreSQL database storage. Users can:
 
 - **Use without an account** - Full functionality, no sign-up required
 - **Create an account** - Save chat history, projects, and health data across devices

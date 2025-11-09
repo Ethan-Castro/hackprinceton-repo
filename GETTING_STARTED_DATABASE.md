@@ -1,6 +1,6 @@
 # Getting Started with Database Storage
 
-Welcome! Your AI Gateway application now has persistent database storage fully configured. This guide will help you get up and running in just a few minutes.
+Welcome! Your Augment application now has persistent database storage fully configured. This guide will help you get up and running in just a few minutes.
 
 ## 📍 Current Status
 

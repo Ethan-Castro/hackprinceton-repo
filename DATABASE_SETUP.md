@@ -1,6 +1,6 @@
 # Database Setup Guide
 
-This guide will help you set up and initialize the PostgreSQL database for the AI Gateway application using Neon.
+This guide will help you set up and initialize the PostgreSQL database for the Augment application using Neon.
 
 ## Quick Start
 

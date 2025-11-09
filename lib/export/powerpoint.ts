@@ -47,7 +47,7 @@ export async function generatePowerPoint(
 ): Promise<Buffer> {
   const {
     title = 'Presentation',
-    author = 'AI Gateway',
+    author = 'Augment',
     subject = 'Generated Presentation',
     theme = 'default',
   } = options;

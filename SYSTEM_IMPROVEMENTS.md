@@ -1,7 +1,7 @@
 # System Improvements Summary
 
 ## Overview
-This document outlines the comprehensive improvements made to the AI Gateway system, including enhanced markdown support, reasoning capabilities, and a thoroughly improved system prompt.
+This document outlines the comprehensive improvements made to the Augment system, including enhanced markdown support, reasoning capabilities, and a thoroughly improved system prompt.
 
 ---
 

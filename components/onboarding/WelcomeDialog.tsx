@@ -26,7 +26,7 @@ export function WelcomeDialog({ open, onStart, onSkip }: WelcomeDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" />
-            Welcome to AI Gateway
+            Welcome to Augment
           </DialogTitle>
           <DialogDescription>
             Your personal AI-powered assistant for health, business, education, and more

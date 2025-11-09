@@ -9,13 +9,13 @@ export interface ModelDefinition {
 }
 
 const MODEL_DEFINITIONS: ModelDefinition[] = [
-  { id: 'cerebras/llama3.1-8b', name: 'Llama 3.1 8B (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/llama-3.3-70b', name: 'Llama 3.3 70B (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/gpt-oss-120b', name: 'GPT-OSS 120B (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/qwen-3-235b-a22b-instruct-2507', name: 'Qwen 3 235B Instruct (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/qwen-3-235b-a22b-thinking-2507', name: 'Qwen 3 235B Thinking (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/qwen-3-32b', name: 'Qwen 3 32B (Cerebras)', provider: 'cerebras' },
-  { id: 'cerebras/qwen-3-coder-480b', name: 'Qwen 3 Coder 480B (Cerebras)', provider: 'cerebras' },
+  { id: 'cerebras/llama3.1-8b', name: 'Llama 3.1 8B ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/llama-3.3-70b', name: 'Llama 3.3 70B ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/gpt-oss-120b', name: 'GPT-OSS 120B ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/qwen-3-235b-a22b-instruct-2507', name: 'Qwen 3 235B Instruct ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/qwen-3-235b-a22b-thinking-2507', name: 'Qwen 3 235B Thinking ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/qwen-3-32b', name: 'Qwen 3 32B ⚡️', provider: 'cerebras' },
+  { id: 'cerebras/qwen-3-coder-480b', name: 'Qwen 3 Coder 480B ⚡️', provider: 'cerebras' },
   { id: 'anthropic/claude-sonnet-4.5', name: 'Claude Sonnet 4.5', provider: 'gateway' },
   { id: 'anthropic/claude-haiku-4.5', name: 'Claude Haiku 4.5', provider: 'gateway' },
   { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'gateway' },

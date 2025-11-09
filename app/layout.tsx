@@ -28,16 +28,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>AI Gateway</title>
+        <title>Augment</title>
         <meta name="description" content="Your personal AI-powered assistant for health, business, education, and more" />
         {/* PWA Meta Tags */}
         <meta name="theme-color" content="#4285f4" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="AI Gateway" />
+        <meta name="apple-mobile-web-app-title" content="Augment" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

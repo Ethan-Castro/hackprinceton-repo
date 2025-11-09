@@ -1,5 +1,9 @@
 A simple [Next.js](https://nextjs.org) chatbot app to demonstrate the use of the Vercel AI Gateway with the [AI SDK](https://sdk.vercel.ai).
 
+## 🚀 Live Demo
+
+**Production URL**: [https://vercel.com/ethan-6436s-projects/augment-hack](https://vercel.com/ethan-6436s-projects/augment-hack)
+
 ## Supported Providers
 
 This demo supports multiple AI providers including:

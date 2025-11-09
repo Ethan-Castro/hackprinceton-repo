@@ -1,4 +1,4 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import postgres from 'postgres';
 
 type NeonClient = ReturnType<typeof neon>;
@@ -10,8 +10,6 @@ const POOLED_ENV_KEYS = ['DATABASE_URL', 'POSTGRES_URL', 'POSTGRES_PRISMA_URL'] 
 const UNPOOLED_ENV_KEYS = ['DATABASE_URL_UNPOOLED', 'POSTGRES_URL_NON_POOLING', 'POSTGRES_URL_NO_SSL'] as const;
 const MISSING_ENV_ERROR =
   `Missing database connection string. Set one of ${[...POOLED_ENV_KEYS, ...UNPOOLED_ENV_KEYS].join(', ')} in your environment.`;
-
-neonConfig.fetchConnectionCache = true;
 
 let neonClient: NeonClient | null = null;
 let pgClient: PostgresClient | null = null;

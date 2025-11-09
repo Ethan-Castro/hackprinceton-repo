@@ -2,7 +2,7 @@
 
 ## Overview
 
-Your AI Gateway Demo now has three powerful tools that allow the LLM to create rich, interactive experiences:
+Your Augment Demo now has three powerful tools that allow the LLM to create rich, interactive experiences:
 
 1. **displayArtifact** - Display code, documents, and structured content in a clean container
 2. **displayWebPreview** - Show live previews of web pages with navigation controls  

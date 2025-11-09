@@ -1,6 +1,6 @@
 # ✅ Storage Setup Complete!
 
-Your AI Gateway application now has complete persistent database storage fully configured and documented.
+Your Augment application now has complete persistent database storage fully configured and documented.
 
 ## 🎯 What Was Set Up
 

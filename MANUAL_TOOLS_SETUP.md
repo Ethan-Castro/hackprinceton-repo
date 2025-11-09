@@ -4,7 +4,7 @@ This guide explains how to set up and use the new manual tools that replace Deda
 
 ## Overview
 
-The following tools have been added to your AI gateway:
+The following tools have been added to your Augment application:
 
 ### 1. ArXiv Research Tools (No setup required)
 - **searchArXiv** - Search for peer-reviewed research papers
@@ -80,7 +80,7 @@ To use Google Docs tools, you need:
 ```bash
 1. Go to https://console.cloud.google.com/
 2. Click "Create Project"
-3. Enter a project name (e.g., "AI Gateway Google Docs")
+3. Enter a project name (e.g., "Augment Google Docs")
 4. Click "Create"
 5. Wait for the project to be created
 ```
@@ -130,7 +130,7 @@ GOOGLE_CREDENTIALS_PATH=~/.config/google-credentials.json
 #### 6. Share Google Docs with Service Account
 ```bash
 1. Copy the service account email from the JSON credentials file
-   (It looks like: ai-gateway-docs@project-id.iam.gserviceaccount.com)
+   (It looks like: augment-docs@project-id.iam.gserviceaccount.com)
 2. Open your Google Doc
 3. Click "Share" button
 4. Paste the service account email

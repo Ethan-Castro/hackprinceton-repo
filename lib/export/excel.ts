@@ -23,7 +23,7 @@ export async function generateExcel(
   const {
     sheetName = 'Sheet1',
     title = 'Exported Document',
-    author = 'AI Gateway',
+    author = 'Augment',
   } = options;
 
   const workbook = new ExcelJS.Workbook();

@@ -77,7 +77,7 @@ export function LoginForm({
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
-              <span className="sr-only">AI Gateway</span>
+              <span className="sr-only">Augment</span>
             </a>
             <h1 className="text-xl font-bold">Welcome Back</h1>
             <FieldDescription>

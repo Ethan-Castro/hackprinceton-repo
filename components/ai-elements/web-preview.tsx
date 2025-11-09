@@ -238,7 +238,7 @@ const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
     const { url } = useWebPreview();
     const [isLoading, setIsLoading] = React.useState(true);
 
-    const iframeSrc = src || url;
+    const iframeSrc = src || url || null;
 
     React.useEffect(() => {
       setIsLoading(true);
@@ -251,13 +251,19 @@ const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
             {loading}
           </div>
         )}
-        <iframe
-          ref={ref}
-          src={iframeSrc}
-          className={cn('h-full w-full border-0', className)}
-          onLoad={() => setIsLoading(false)}
-          {...props}
-        />
+        {iframeSrc ? (
+          <iframe
+            ref={ref}
+            src={iframeSrc}
+            className={cn('h-full w-full border-0', className)}
+            onLoad={() => setIsLoading(false)}
+            {...props}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-muted/30">
+            <p className="text-sm text-muted-foreground">No preview available</p>
+          </div>
+        )}
       </div>
     );
   }

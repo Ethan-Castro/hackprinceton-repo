@@ -2,7 +2,7 @@
  * Database Initialization Module
  * 
  * This module handles creating and initializing all required database tables
- * for the AI Gateway application. Run this before starting the application
+ * for the Augment application. Run this before starting the application
  * if tables don't exist.
  */
 
@@ -85,7 +85,7 @@ const SCHEMA_DEFINITIONS = {
     );
   `,
 
-  // AI Gateway Generations - for tracking generation IDs and metrics
+  // Augment Generations - for tracking generation IDs and metrics
   generations: `
     CREATE TABLE IF NOT EXISTS generations (
       id SERIAL PRIMARY KEY,

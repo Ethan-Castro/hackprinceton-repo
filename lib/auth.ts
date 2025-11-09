@@ -49,7 +49,34 @@ export interface User {
 
 /**
  * NextAuth configuration
+ * 
+ * Note: For production, ensure NEXTAUTH_SECRET and NEXTAUTH_URL are set in environment variables.
+ * For development, defaults are provided to reduce warnings.
  */
+// Set environment variables if not already set (development only)
+if (process.env.NODE_ENV !== 'production') {
+  if (!process.env.NEXTAUTH_SECRET) {
+    process.env.NEXTAUTH_SECRET = 'development-secret-change-in-production';
+  }
+  if (!process.env.NEXTAUTH_URL) {
+    process.env.NEXTAUTH_URL = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+  }
+}
+
+const getNextAuthSecret = (): string => {
+  // In production, secret must be set
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
+    throw new Error('NEXTAUTH_SECRET is required in production');
+  }
+  return process.env.NEXTAUTH_SECRET!;
+};
+
+const getNextAuthUrl = (): string | undefined => {
+  return process.env.NEXTAUTH_URL;
+};
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -152,7 +179,8 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: getNextAuthSecret(),
+  url: getNextAuthUrl(),
 };
 
 /**

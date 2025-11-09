@@ -28,7 +28,7 @@ export async function generatePdf(
 ): Promise<Buffer> {
   const {
     title = content.title,
-    author = 'AI Gateway',
+    author = 'Augment',
     subject = 'Generated Document',
     includeTableOfContents = true,
     margin = 15,
