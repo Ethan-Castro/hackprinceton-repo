@@ -1,4 +1,7 @@
-import { Template } from './engine';
+import type { Template } from './engine';
+
+// Re-export Template type for use in other files
+export type { Template };
 
 // Business Templates
 export const BUSINESS_TEMPLATES: Template[] = [

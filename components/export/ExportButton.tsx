@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, FileText, FileSpreadsheet, FilePresentation } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Presentation } from 'lucide-react';
 import { ExportDialog } from './ExportDialog';
 
 interface ExportContent {
@@ -62,7 +62,7 @@ export function ExportButton({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowDialog(true)}>
-            <FilePresentation className="w-4 h-4 mr-2" />
+            <Presentation className="w-4 h-4 mr-2" />
             <span>PowerPoint Presentation</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -100,16 +100,14 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
 
       // Extract React code from the response
       const extractedCode = extractReactCode(generatedCode);
-      console.log("[V0 Clone] Extracted code:", extractedCode ? `${extractedCode.length} chars` : "null");
+      console.log("[V0 Clone] Extracted code:", extractedCode ? `${(extractedCode as any).length || 'object'} chars` : "null");
       
       if (extractedCode) {
         // Generate CodeSandbox preview URL
         console.log("[V0 Clone] Creating CodeSandbox URL...");
         try {
-          const sandboxUrl = createCodeSandboxUrl(
-            extractedCode,
-            `GPT-OSS-120B UI - ${new Date().toLocaleTimeString()}`
-          );
+          const codeString = typeof extractedCode === 'string' ? extractedCode : (extractedCode as any).code || '';
+          const sandboxUrl = createCodeSandboxUrl(codeString);
           console.log("[V0 Clone] CodeSandbox URL:", sandboxUrl);
           setPreviewUrl(sandboxUrl);
 
@@ -117,7 +115,7 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
           const assistantMessage: Message = {
             id: Date.now().toString(),
             role: "assistant",
-            content: `✨ **Generated with GPT-OSS-120B**\n\nYour UI is ready! Check the live preview on the right →\n\n<details>\n<summary>📝 View Source Code (${extractedCode.length} chars)</summary>\n\n\`\`\`tsx\n${extractedCode}\n\`\`\`\n</details>`,
+            content: `✨ **Generated with GPT-OSS-120B**\n\nYour UI is ready! Check the live preview on the right →\n\n<details>\n<summary>📝 View Source Code (${codeString.length} chars)</summary>\n\n\`\`\`tsx\n${codeString}\n\`\`\`\n</details>`,
             createdAt: new Date().toISOString(),
           };
 

@@ -43,8 +43,8 @@ interface WebPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const WebPreview = React.forwardRef<HTMLDivElement, WebPreviewProps>(
   ({ defaultUrl = '', onUrlChange, className, children, ...props }, ref) => {
-    const [url, setUrlState] = React.useState(defaultUrl);
-    const [history, setHistory] = React.useState<string[]>([defaultUrl]);
+    const [url, setUrlState] = React.useState(defaultUrl || '');
+    const [history, setHistory] = React.useState<string[]>(defaultUrl ? [defaultUrl] : []);
     const [historyIndex, setHistoryIndex] = React.useState(0);
     const [refreshKey, setRefreshKey] = React.useState(0);
 

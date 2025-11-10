@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAvailableModels } from "@/lib/hooks/use-available-models";
 
 export function useModelManager(initialModelId: string) {
   const { models, isLoading, error, providers } = useAvailableModels();
-  const [currentModelId, setCurrentModelId] = useState(initialModelId);
+  const [currentModelId, setCurrentModelIdState] = useState(initialModelId);
+
+  // Use useCallback to memoize the setter to prevent infinite loops
+  const setCurrentModelId = useCallback((newModelId: string) => {
+    setCurrentModelIdState(newModelId);
+  }, []);
 
   useEffect(() => {
     setCurrentModelId(initialModelId);
-  }, [initialModelId]);
+  }, [initialModelId, setCurrentModelId]);
 
   useEffect(() => {
     if (!models.length) return;
@@ -17,7 +22,7 @@ export function useModelManager(initialModelId: string) {
     if (!hasCurrent) {
       setCurrentModelId(models[0].id);
     }
-  }, [models, currentModelId]);
+  }, [models]); // Removed currentModelId from dependency array to prevent infinite loop
 
   return {
     models,

@@ -314,7 +314,7 @@ export function GenericToolRenderer({
             </div>
           )}
 
-          {data.output && data.state === "output-available" && (
+          {(data.output && data.state === "output-available") ? (
             <div className="space-y-1.5">
               <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Output
@@ -322,12 +322,12 @@ export function GenericToolRenderer({
               <div className="rounded-md bg-muted/50 p-3 text-xs font-mono overflow-x-auto">
                 <pre className="whitespace-pre-wrap break-words">
                   {typeof data.output === "string"
-                    ? data.output
+                    ? (data.output as string)
                     : JSON.stringify(data.output, null, 2)}
                 </pre>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

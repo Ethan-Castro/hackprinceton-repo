@@ -4,15 +4,17 @@ import React from 'react';
 import { NodeToolbar } from '@xyflow/react';
 import { cn } from '@/lib/utils';
 
+type Position = NonNullable<React.ComponentProps<typeof NodeToolbar>['position']>;
+
 interface ToolbarProps extends Omit<React.ComponentProps<typeof NodeToolbar>, 'position'> {
   children: React.ReactNode;
   className?: string;
-  position?: React.ComponentProps<typeof NodeToolbar>['position'];
+  position?: Position;
 }
 
 export function Toolbar({ children, className, position, ...props }: ToolbarProps) {
   return (
-    <NodeToolbar position={position ?? ('bottom' as const)} {...props}>
+    <NodeToolbar position={position ?? ('bottom' as Position)} {...props}>
       <div className={cn('flex gap-1 rounded-lg border bg-card p-1 shadow-lg', className)}>
         {children}
       </div>

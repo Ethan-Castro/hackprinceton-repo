@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
-import { Loader2, FileText, FileSpreadsheet, FilePresentation } from 'lucide-react';
+import { Loader2, FileText, FileSpreadsheet, Presentation } from 'lucide-react';
 import { downloadPdf } from '@/lib/export/pdf';
 import { downloadExcel } from '@/lib/export/excel';
 import { downloadPowerPoint } from '@/lib/export/powerpoint';
@@ -153,7 +153,7 @@ export function ExportDialog({
                 <RadioGroupItem value="powerpoint" id="powerpoint" />
                 <Label htmlFor="powerpoint" className="flex-1 cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <FilePresentation className="w-4 h-4" />
+                    <Presentation className="w-4 h-4" />
                     <span className="font-medium">PowerPoint</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
