@@ -42,7 +42,7 @@ export async function generateExcel(
       pattern: 'solid',
       fgColor: { argb: 'FF4285F4' },
     };
-    headerRow.alignment = { horizontal: 'center', vertical: 'center' };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
     // Add data rows
     for (const rowData of sheetData.rows) {

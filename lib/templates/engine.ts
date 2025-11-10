@@ -62,7 +62,6 @@ export class TemplateEngine {
         model: gateway('anthropic/claude-sonnet-4.5'),
         prompt,
         temperature: 0.7,
-        maxTokens: 1000,
       });
 
       return result.text;

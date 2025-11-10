@@ -109,7 +109,7 @@ export function createChatAgent(modelId: string) {
       ? {
           tools,
           stopWhen: stepCountIs(10),
-          onStepFinish: createToolLogger("Chat"),
+          onStepFinish: createToolLogger<typeof tools>("Chat"),
         }
       : {};
 

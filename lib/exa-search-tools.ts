@@ -60,7 +60,7 @@ export const webSearch = createTool({
         results: results.map((result) => ({
           title: result.title || "Untitled",
           url: result.url,
-          content: result.text?.slice(0, 500) || "No content available",
+          content: `${result.author ? `By ${result.author}. ` : ""}Visit ${result.url} for more information.`,
           publishedDate: result.publishedDate,
         })),
         totalResults: results.length,

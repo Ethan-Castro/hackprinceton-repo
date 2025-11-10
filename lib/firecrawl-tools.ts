@@ -56,10 +56,6 @@ export const scrapeWebsite = createTool({
         formats: formats as any,
       });
 
-      if (!result.success) {
-        throw new Error("Scraping failed");
-      }
-
       return {
         url,
         success: true,

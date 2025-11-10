@@ -55,7 +55,15 @@ export async function query<T = Record<string, unknown>>(
   params: unknown[] = []
 ): Promise<T[]> {
   const client = getNeonClient();
-  return client.query<T>(sqlText, params);
+  const result = await client.query(sqlText, params);
+  // Handle different return types from neon client
+  if (Array.isArray(result)) {
+    return result as T[];
+  }
+  if (result && typeof result === 'object' && 'rows' in result) {
+    return (result as { rows: T[] }).rows;
+  }
+  return result as T[];
 }
 
 export async function queryOne<T = Record<string, unknown>>(
@@ -84,14 +92,18 @@ export async function queryWithPostgres<T = Record<string, unknown>>(
   ...params: unknown[]
 ): Promise<T[]> {
   const client = getPostgresClient();
-  return client<T>(strings, ...params);
+  // Call without type argument and cast result
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (client as any)(strings, ...params);
+  return result as T[];
 }
 
 export async function withTransaction<T>(
   work: (sql: PostgresClient) => Promise<T>
 ): Promise<T> {
   const client = getPostgresClient();
-  return client.begin(work);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (client as any).begin(work) as Promise<T>;
 }
 
 export async function closeDatabaseClients() {

@@ -58,16 +58,6 @@ export async function generatePowerPoint(
 
   const themeColors = THEMES[theme];
 
-  // Set theme
-  prs.theme = {
-    name: theme,
-    colors: [
-      themeColors.primaryColor,
-      themeColors.secondaryColor,
-      themeColors.backgroundColor,
-    ],
-  };
-
   // Title slide
   const titleSlide = prs.addSlide();
   titleSlide.background = { color: themeColors.primaryColor };
@@ -106,6 +96,7 @@ export async function generatePowerPoint(
   });
 
   // Content slides
+  let slideNumber = 1;
   for (const slideData of content.slides) {
     const slide = prs.addSlide();
     slide.background = { color: themeColors.backgroundColor };
@@ -179,7 +170,7 @@ export async function generatePowerPoint(
     }
 
     // Footer
-    slide.addText(`Page ${prs.slides.length - 1}`, {
+    slide.addText(`Page ${slideNumber}`, {
       x: 0.5,
       y: 7,
       w: 9,
@@ -188,10 +179,12 @@ export async function generatePowerPoint(
       color: themeColors.secondaryColor,
       align: 'right',
     });
+    
+    slideNumber++;
   }
 
   // Get buffer
-  const buffer = await prs.writeFile({ outputType: 'arraybuffer' });
+  const buffer = await prs.write({ outputType: 'arraybuffer' } as any);
   return Buffer.from(buffer as ArrayBuffer);
 }
 

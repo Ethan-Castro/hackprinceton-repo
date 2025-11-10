@@ -167,7 +167,7 @@ export async function createHealthAgent(modelId: string) {
       ? {
           tools: allTools,
           stopWhen: stepCountIs(10),
-          onStepFinish: createToolLogger("Health Chat"),
+          onStepFinish: createToolLogger<typeof allTools>("Health Chat"),
         }
       : {}),
   });

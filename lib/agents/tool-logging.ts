@@ -1,6 +1,7 @@
 import type { GenerateTextOnStepFinishCallback } from "ai";
 
-export function createToolLogger(namespace: string): GenerateTextOnStepFinishCallback<Record<string, any>> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createToolLogger<TOOLS extends Record<string, any>>(namespace: string): GenerateTextOnStepFinishCallback<TOOLS> {
   return ({ toolCalls, toolResults }) => {
     if (toolCalls && toolCalls.length > 0) {
       console.log(`[${namespace}] Tool calls:`, toolCalls.map((tc) => ({

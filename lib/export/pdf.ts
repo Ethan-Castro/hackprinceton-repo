@@ -54,7 +54,7 @@ export async function generatePdf(
 
   // Cover page
   doc.setFontSize(32);
-  doc.setFont(undefined, 'bold');
+  doc.setFont('helvetica', 'bold');
   const titleLines = doc.splitTextToSize(title, contentWidth);
   titleLines.forEach((line: string) => {
     doc.text(line, margin, yPosition);
@@ -62,7 +62,7 @@ export async function generatePdf(
   });
 
   doc.setFontSize(12);
-  doc.setFont(undefined, 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(128, 128, 128);
   doc.text(`Generated on ${new Date().toLocaleDateString()}`, margin, yPosition + 20);
   doc.text(`By ${author}`, margin, yPosition + 30);
@@ -74,13 +74,13 @@ export async function generatePdf(
   // Table of Contents
   if (includeTableOfContents && content.sections.length > 0) {
     doc.setFontSize(16);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text('Table of Contents', margin, yPosition);
     yPosition += 10;
 
     doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     content.sections.forEach((section, index) => {
       doc.text(`${index + 1}. ${section.title}`, margin + 5, yPosition);
       yPosition += 6;
@@ -99,14 +99,14 @@ export async function generatePdf(
 
     // Section title
     doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text(section.title, margin, yPosition);
     yPosition += 8;
 
     // Section content
     doc.setFontSize(11);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     const lines = doc.splitTextToSize(section.content, contentWidth);
 
     lines.forEach((line: string) => {
@@ -131,7 +131,7 @@ export async function generatePdf(
 
       // Table title
       doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text(table.title, margin, yPosition);
       yPosition += 8;
 
@@ -142,7 +142,7 @@ export async function generatePdf(
         startY: yPosition,
         margin: margin,
         theme: 'grid',
-        headerStyles: {
+        headStyles: {
           fillColor: [66, 133, 244],
           textColor: 255,
           fontStyle: 'bold',
