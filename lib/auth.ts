@@ -66,11 +66,16 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const getNextAuthSecret = (): string => {
-  // In production, secret must be set
+  // During build time, use a placeholder to allow builds to complete
+  // The actual secret will be validated at runtime
+  if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_RUNTIME === undefined) {
+    return process.env.NEXTAUTH_SECRET || 'build-time-placeholder-secret';
+  }
+  // In production runtime, secret must be set
   if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
     throw new Error('NEXTAUTH_SECRET is required in production');
   }
-  return process.env.NEXTAUTH_SECRET!;
+  return process.env.NEXTAUTH_SECRET || 'development-secret-change-in-production';
 };
 
 const getNextAuthUrl = (): string | undefined => {

@@ -3,6 +3,11 @@ import type { Template } from './engine';
 // Re-export Template type for use in other files
 export type { Template };
 
+// Helper to create dollar sign + placeholder strings that TypeScript won't interpret as object shorthand
+const dollarPlaceholder = (placeholder: string): string => {
+  return '${{' + placeholder + '}}';
+};
+
 // Business Templates
 export const BUSINESS_TEMPLATES: Template[] = [
   {
@@ -57,7 +62,7 @@ export const BUSINESS_TEMPLATES: Template[] = [
       {
         title: 'Executive Summary',
         prompt: `Write an executive summary for a SaaS startup called "{{companyName}}" that solves the following problem: {{problem}}.
-                 Target market: {{targetMarket}}. Funding required: $` + `{{fundingRequired}}` + `.
+                 Target market: {{targetMarket}}. Funding required: ${dollarPlaceholder('fundingRequired')}.
                  Make it compelling and concise (150-200 words).`,
         placeholders: ['companyName', 'problem', 'targetMarket', 'fundingRequired'],
       },
@@ -80,13 +85,13 @@ export const BUSINESS_TEMPLATES: Template[] = [
       },
       {
         title: 'Financial Projections',
-        prompt: `Create 3-year financial projections (revenue, expenses, profitability) for {{companyName}} with funding of $` + `{{fundingRequired}}` + `.
+        prompt: `Create 3-year financial projections (revenue, expenses, profitability) for {{companyName}} with funding of ${dollarPlaceholder('fundingRequired')}.
                  Include assumptions and key metrics.`,
         placeholders: ['companyName', 'fundingRequired'],
       },
       {
         title: 'Use of Funds',
-        prompt: `Breakdown the allocation of $` + `{{fundingRequired}}` + ` funding for {{companyName}}. Include team, product development,
+        prompt: `Breakdown the allocation of ${dollarPlaceholder('fundingRequired')} funding for {{companyName}}. Include team, product development,
                  marketing, operations, and contingency.`,
         placeholders: ['fundingRequired', 'companyName'],
       },
@@ -173,7 +178,7 @@ export const BUSINESS_TEMPLATES: Template[] = [
       },
       {
         title: 'Startup Costs & Funding',
-        prompt: `Break down the $` + `{{startupCost}}` + ` startup cost for {{restaurantName}}. Include buildout, equipment,
+        prompt: `Break down the ${dollarPlaceholder('startupCost')} startup cost for {{restaurantName}}. Include buildout, equipment,
                  permits, initial inventory, and working capital.`,
         placeholders: ['startupCost', 'restaurantName'],
       },
@@ -253,7 +258,7 @@ export const BUSINESS_TEMPLATES: Template[] = [
       },
       {
         title: 'Financial Model',
-        prompt: `Create a financial model for {{firmName}} targeting $` + `{{yearOneRevenue}}` + ` in Year 1 revenue.
+        prompt: `Create a financial model for {{firmName}} targeting ${dollarPlaceholder('yearOneRevenue')} in Year 1 revenue.
                  Include utilization rates, billable rates, and profitability.`,
         placeholders: ['firmName', 'yearOneRevenue'],
       },
