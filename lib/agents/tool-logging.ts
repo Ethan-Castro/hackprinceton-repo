@@ -1,6 +1,6 @@
 import type { GenerateTextOnStepFinishCallback } from "ai";
 
-export function createToolLogger(namespace: string): GenerateTextOnStepFinishCallback {
+export function createToolLogger(namespace: string): GenerateTextOnStepFinishCallback<Record<string, any>> {
   return ({ toolCalls, toolResults }) => {
     if (toolCalls && toolCalls.length > 0) {
       console.log(`[${namespace}] Tool calls:`, toolCalls.map((tc) => ({
