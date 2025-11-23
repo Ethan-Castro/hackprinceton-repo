@@ -32,6 +32,7 @@ A comprehensive Next.js application demonstrating the power of the [Vercel AI Ga
 | **Sustainability Studio** | `/sustainability/studio` | Carbon tracking, ESG reports, impact analysis |
 | **Business Analyst** | `/business-analyst` | Data analysis with Python code execution (E2B) |
 | **v0 Clone** | `/v0-clone` | Generic UI generation interface |
+| **Open Lovable** | `/open-lovable` | Open Lovable-inspired flow with overview, generation, and builder pages |
 | **Textbook Studio** | `/textbook-studio` | Educational content creation platform with authentication |
 | **Playground** | `/playground` | Experimental features and testing |
 | **DB Demo** | `/db-demo` | Database integration examples |
@@ -43,6 +44,9 @@ A comprehensive Next.js application demonstrating the power of the [Vercel AI Ga
 - **Business Pages**: `/business/analytics`, `/business/reports`, `/business/strategy`
 - **Education Pages**: `/education/courses`, `/education/quizzes`, `/education/study`
 - **Sustainability Pages**: `/sustainability/carbon`, `/sustainability/esg`, `/sustainability/impact`, `/sustainability/initiatives`, `/sustainability/workflow`, `/sustainability/ai-energy-resources`
+- **Open Lovable Pages**: `/open-lovable` (overview), `/open-lovable/generation` (preview and download), `/open-lovable/builder` (quick mock builder)
+
+Open Lovable flows use Firecrawl for search/scrape; set `FIRECRAWL_API_KEY` in `.env.local`.
 
 ## 🎯 Supported AI Providers
 
@@ -133,6 +137,8 @@ The application exposes the following API endpoints:
 - `POST /api/tts` - Text-to-speech (ElevenLabs)
 - `POST /api/carbon/estimate` - Carbon footprint estimation
 - `POST /api/cerebras-ui-gen` - Cerebras UI generation
+- `POST /api/open-lovable/search` - Firecrawl-powered site search for Open Lovable
+- `POST /api/open-lovable/scrape-website` - Firecrawl scraping for Open Lovable previews
 - `GET /api/reports` - Generate reports
 
 ### Textbook Studio APIs

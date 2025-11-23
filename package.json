@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test:tools": "tsx scripts/test-tools.ts"
+    "test:tools": "tsx scripts/test-tools.ts",
+    "test:models": "tsx scripts/test-models.ts"
   },
   "dependencies": {
     "@ai-sdk/cerebras": "^1.0.29",
@@ -96,6 +97,7 @@
     "@types/three": "^0.181.0",
     "eslint": "^9.25.1",
     "eslint-config-next": "15.3.1",
+    "shadcn": "^3.5.0",
     "tailwindcss": "^4.1.5",
     "tsx": "^4.20.6",
     "typescript": "^5.8.3"

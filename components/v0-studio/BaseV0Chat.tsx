@@ -306,6 +306,7 @@ export function BaseV0Chat({
         body: JSON.stringify({
           message: userMessage,
           chatId: chatId,
+          system: !chatId ? systemPrompt : undefined,
         }),
       });
 

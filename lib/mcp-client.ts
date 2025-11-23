@@ -79,7 +79,7 @@ export async function createHealthMCPClient(config?: MCPConfig) {
 
       case 'stdio': {
         const command = config?.command || process.env.MCP_COMMAND || 'node';
-        const args = config?.args || process.env.MCP_ARGS?.split(' ') || [];
+        const args = config?.args || (process.env.MCP_ARGS ? process.env.MCP_ARGS.split(' ') : []);
 
         if (!args || args.length === 0) {
           console.warn('MCP stdio command args not configured. MCP tools will not be available.');
@@ -99,7 +99,11 @@ export async function createHealthMCPClient(config?: MCPConfig) {
         return null;
     }
   } catch (error) {
-    console.error('Failed to create MCP client:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Failed to create MCP client:', errorMessage);
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
     return null;
   }
 }
@@ -128,8 +132,16 @@ export async function getHealthMCPTools() {
       close: () => mcpClient.close(),
     };
   } catch (error) {
-    console.error('Failed to get MCP tools:', error);
-    await mcpClient.close();
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Failed to get MCP tools:', errorMessage);
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
+    try {
+      await mcpClient.close();
+    } catch (closeError) {
+      console.error('Failed to close MCP client:', closeError);
+    }
     return null;
   }
 }

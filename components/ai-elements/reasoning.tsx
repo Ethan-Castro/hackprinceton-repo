@@ -11,21 +11,24 @@ const ReasoningContext = React.createContext<{
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   isStreaming: boolean;
+  duration?: number;
 }>({
   isOpen: false,
   setIsOpen: () => {},
   isStreaming: false,
+  duration: undefined,
 });
 
 interface ReasoningProps
   extends React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.Root> {
   isStreaming?: boolean;
+  duration?: number;
 }
 
 const Reasoning = React.forwardRef<
   React.ElementRef<typeof CollapsiblePrimitive.Root>,
   ReasoningProps
->(({ className, isStreaming = false, children, ...props }, ref) => {
+>(({ className, isStreaming = false, duration, children, ...props }, ref) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Auto-open when streaming, auto-close when finished
@@ -33,16 +36,16 @@ const Reasoning = React.forwardRef<
     if (isStreaming) {
       setIsOpen(true);
     } else if (!isStreaming && isOpen) {
-      // Add a small delay before closing to allow reading
+      // Add a delay before closing to allow reading (1000ms per AI SDK spec)
       const timer = setTimeout(() => {
         setIsOpen(false);
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [isStreaming, isOpen]);
 
   return (
-    <ReasoningContext.Provider value={{ isOpen, setIsOpen, isStreaming }}>
+    <ReasoningContext.Provider value={{ isOpen, setIsOpen, isStreaming, duration }}>
       <CollapsiblePrimitive.Root
         ref={ref}
         open={isOpen}
@@ -66,7 +69,15 @@ const ReasoningTrigger = React.forwardRef<
   React.ElementRef<typeof CollapsiblePrimitive.Trigger>,
   ReasoningTriggerProps
 >(({ className, title = "Reasoning", ...props }, ref) => {
-  const { isOpen, isStreaming } = React.useContext(ReasoningContext);
+  const { isOpen, isStreaming, duration } = React.useContext(ReasoningContext);
+
+  // Format duration to "Took Xs" or "Took Xms" for very quick responses
+  const durationDisplay =
+    !isStreaming && duration
+      ? duration >= 1000
+        ? `Took ${(duration / 1000).toFixed(1)}s`
+        : `Took ${Math.round(duration)}ms`
+      : null;
 
   return (
     <CollapsiblePrimitive.Trigger
@@ -79,7 +90,7 @@ const ReasoningTrigger = React.forwardRef<
       {...props}
     >
       <div className="flex items-center gap-2">
-        <span>{title}</span>
+        <span>{durationDisplay || title}</span>
         {isStreaming && (
           <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
         )}

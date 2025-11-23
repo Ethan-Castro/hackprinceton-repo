@@ -3,7 +3,6 @@
 import { useChat } from "@ai-sdk/react";
 import { useRouter } from "next/navigation";
 import { ModelSelector } from "@/components/model-selector";
-import { CategorySelector } from "@/components/category-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -139,6 +138,7 @@ export function Chat({
   apiEndpoint?: string;
 }) {
   const [input, setInput] = useState("");
+  const [currentApiEndpoint, setCurrentApiEndpoint] = useState(apiEndpoint);
   const {
     currentModelId,
     setCurrentModelId,
@@ -147,8 +147,8 @@ export function Chat({
     modelsError,
     providers,
   } = useModelManager(modelId);
-  const [category, setCategory] = useState("edu");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastApiEndpointRef = useRef(apiEndpoint);
   const [tokenUsage, setTokenUsage] = useState({
     inputTokens: 0,
     outputTokens: 0,
@@ -156,14 +156,23 @@ export function Chat({
     estimatedCost: 0,
   });
 
-  const handleCategoryChange = (newCategory: string) => {
-    setCategory(newCategory);
-  };
-
   const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat({
-    api: apiEndpoint,
+    api: currentApiEndpoint,
+    id: `chat-${currentApiEndpoint}`,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
+
+  useEffect(() => {
+    if (lastApiEndpointRef.current === apiEndpoint) {
+      return;
+    }
+
+    lastApiEndpointRef.current = apiEndpoint;
+    stop();
+    setMessages([]);
+    setInput("");
+    setCurrentApiEndpoint(apiEndpoint);
+  }, [apiEndpoint, setMessages, stop]);
 
   const hasMessages = messages.length > 0;
   const modelsUnavailable = !modelsLoading && models.length === 0;
@@ -315,10 +324,6 @@ export function Chat({
                     />
                     {renderTokenUsage()}
                   </div>
-                  <CategorySelector
-                    category={category}
-                    onCategoryChange={handleCategoryChange}
-                  />
                   <div className="flex flex-1 items-center">
                     <Input
                       name="prompt"
@@ -1051,10 +1056,6 @@ export function Chat({
                 />
                 {renderTokenUsage()}
               </div>
-              <CategorySelector
-                category={category}
-                onCategoryChange={handleCategoryChange}
-              />
               <div className="flex flex-1 items-center">
                 <Input
                   name="prompt"

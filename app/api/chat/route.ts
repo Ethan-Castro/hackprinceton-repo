@@ -6,19 +6,20 @@ import { queryWithPostgres } from "@/lib/neon";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const {
-    messages,
-    modelId = DEFAULT_MODEL,
-  }: { messages: UIMessage[]; modelId: string } = await req.json();
+  try {
+    const {
+      messages,
+      modelId = DEFAULT_MODEL,
+    }: { messages: UIMessage[]; modelId: string } = await req.json();
 
-  if (!SUPPORTED_MODELS.includes(modelId)) {
-    return new Response(
-      JSON.stringify({ error: `Model ${modelId} is not supported` }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
+    if (!SUPPORTED_MODELS.includes(modelId)) {
+      return new Response(
+        JSON.stringify({ error: `Model ${modelId} is not supported` }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-  const { agent, supportsReasoning } = createChatAgent(modelId);
+    const { agent, supportsReasoning } = createChatAgent(modelId);
 
   const result = agent.stream({
     messages: convertToModelMessages(messages),
@@ -111,7 +112,28 @@ export async function POST(req: Request) {
       console.error("Error while streaming.", error);
     });
 
-  return result.toUIMessageStreamResponse({
-    sendReasoning: supportsReasoning,
-  });
+    return result.toUIMessageStreamResponse({
+      sendReasoning: supportsReasoning,
+    });
+  } catch (error: any) {
+    console.error("[Chat] Error:", error);
+    
+    // Handle API key errors specifically
+    if (error.message?.includes("API_KEY")) {
+      return new Response(
+        JSON.stringify({ 
+          error: error.message,
+          details: "Please check your .env.local file and ensure the required API keys are set"
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || "Failed to process chat request"
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
 }

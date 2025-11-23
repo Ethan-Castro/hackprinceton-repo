@@ -57,6 +57,12 @@ export class TemplateEngine {
   ): Promise<string> {
     const prompt = this.interpolate(section.prompt, variables);
 
+    // Validate API key before generating
+    if (!process.env.AI_GATEWAY_API_KEY) {
+      console.error(`AI_GATEWAY_API_KEY is required for template generation`);
+      return `[Unable to generate content for ${section.title}: AI_GATEWAY_API_KEY is not configured]`;
+    }
+
     try {
       const result = await generateText({
         model: gateway('anthropic/claude-sonnet-4.5'),
@@ -67,6 +73,10 @@ export class TemplateEngine {
       return result.text;
     } catch (error) {
       console.error(`Failed to generate section "${section.title}":`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('API_KEY') || errorMessage.includes('authentication')) {
+        return `[Unable to generate content for ${section.title}: API key configuration issue]`;
+      }
       return `[Unable to generate content for ${section.title}]`;
     }
   }

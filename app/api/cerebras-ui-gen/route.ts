@@ -98,6 +98,17 @@ Start your response with \`\`\`tsx and end with \`\`\` - nothing else.`;
 
 export async function POST(req: NextRequest) {
   try {
+    // Validate API key before processing
+    if (!process.env.CEREBRAS_API_KEY) {
+      return new Response(
+        JSON.stringify({ 
+          error: "CEREBRAS_API_KEY is required",
+          details: "Please add CEREBRAS_API_KEY to your .env.local file"
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const body = await req.json();
     const { message, systemPrompt, conversationHistory } = body;
 

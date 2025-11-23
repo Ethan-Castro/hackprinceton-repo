@@ -39,14 +39,40 @@ const data = {
   ],
   navMain: [
     {
-      title: "General",
-      url: "/playground",
+      title: "Platform",
+      url: "/",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "General Chat",
+          title: "Home",
+          url: "/",
+        },
+        {
+          title: "Main Chat",
+          url: "/chat",
+        },
+        {
+          title: "Playground",
           url: "/playground",
+        },
+        {
+          title: "Open Lovable",
+          url: "/open-lovable",
+          items: [
+            {
+              title: "Overview",
+              url: "/open-lovable",
+            },
+            {
+              title: "Generation",
+              url: "/open-lovable/generation",
+            },
+            {
+              title: "Builder",
+              url: "/open-lovable/builder",
+            },
+          ],
         },
       ],
     },

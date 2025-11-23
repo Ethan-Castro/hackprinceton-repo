@@ -104,10 +104,22 @@ You have access to powerful tools for enhanced content presentation. Use these s
 
 export function createChatAgent(modelId: string) {
   const resolved = resolveModel(modelId);
+
+  // Select appropriate tools for chat context
+  // Prioritize display and artifact tools over specialized domain tools
+  const chatActiveTools: (keyof typeof tools)[] = [
+    "displayArtifact",
+    "displayWebPreview",
+    "generateHtmlPreview",
+  ];
+
   const baseSettings =
     resolved.useTools
       ? {
           tools,
+          toolChoice: "auto" as const, // Model can choose whether to use tools
+          activeTools: chatActiveTools, // Limit to chat-appropriate tools
+          maxToolRoundtrips: 5, // Limit tool usage iterations
           stopWhen: stepCountIs(10),
           onStepFinish: createToolLogger<typeof tools>("Chat"),
         }
