@@ -132,7 +132,7 @@ export default function LandingPage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground font-serif italic leading-relaxed">
-                        "{clip.snippet}"
+                        &ldquo;{clip.snippet}&rdquo;
                       </p>
                     </CardContent>
                     <CardFooter className="pt-0">
