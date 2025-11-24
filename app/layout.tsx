@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { CommandPalette } from "@/components/navigation/CommandPalette";
 import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 import { Toaster } from "react-hot-toast";
@@ -52,6 +52,9 @@ export default function RootLayout({
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset>
+                <div className="fixed left-3 top-3 z-50 md:hidden">
+                  <SidebarTrigger className="shadow-border-medium bg-background/90 backdrop-blur-sm border border-border hover:shadow-border-medium" />
+                </div>
                 {children}
               </SidebarInset>
             </SidebarProvider>

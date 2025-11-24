@@ -139,6 +139,7 @@ export function BaseV0Chat({
   const [input, setInput] = useState("");
   const [chatId, setChatId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,6 +246,15 @@ export function BaseV0Chat({
         const chatMessages = transformApiMessages(chatData.messages || []);
 
         setMessages(chatMessages);
+        const loadedFiles = Array.isArray(chatData.files) ? chatData.files : [];
+        const loadedMainFile =
+          loadedFiles.find(
+            (f: any) =>
+              typeof f?.name === "string" &&
+              (f.name.includes("App") ||
+                f.name.includes("page") ||
+                f.name.includes("index"))
+          ) || loadedFiles[0];
 
         if (chatData.demo || chatData.previewUrl) {
           setPreviewUrl(chatData.demo || chatData.previewUrl || null);
@@ -254,6 +264,11 @@ export function BaseV0Chat({
           );
           setPreviewUrl(matchedChat?.previewUrl || null);
         }
+        setPreviewHtml(
+          loadedMainFile?.content && typeof loadedMainFile.content === "string"
+            ? loadedMainFile.content
+            : null
+        );
       } catch (err: any) {
         console.error("Error loading chat:", err);
         setError(err.message || "Failed to load chat");
@@ -345,6 +360,7 @@ export function BaseV0Chat({
         if (mainFile?.content) {
           console.log("[BaseV0Chat] Setting generated code from:", mainFile.name);
           setGeneratedCode(mainFile.content);
+          setPreviewHtml(mainFile.content);
         }
       } else {
         console.warn("[BaseV0Chat] No files in response");
@@ -383,6 +399,7 @@ export function BaseV0Chat({
     setMessages([]);
     setChatId(null);
     setPreviewUrl(null);
+    setPreviewHtml(null);
     setError(null);
     void fetchSavedChats();
   };
@@ -583,7 +600,10 @@ export function BaseV0Chat({
               </div>
             )}
           </WebPreviewNavigation>
-          <WebPreviewBody src={previewUrl || undefined} />
+          <WebPreviewBody
+            src={previewUrl || undefined}
+            srcDoc={previewHtml || undefined}
+          />
         </WebPreview>
       </div>
     </div>

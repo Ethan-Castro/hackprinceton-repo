@@ -23,6 +23,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 // This is sample data.
 const data = {
@@ -78,6 +79,21 @@ const data = {
               url: "/open-lovable/builder",
             },
           ],
+        },
+      ],
+    },
+    {
+      title: "Experiments",
+      url: "#",
+      icon: Network,
+      items: [
+        {
+          title: "v0 Clone",
+          url: "/experiments",
+        },
+        {
+          title: "Agents",
+          url: "/experiments/agents",
         },
       ],
     },
@@ -178,6 +194,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
+        <div className="flex items-center justify-between px-2 py-2">
+          <span className="text-xs text-muted-foreground">Appearance</span>
+          <ThemeToggle />
+        </div>
         <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />

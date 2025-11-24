@@ -231,18 +231,22 @@ WebPreviewUrl.displayName = 'WebPreviewUrl';
 interface WebPreviewBodyProps
   extends Omit<React.IframeHTMLAttributes<HTMLIFrameElement>, 'loading'> {
   loading?: React.ReactNode;
+  srcDoc?: string;
 }
 
 const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
-  ({ loading, className, src, ...props }, ref) => {
+  ({ loading, className, src, srcDoc, ...props }, ref) => {
     const { url } = useWebPreview();
     const [isLoading, setIsLoading] = React.useState(true);
 
     const iframeSrc = src || url || null;
+    const iframeSrcDoc = srcDoc || undefined;
 
     React.useEffect(() => {
       setIsLoading(true);
-    }, [iframeSrc]);
+    }, [iframeSrc, iframeSrcDoc]);
+
+    const hasContent = Boolean(iframeSrc || iframeSrcDoc);
 
     return (
       <div className="relative flex-1 bg-background">
@@ -251,10 +255,11 @@ const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
             {loading}
           </div>
         )}
-        {iframeSrc ? (
+        {hasContent ? (
           <iframe
             ref={ref}
             src={iframeSrc}
+            srcDoc={iframeSrcDoc}
             className={cn('h-full w-full border-0', className)}
             onLoad={() => setIsLoading(false)}
             {...props}
@@ -335,4 +340,3 @@ export {
   WebPreviewBody,
   WebPreviewConsole,
 };
-

@@ -30,6 +30,7 @@ interface Chat {
 export default function ExperimentsPage() {
   const [message, setMessage] = useState('');
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<
     Array<{
@@ -68,6 +69,11 @@ export default function ExperimentsPage() {
 
       const chat: Chat = await response.json();
       setCurrentChat(chat);
+      const fileHtml =
+        Array.isArray((chat as any).files) && (chat as any).files[0]?.content
+          ? (chat as any).files[0].content
+          : null;
+      setPreviewHtml(fileHtml);
 
       setChatHistory((prev) => [
         ...prev,
@@ -182,7 +188,10 @@ export default function ExperimentsPage() {
               value={currentChat?.demo}
             />
           </WebPreviewNavigation>
-          <WebPreviewBody src={currentChat?.demo} />
+          <WebPreviewBody
+            src={currentChat?.demo}
+            srcDoc={previewHtml ?? undefined}
+          />
         </WebPreview>
       </div>
     </div>

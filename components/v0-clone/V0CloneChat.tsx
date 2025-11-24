@@ -59,6 +59,7 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState<ChatHistoryEntry[]>([]);
   const [currentChat, setCurrentChat] = useState<ChatSummary | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -111,6 +112,11 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
 
       const chat: { id: string; demo: string | null } = await response.json();
       setCurrentChat(chat);
+      const fileHtml =
+        Array.isArray((chat as any).files) && (chat as any).files[0]?.content
+          ? (chat as any).files[0].content
+          : null;
+      setPreviewHtml(fileHtml);
       setChatHistory((prev) => [
         ...prev,
         {
@@ -139,6 +145,7 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
   const handleNewChat = () => {
     setChatHistory([]);
     setCurrentChat(null);
+    setPreviewHtml(null);
     setMessage("");
     setError(null);
   };
@@ -242,6 +249,7 @@ export function V0CloneChat({ className }: V0CloneChatProps) {
           </WebPreviewNavigation>
           <WebPreviewBody
             src={currentChat?.demo ?? undefined}
+            srcDoc={previewHtml ?? undefined}
             loading={<Loader />}
           />
         </WebPreview>
