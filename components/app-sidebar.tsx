@@ -80,6 +80,10 @@ const data = {
             },
           ],
         },
+        {
+          title: "Interactive Insights",
+          url: "/interactive",
+        },
       ],
     },
     {

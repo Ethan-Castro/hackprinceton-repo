@@ -132,10 +132,12 @@ function ModelSelectorHandler({
 
 export function Chat({
   modelId = DEFAULT_MODEL,
-  apiEndpoint = "/api/chat"
+  apiEndpoint = "/api/chat",
+  embedded = false
 }: {
-  modelId: string;
+  modelId?: string;
   apiEndpoint?: string;
+  embedded?: boolean;
 }) {
   const [input, setInput] = useState("");
   const [currentApiEndpoint, setCurrentApiEndpoint] = useState(apiEndpoint);
@@ -176,6 +178,10 @@ export function Chat({
 
   const hasMessages = messages.length > 0;
   const modelsUnavailable = !modelsLoading && models.length === 0;
+  const containerClass = cn(
+    "flex flex-col overflow-hidden relative",
+    embedded ? "min-h-[720px] bg-background" : "h-screen"
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -284,85 +290,85 @@ export function Chat({
   return (
     <>
       <Toaster position="top-center" />
-      <div className="flex flex-col h-screen overflow-hidden">
+      <div className={containerClass}>
         <div className="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex gap-2 animate-fade-in">
-        <Button
-          onClick={handleNewChat}
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 shadow-border-small hover:shadow-border-medium bg-background/80 backdrop-blur-sm border-0 hover:bg-background hover:scale-[1.02] transition-all duration-150 ease"
-        >
-          <PlusIcon className="h-4 w-4" />
-        </Button>
-        <ThemeToggle />
-      </div>
-      {!hasMessages && (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 animate-fade-in">
-          <div className="w-full max-w-2xl text-center space-y-8 md:space-y-12">
-            <h1 className="text-3xl md:text-6xl font-light tracking-tight text-foreground animate-slide-up">
-              <span className="font-mono font-semibold tracking-tight bg-foreground text-background px-4 py-3 rounded-2xl shadow-border-medium">
-                Augment
-              </span>
-            </h1>
-            <ProvidersWarning providers={providers} />
-            <div className="w-full animate-slide-up" style={{ animationDelay: '100ms' }}>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  sendMessage({ text: input }, { body: { modelId: currentModelId } });
-                  setInput("");
-                }}
-              >
-                <div className="flex flex-wrap items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl glass-effect shadow-border-medium transition-all duration-200 ease-out">
-                  <div className="flex items-center gap-2">
-                    <ModelSelectorHandler
-                      modelId={currentModelId}
-                      onModelIdChange={setCurrentModelId}
-                      models={models}
-                      modelsLoading={modelsLoading}
-                      modelsError={modelsError}
-                    />
-                    {renderTokenUsage()}
+          <Button
+            onClick={handleNewChat}
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shadow-border-small hover:shadow-border-medium bg-background/80 backdrop-blur-sm border-0 hover:bg-background hover:scale-[1.02] transition-all duration-150 ease"
+          >
+            <PlusIcon className="h-4 w-4" />
+          </Button>
+          <ThemeToggle />
+        </div>
+        {!hasMessages && (
+          <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 animate-fade-in">
+            <div className="w-full max-w-2xl text-center space-y-8 md:space-y-12">
+              <h1 className="text-3xl md:text-6xl font-light tracking-tight text-foreground animate-slide-up">
+                <span className="font-mono font-semibold tracking-tight bg-foreground text-background px-4 py-3 rounded-2xl shadow-border-medium">
+                  Augment
+                </span>
+              </h1>
+              <ProvidersWarning providers={providers} />
+              <div className="w-full animate-slide-up" style={{ animationDelay: '100ms' }}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendMessage({ text: input }, { body: { modelId: currentModelId } });
+                    setInput("");
+                  }}
+                >
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl glass-effect shadow-border-medium transition-all duration-200 ease-out">
+                    <div className="flex items-center gap-2">
+                      <ModelSelectorHandler
+                        modelId={currentModelId}
+                        onModelIdChange={setCurrentModelId}
+                        models={models}
+                        modelsLoading={modelsLoading}
+                        modelsError={modelsError}
+                      />
+                      {renderTokenUsage()}
+                    </div>
+                    <div className="flex flex-1 items-center">
+                      <Input
+                        name="prompt"
+                        placeholder="Ask a question..."
+                        onChange={(e) => setInput(e.target.value)}
+                        value={input}
+                        autoFocus
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 transition-all duration-150"
+                        onKeyDown={(e) => {
+                          if (e.metaKey && e.key === "Enter") {
+                            sendMessage(
+                              { text: input },
+                              { body: { modelId: currentModelId } },
+                            );
+                            setInput("");
+                          }
+                        }}
+                        disabled={modelsUnavailable}
+                      />
+                      <VoiceInput
+                        onTranscript={(text) => setInput(text)}
+                        disabled={status === "streaming" || modelsUnavailable}
+                      />
+                      <Button
+                        type="submit"
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 rounded-xl hover:bg-muted/50 transition-all duration-150"
+                        disabled={!input.trim() || modelsUnavailable}
+                      >
+                        <SendIcon className="h-4 w-4 transition-transform duration-150 hover:scale-110" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-1 items-center">
-                    <Input
-                      name="prompt"
-                      placeholder="Ask a question..."
-                      onChange={(e) => setInput(e.target.value)}
-                      value={input}
-                      autoFocus
-                      className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 transition-all duration-150"
-                      onKeyDown={(e) => {
-                        if (e.metaKey && e.key === "Enter") {
-                          sendMessage(
-                            { text: input },
-                            { body: { modelId: currentModelId } },
-                          );
-                          setInput("");
-                        }
-                      }}
-                      disabled={modelsUnavailable}
-                    />
-                    <VoiceInput
-                      onTranscript={(text) => setInput(text)}
-                      disabled={status === "streaming" || modelsUnavailable}
-                    />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 rounded-xl hover:bg-muted/50 transition-all duration-150"
-                      disabled={!input.trim() || modelsUnavailable}
-                    >
-                      <SendIcon className="h-4 w-4 transition-transform duration-150 hover:scale-110" />
-                    </Button>
-                  </div>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {hasMessages && (
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full animate-fade-in overflow-hidden">

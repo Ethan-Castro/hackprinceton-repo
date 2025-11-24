@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Chat } from '@/components/chat';
 import { Canvas } from '@/components/ai-elements/canvas';
 import { Connection } from '@/components/ai-elements/connection';
 import { Controls } from '@/components/ai-elements/controls';
@@ -458,6 +459,7 @@ export default function WorkflowPage() {
             <TabsTrigger value="time-saved">Time Saved</TabsTrigger>
             <TabsTrigger value="workflows-changed">Workflows Changed</TabsTrigger>
             <TabsTrigger value="innovation">Innovation</TabsTrigger>
+            <TabsTrigger value="interactive">Interactive</TabsTrigger>
           </TabsList>
         </div>
         
@@ -472,8 +474,60 @@ export default function WorkflowPage() {
         <TabsContent value="innovation" className="flex-1 p-0 m-0 h-full relative border-t mt-0">
           <InnovationWorkflow />
         </TabsContent>
+
+        <TabsContent value="interactive" className="flex-1 overflow-y-auto border-t mt-0 bg-muted/30">
+          <div className="max-w-6xl mx-auto w-full p-6 md:p-8 space-y-6">
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.2em]">
+                    McKinsey Feature
+                  </p>
+                  <h2 className="text-2xl font-semibold leading-tight">The State of AI</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Read the article in-page and collaborate with the chat assistant below.
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <a
+                    href="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open article
+                  </a>
+                </Button>
+              </div>
+              <div className="rounded-2xl overflow-hidden border bg-background shadow-sm">
+                <iframe
+                  src="https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai"
+                  title="McKinsey: The State of AI"
+                  className="w-full h-[75vh] min-h-[520px]"
+                  loading="lazy"
+                  allowFullScreen
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If the site blocks embedding, use the button above to open the article directly.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-background shadow-sm p-4 md:p-6 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="text-lg font-semibold">Interactive Chat</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Capture insights, summarize sections, or ask follow-up questions.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl border bg-muted/20 overflow-hidden">
+                <Chat embedded />
+              </div>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
-
