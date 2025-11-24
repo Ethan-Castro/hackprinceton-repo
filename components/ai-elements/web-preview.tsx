@@ -239,7 +239,7 @@ const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
     const { url } = useWebPreview();
     const [isLoading, setIsLoading] = React.useState(true);
 
-    const iframeSrc = src || url || null;
+    const iframeSrc = src || url || undefined;
     const iframeSrcDoc = srcDoc || undefined;
 
     React.useEffect(() => {
