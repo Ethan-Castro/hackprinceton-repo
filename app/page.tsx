@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const container = {
   hidden: { opacity: 0 },
@@ -72,32 +73,35 @@ const executiveReports = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background p-6 md:p-12 font-sans">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <div className="min-h-screen bg-background px-4 py-8 sm:px-6 md:px-12 font-sans">
+      <div className="max-w-7xl mx-auto space-y-12 md:space-y-16">
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
         
         {/* Hero Section */}
         <motion.section 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col items-start justify-center space-y-6 pt-12 md:pt-24 pb-12"
+          className="flex flex-col items-start justify-center space-y-5 sm:space-y-6 pt-8 sm:pt-12 md:pt-24 pb-8 sm:pb-12"
         >
           <Badge variant="outline" className="px-4 py-1 text-sm tracking-widest uppercase rounded-full border-primary/20 text-primary/80">
             System Online
           </Badge>
-          <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-foreground">
+          <h1 className="text-4xl sm:text-5xl md:text-8xl font-light tracking-tighter text-foreground">
             Augment <span className="font-serif italic text-muted-foreground">Intelligence</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl font-light leading-relaxed">
+          <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl font-light leading-relaxed text-balance">
             Eliminate the downtime between thought and action. A unified workspace for frictionless, high-performance AI collaboration.
           </p>
-          <div className="flex gap-4 pt-4">
-            <Button size="lg" className="rounded-full text-base px-8 h-12" asChild>
+          <div className="flex w-full flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
+            <Button size="lg" className="rounded-full text-base px-8 h-12 w-full sm:w-auto justify-center" asChild>
               <Link href="/chat">
                 Initialize Workspace <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" className="rounded-full text-base px-8 h-12" asChild>
+            <Button variant="outline" size="lg" className="rounded-full text-base px-8 h-12 w-full sm:w-auto justify-center" asChild>
               <Link href="/playground">
                 View Documentation
               </Link>
@@ -105,14 +109,14 @@ export default function LandingPage() {
           </div>
         </motion.section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
           
           {/* Press Clippings Column */}
           <motion.div 
             variants={container}
             initial="hidden"
             animate="show"
-            className="lg:col-span-7 space-y-8"
+            className="lg:col-span-7 space-y-6 sm:space-y-8"
           >
             <div className="flex items-center gap-2 border-b pb-4 mb-6">
               <FileText className="h-5 w-5 text-muted-foreground" />
@@ -128,7 +132,7 @@ export default function LandingPage() {
                         <span className="text-xs font-bold tracking-wider text-primary">{clip.source}</span>
                         <span className="text-xs text-muted-foreground font-mono">{clip.date}</span>
                       </div>
-                      <CardTitle className="text-xl md:text-2xl font-serif leading-tight">{clip.title}</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl md:text-2xl font-serif leading-tight">{clip.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground font-serif italic leading-relaxed">
@@ -150,12 +154,12 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Executive Reports Column */}
-          <motion.div 
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="lg:col-span-5 space-y-8"
-          >
+            <motion.div 
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="lg:col-span-5 space-y-6 sm:space-y-8"
+            >
              <div className="flex items-center gap-2 border-b pb-4 mb-6">
               <Activity className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">Executive Reports</h2>
@@ -166,18 +170,18 @@ export default function LandingPage() {
                 <motion.div key={i} variants={item}>
                   <Card className="hover:shadow-md transition-shadow duration-300">
                     <CardContent className="p-5">
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <report.icon className="h-4 w-4 text-primary" />
                             <span className="text-xs font-mono text-muted-foreground">{report.id}</span>
                           </div>
                           <h3 className="font-medium text-foreground">{report.title}</h3>
-                          <p className="text-xs text-muted-foreground line-clamp-2 max-w-[260px]">
+                          <p className="text-xs text-muted-foreground line-clamp-2 sm:max-w-[260px]">
                             {report.description}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <div className="text-2xl font-light tracking-tight">{report.metric}</div>
                           <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
                             {report.status}
@@ -193,13 +197,13 @@ export default function LandingPage() {
             {/* Interactive Widget Placeholder */}
             <motion.div 
               variants={item}
-              className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/10 relative overflow-hidden"
+              className="mt-8 p-5 sm:p-6 rounded-2xl bg-primary/5 border border-primary/10 relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Zap className="h-24 w-24" />
               </div>
               <h3 className="text-lg font-medium mb-2">System Status</h3>
-              <div className="space-y-3 font-mono text-sm">
+              <div className="space-y-3 font-mono text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Gateway</span>
                   <span className="text-green-600">Operational</span>
@@ -223,9 +227,9 @@ export default function LandingPage() {
           variants={container}
           initial="hidden"
           animate="show"
-          className="pb-16 space-y-8"
+          className="pb-12 sm:pb-16 space-y-6 sm:space-y-8"
         >
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">
               Impact Dashboard
             </h2>
@@ -234,7 +238,7 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {/* Time Saved */}
             <motion.div variants={item}>
               <Card className="h-full border-none shadow-sm bg-muted/30">
@@ -245,15 +249,15 @@ export default function LandingPage() {
                       TIME SAVED
                     </span>
                   </div>
-                  <CardTitle className="text-xl font-serif">
+                  <CardTitle className="text-lg sm:text-xl font-serif">
                     Operational Latency Removed
                   </CardTitle>
-                  <CardDescription className="text-xs">
+                  <CardDescription className="text-xs sm:text-sm">
                     Reserve this surface for metrics, case studies, or narratives on time reduction.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
+                  <div className="min-h-[140px] sm:min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
                     {/* Time Saved articles / charts / embeds go here */}
                   </div>
                 </CardContent>
@@ -270,15 +274,15 @@ export default function LandingPage() {
                       WORKFLOWS CHANGED
                     </span>
                   </div>
-                  <CardTitle className="text-xl font-serif">
+                  <CardTitle className="text-lg sm:text-xl font-serif">
                     From Linear Tasks to Live Systems
                   </CardTitle>
-                  <CardDescription className="text-xs">
+                  <CardDescription className="text-xs sm:text-sm">
                     Use this canvas for workflow diagrams, before/after stories, and internal runbooks.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
+                  <div className="min-h-[140px] sm:min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
                     {/* Workflows Changed articles / diagrams / embeds go here */}
                   </div>
                 </CardContent>
@@ -295,15 +299,15 @@ export default function LandingPage() {
                       INNOVATION
                     </span>
                   </div>
-                  <CardTitle className="text-xl font-serif">
+                  <CardTitle className="text-lg sm:text-xl font-serif">
                     New Capabilities Unlocked
                   </CardTitle>
-                  <CardDescription className="text-xs">
+                  <CardDescription className="text-xs sm:text-sm">
                     Allocate this area for innovation briefs, feature launches, and speculative explorations.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
+                  <div className="min-h-[140px] sm:min-h-[180px] rounded-xl border border-dashed border-muted-foreground/30 bg-muted/20">
                     {/* Innovation-focused articles / launches / embeds go here */}
                   </div>
                 </CardContent>

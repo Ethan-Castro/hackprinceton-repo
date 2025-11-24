@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
@@ -16,8 +16,13 @@ import {
   BookOpen,
   Leaf,
   Search,
+  Network,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
 interface CommandItem {
@@ -28,12 +33,17 @@ interface CommandItem {
   shortcut?: string;
   group: 'navigation' | 'actions' | 'templates' | 'settings';
   action: () => void;
+  isActive?: boolean;
 }
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const router = useRouter();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  const selectedTheme = theme ?? 'system';
+  const currentVisualTheme = resolvedTheme ?? 'light';
 
   const commands: CommandItem[] = [
     // Navigation
@@ -91,6 +101,17 @@ export function CommandPalette() {
         setOpen(false);
       },
     },
+    {
+      id: 'workflow',
+      label: 'Workflows',
+      description: 'Workflow visualizations and integration patterns',
+      icon: <Network className="w-4 h-4" />,
+      group: 'navigation',
+      action: () => {
+        router.push('/workflow');
+        setOpen(false);
+      },
+    },
 
     // Actions
     {
@@ -128,6 +149,54 @@ export function CommandPalette() {
         router.push('/settings');
         setOpen(false);
       },
+    },
+    {
+      id: 'theme-toggle',
+      label: currentVisualTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+      description: 'Toggle the color theme across the app',
+      shortcut: 'Cmd+Shift+L',
+      icon: currentVisualTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />,
+      group: 'settings',
+      action: () => {
+        setTheme(currentVisualTheme === 'dark' ? 'light' : 'dark');
+        setOpen(false);
+      },
+    },
+    {
+      id: 'theme-light',
+      label: 'Light Mode',
+      description: selectedTheme === 'light' ? 'Currently active' : 'Use light theme on every page',
+      icon: <Sun className="w-4 h-4" />,
+      group: 'settings',
+      action: () => {
+        setTheme('light');
+        setOpen(false);
+      },
+      isActive: selectedTheme === 'light',
+    },
+    {
+      id: 'theme-dark',
+      label: 'Dark Mode',
+      description: selectedTheme === 'dark' ? 'Currently active' : 'Use dark theme on every page',
+      icon: <Moon className="w-4 h-4" />,
+      group: 'settings',
+      action: () => {
+        setTheme('dark');
+        setOpen(false);
+      },
+      isActive: selectedTheme === 'dark',
+    },
+    {
+      id: 'theme-system',
+      label: 'System Theme',
+      description: selectedTheme === 'system' ? 'Following device preference' : 'Match your OS appearance',
+      icon: <Monitor className="w-4 h-4" />,
+      group: 'settings',
+      action: () => {
+        setTheme('system');
+        setOpen(false);
+      },
+      isActive: selectedTheme === 'system',
     },
     {
       id: 'help',
@@ -268,8 +337,9 @@ function CommandItem({ cmd }: CommandItemProps) {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        'relative flex w-full select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none cursor-pointer',
-        isHovering ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground'
+        'relative flex w-full select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none cursor-pointer border border-transparent',
+        isHovering ? 'bg-accent text-accent-foreground' : 'hover:bg-accent hover:text-accent-foreground',
+        cmd.isActive && 'border-primary/40 bg-primary/5'
       )}
     >
       <div className="mr-2 flex h-4 w-4 items-center justify-center">

@@ -115,40 +115,45 @@ export default function StreamingChatPage() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white p-4 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-6">Streaming Chat</h1>
+      <div className="w-64 border-r border-border bg-card/80 backdrop-blur-sm p-4 overflow-y-auto">
+        <h1 className="text-2xl font-semibold mb-6">Streaming Chat</h1>
 
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 mb-2">CHAT MODE</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide">
+            CHAT MODE
+          </h2>
           <div className="space-y-2">
             <button
               onClick={() => setChatMode('general')}
-              className={`w-full text-left px-3 py-2 rounded transition ${
+              type="button"
+              className={`w-full text-left px-3 py-2 rounded-md transition border border-transparent ${
                 chatMode === 'general'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               General Chat
             </button>
             <button
               onClick={() => setChatMode('business')}
-              className={`w-full text-left px-3 py-2 rounded transition ${
+              type="button"
+              className={`w-full text-left px-3 py-2 rounded-md transition border border-transparent ${
                 chatMode === 'business'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               Business Analyst
             </button>
             <button
               onClick={() => setChatMode('analysis')}
-              className={`w-full text-left px-3 py-2 rounded transition ${
+              type="button"
+              className={`w-full text-left px-3 py-2 rounded-md transition border border-transparent ${
                 chatMode === 'analysis'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-muted'
               }`}
             >
               Structured Analysis
@@ -157,11 +162,13 @@ export default function StreamingChatPage() {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-gray-400 mb-2">MODEL</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground mb-2 tracking-wide">
+            MODEL
+          </h2>
           <select
             value={modelId}
             onChange={(e) => setModelId(e.target.value)}
-            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm"
+            className="w-full px-3 py-2 bg-muted border border-border rounded-md text-foreground text-sm"
           >
             <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
             <option value="claude-3-opus-20250219">Claude 3 Opus</option>
@@ -169,7 +176,7 @@ export default function StreamingChatPage() {
           </select>
         </div>
 
-        <div className="text-xs text-gray-400 mt-8">
+        <div className="text-xs text-muted-foreground mt-8 space-y-1.5">
           <p className="mb-2 font-semibold">Features:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Real-time streaming</li>
@@ -181,15 +188,15 @@ export default function StreamingChatPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-background">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="bg-card border-b border-border p-4 shadow-sm">
+          <h2 className="text-lg font-semibold">
             {chatMode === 'general' && 'General Chat'}
             {chatMode === 'business' && 'Business Analyst'}
             {chatMode === 'analysis' && 'Structured Analysis'}
           </h2>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {chatMode === 'general' && 'Ask questions and get streaming responses'}
             {chatMode === 'business' && 'Business-specific analysis and insights'}
             {chatMode === 'analysis' && 'Generate structured business analyses'}
@@ -199,7 +206,7 @@ export default function StreamingChatPage() {
         {/* Messages */}
         <div className="flex-1 overflow-auto p-6 space-y-4">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
                 <p className="text-lg font-semibold mb-2">Start a conversation</p>
                 <p className="text-sm">Messages will stream in real-time</p>
@@ -211,8 +218,8 @@ export default function StreamingChatPage() {
                 <div
                   className={`px-4 py-2 rounded-lg max-w-md whitespace-pre-wrap ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-800'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-foreground'
                   }`}
                 >
                   {msg.content}
@@ -222,11 +229,11 @@ export default function StreamingChatPage() {
           )}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-gray-200 px-4 py-2 rounded-lg">
+              <div className="bg-muted px-4 py-2 rounded-lg">
                 <div className="flex gap-2">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  <div className="w-2 h-2 bg-muted-foreground/70 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-muted-foreground/70 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-muted-foreground/70 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                 </div>
               </div>
             </div>
@@ -234,7 +241,7 @@ export default function StreamingChatPage() {
         </div>
 
         {/* Input */}
-        <div className="bg-white border-t border-gray-200 p-4 shadow-lg">
+        <div className="bg-card border-t border-border p-4 shadow-lg">
           <form onSubmit={handleSendMessage} className="flex gap-2">
             <input
               type="text"
@@ -242,15 +249,15 @@ export default function StreamingChatPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type a message..."
               disabled={isLoading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50"
+              className="flex-1 px-4 py-2 rounded-lg border border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
             />
-            <button
+            <Button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition"
+              className="px-6"
             >
               Send
-            </button>
+            </Button>
           </form>
         </div>
       </div>

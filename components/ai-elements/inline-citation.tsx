@@ -115,7 +115,7 @@ const InlineCitationCardBody = React.forwardRef<
   return (
     <HoverCardContent
       ref={ref}
-      className={cn("w-96 p-0", className)}
+      className={cn("w-full max-w-[calc(100vw-2rem)] sm:w-96 p-0", className)}
       {...props}
     />
   )
@@ -341,4 +341,3 @@ export {
   InlineCitationSource,
   InlineCitationQuote,
 }
-

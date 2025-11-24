@@ -1,29 +1,24 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-
-const PREVIEW_DIR = path.join(process.cwd(), ".next", "cache", "cerebras-previews");
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id");
+  const data = req.nextUrl.searchParams.get("data");
 
-  if (!id) {
-    return NextResponse.json({ error: "id is required" }, { status: 400 });
+  if (!data && !id) {
+    return NextResponse.json({ error: "data or id is required" }, { status: 400 });
   }
 
   try {
-    const filePath = path.join(PREVIEW_DIR, `${id}.html`);
-    const html = await fs.readFile(filePath, "utf8");
-
-    return new NextResponse(html, {
-      status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
-  } catch (error: any) {
-    if (error?.code === "ENOENT") {
-      return NextResponse.json({ error: "Preview not found" }, { status: 404 });
+    if (data) {
+      const html = Buffer.from(data, "base64url").toString("utf8");
+      return new NextResponse(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     }
 
+    return NextResponse.json({ error: "Preview not found" }, { status: 404 });
+  } catch (error: any) {
     console.error("[v0-chat] Preview load error:", error);
     return NextResponse.json(
       { error: "Failed to load preview" },

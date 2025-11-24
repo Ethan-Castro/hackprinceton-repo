@@ -53,6 +53,10 @@ const breadcrumbsMap: Record<string, BreadcrumbItem[]> = {
     { label: 'Home', href: '/' },
     { label: 'Playground', href: '/playground', current: true },
   ],
+  '/workflow': [
+    { label: 'Home', href: '/' },
+    { label: 'Workflows', href: '/workflow', current: true },
+  ],
 };
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {

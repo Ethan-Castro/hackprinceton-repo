@@ -1,5 +1,3 @@
-import { promises as fs } from "fs";
-import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createCerebras } from "@ai-sdk/cerebras";
@@ -10,7 +8,6 @@ const cerebras = createCerebras({
 
 const SUPPORTED_MODELS = ["gpt-oss-120b", "zai-glm-4.6"] as const;
 const DEFAULT_MODEL = SUPPORTED_MODELS[0];
-const PREVIEW_DIR = path.join(process.cwd(), ".next", "cache", "cerebras-previews");
 
 const SYSTEM_PROMPT = `You are an expert frontend developer. Generate a COMPLETE, self-contained HTML document that can be shown in an iframe WITHOUT a build step.
 
@@ -109,14 +106,14 @@ export async function POST(request: NextRequest) {
         : `cerebras-${Date.now()}`);
 
     console.log("[v0-chat] Generated demo URL length:", demoUrl.length);
-    await fs.mkdir(PREVIEW_DIR, { recursive: true });
-    const previewId = responseChatId;
-    const previewPath = path.join(PREVIEW_DIR, `${previewId}.html`);
-    await fs.writeFile(previewPath, cleanedHtml, "utf8");
-    const demoHttpUrl = `${request.nextUrl.origin}/api/v0-chat/preview?id=${encodeURIComponent(previewId)}`;
+    const encodedHtml = Buffer.from(cleanedHtml, "utf8").toString("base64url");
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : request.nextUrl.origin);
+    const demoHttpUrl = `${baseUrl}/api/v0-chat/preview?data=${encodedHtml}&id=${encodeURIComponent(responseChatId)}`;
 
     return NextResponse.json({
-      id: previewId,
+      id: responseChatId,
       demo: demoHttpUrl,
       model: `cerebras/${normalizedModel}`,
       files: [

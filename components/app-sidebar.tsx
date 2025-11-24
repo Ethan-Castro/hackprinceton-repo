@@ -9,6 +9,7 @@ import {
   Leaf,
   GalleryVerticalEnd,
   SquareTerminal,
+  Network,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -55,6 +56,10 @@ const data = {
         {
           title: "Playground",
           url: "/playground",
+        },
+        {
+          title: "Workflows",
+          url: "/workflow",
         },
         {
           title: "Open Lovable",
