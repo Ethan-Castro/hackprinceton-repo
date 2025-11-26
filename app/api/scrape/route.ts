@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     const app = new FirecrawlApp({ apiKey });
 
-    const scrapeResult = await app.scrapeUrl(url, {
+    const scrapeResult = await app.scrape(url, {
       formats: ["markdown"],
     });
 
