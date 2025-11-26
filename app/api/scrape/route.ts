@@ -24,13 +24,13 @@ export async function POST(req: Request) {
 
     const app = new FirecrawlApp({ apiKey });
 
-    const scrapeResult = await app.scrape(url, {
+    const scrapeResult = await app.scrapeUrl(url, {
       formats: ["markdown"],
     });
 
-    if (!scrapeResult) {
+    if (!scrapeResult.success) {
       return NextResponse.json(
-        { error: "Failed to scrape URL" },
+        { error: `Failed to scrape URL: ${scrapeResult.error}` },
         { status: 500 }
       );
     }

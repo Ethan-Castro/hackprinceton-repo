@@ -35,7 +35,7 @@ export const ModelSelector = memo(function ModelSelector({
       onValueChange={onModelChange}
       disabled={isLoading || !!error || !models?.length}
     >
-      <SelectTrigger className="w-9 h-9 md:min-w-[200px] border-0 bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:outline-none focus:border-0 focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl font-medium text-sm p-0 md:px-3 [&_[data-placeholder]]:hidden md:[&_[data-placeholder]]:block [&>svg]:hidden md:[&>svg]:block">
+      <SelectTrigger className="w-9 h-9 md:min-w-[200px] border-0 bg-transparent focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:outline-none focus:border-0 focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-xl font-serif italic text-sm p-0 md:px-3 [&_[data-placeholder]]:hidden md:[&_[data-placeholder]]:block [&>svg]:hidden md:[&>svg]:block text-muted-foreground hover:text-foreground transition-colors">
         <div className="flex items-center justify-center w-full h-full md:hidden">
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -47,12 +47,12 @@ export const ModelSelector = memo(function ModelSelector({
           {isLoading ? (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="text-sm">Loading</span>
+              <span className="text-sm not-italic font-sans">Loading</span>
             </>
           ) : error ? (
-            <span className="text-red-500 text-sm">Error</span>
+            <span className="text-red-500 text-sm not-italic font-sans">Error</span>
           ) : !models?.length ? (
-            <span className="text-sm">No models</span>
+            <span className="text-sm not-italic font-sans">No models</span>
           ) : (
             <SelectValue placeholder="Select model" />
           )}
@@ -61,9 +61,9 @@ export const ModelSelector = memo(function ModelSelector({
 
       <SelectContent className="rounded-2xl border-0 shadow-border-medium bg-popover/95 backdrop-blur-sm animate-scale-in" align="start" sideOffset={4}>
         <SelectGroup>
-          <SelectLabel className="text-xs text-muted-foreground px-2 py-1 transition-colors duration-150">Models</SelectLabel>
+          <SelectLabel className="text-xs text-muted-foreground px-2 py-1 transition-colors duration-150 font-sans not-italic">Models</SelectLabel>
           {models?.map((model) => (
-            <SelectItem key={model.id} value={model.id} className="rounded-lg hover:bg-accent/50 cursor-pointer">
+            <SelectItem key={model.id} value={model.id} className="rounded-lg hover:bg-accent/50 cursor-pointer font-serif italic text-muted-foreground focus:text-foreground focus:bg-accent/50">
               {model.label}
             </SelectItem>
           )) || []}

@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SendIcon, PlusIcon } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { DEFAULT_MODEL } from "@/lib/constants";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { VoiceInput } from "@/components/voice-input";
 import { TextToSpeechButton } from "@/components/text-to-speech-button";
 import { Toaster } from "react-hot-toast";
@@ -218,8 +218,8 @@ export function Chat({
   const hasMessages = messages.length > 0;
   const modelsUnavailable = !modelsLoading && models.length === 0;
   const containerClass = cn(
-    "flex flex-col overflow-hidden relative",
-    embedded ? "min-h-[720px] bg-background" : "h-screen"
+    "flex flex-col relative transition-all duration-500",
+    embedded ? "min-h-[720px] bg-background" : (hasMessages ? "h-screen overflow-hidden" : "min-h-screen overflow-y-auto bg-background")
   );
 
   const scrollToBottom = () => {
@@ -330,6 +330,7 @@ export function Chat({
     <>
       <Toaster position="top-center" />
       <div className={containerClass}>
+        {hasMessages && (
         <div className="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex gap-2 animate-fade-in">
           <Button
             onClick={handleNewChat}
@@ -341,15 +342,22 @@ export function Chat({
           </Button>
           <ThemeToggle />
         </div>
+        )}
         {!hasMessages && (
           <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 animate-fade-in">
             <div className="w-full max-w-2xl text-center space-y-8 md:space-y-12">
-              <h1 className="text-3xl md:text-6xl font-light tracking-tight text-foreground animate-slide-up">
-                <span className="font-mono font-semibold tracking-tight bg-foreground text-background px-4 py-3 rounded-2xl shadow-border-medium">
-                  Augment
-                </span>
-              </h1>
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                <h1 className="text-4xl sm:text-5xl md:text-8xl font-light tracking-tighter text-foreground">
+                  Augment <span className="font-serif italic text-muted-foreground">Intelligence</span>
+                </h1>
+              </motion.div>
+              
               <ProvidersWarning providers={providers} />
+              
               <div className="w-full animate-slide-up" style={{ animationDelay: '100ms' }}>
                 <form
                   onSubmit={(e) => {
@@ -358,7 +366,7 @@ export function Chat({
                     setInput("");
                   }}
                 >
-                  <div className="flex flex-wrap items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl glass-effect shadow-border-medium transition-all duration-200 ease-out">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl glass-effect shadow-border-medium transition-all duration-200 ease-out bg-muted/30 border border-muted-foreground/10">
                     <div className="flex items-center gap-2">
                       <ModelSelectorHandler
                         modelId={currentModelId}
@@ -1118,28 +1126,6 @@ export function Chat({
           </div>
         )}
 
-        <footer className="pb-8 text-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <p className="text-xs md:text-sm text-muted-foreground/80">
-            The models in the list are a small subset of those available in the
-            Vercel AI Gateway.
-            <br />
-            See the{" "}
-            <Button
-              variant="link"
-              asChild
-              className="p-0 h-auto text-xs md:text-sm font-normal transition-opacity duration-150 hover:opacity-80"
-            >
-              <a
-                href="https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fmodel-list&title="
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                model library
-              </a>
-            </Button>{" "}
-            for the full set.
-          </p>
-        </footer>
       </div>
     </>
   );
