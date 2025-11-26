@@ -28,9 +28,9 @@ export async function POST(req: Request) {
       formats: ["markdown"],
     });
 
-    if (!scrapeResult.success) {
+    if (!scrapeResult) {
       return NextResponse.json(
-        { error: `Failed to scrape URL: ${(scrapeResult as any).error}` },
+        { error: "Failed to scrape URL" },
         { status: 500 }
       );
     }
