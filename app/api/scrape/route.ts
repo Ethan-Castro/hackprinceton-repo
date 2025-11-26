@@ -24,22 +24,21 @@ export async function POST(req: Request) {
 
     const app = new FirecrawlApp({ apiKey });
 
-    const scrapeResult = await app.scrape({
-      url,
+    const scrapeResult = await app.scrapeUrl(url, {
       formats: ["markdown"],
     });
 
     if (!scrapeResult.success) {
       return NextResponse.json(
-        { error: `Failed to scrape URL: ${scrapeResult.error}` },
+        { error: `Failed to scrape URL: ${(scrapeResult as any).error}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      text: scrapeResult.data?.[0]?.markdown || "",
-      title: scrapeResult.data?.[0]?.metadata?.title,
-      description: scrapeResult.data?.[0]?.metadata?.description,
+      text: scrapeResult.markdown || "",
+      title: scrapeResult.metadata?.title,
+      description: scrapeResult.metadata?.description,
     });
   } catch (error: any) {
     console.error("Scrape error:", error);
