@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { tool as createTool } from 'ai';
 import { z } from 'zod';
 import { textbookTools } from './textbook-tools';
@@ -19,6 +20,7 @@ import { sendgridTools } from './sendgrid-tools';
 import { elevenlabsTools } from './elevenlabs-tools';
 import { healthMonitoringTools } from './health-monitoring-tools';
 import { providerInsuranceTools } from './provider-insurance-tools';
+import { dashboardTools } from './dashboard-tools';
 
 /**
  * Tool for displaying content in an artifact container
@@ -142,9 +144,16 @@ export const generateHtmlPreview = createTool({
         throw new Error("HTML content cannot be empty");
       }
 
-      // Return the HTML as a data URL for the iframe
-      const encodedHtml = encodeURIComponent(html);
-      const dataUrl = `data:text/html;charset=utf-8,${encodedHtml}`;
+      // Build a data URL that works with arbitrary characters
+      let dataUrl: string;
+      try {
+        const base64 = Buffer.from(html, "utf-8").toString("base64");
+        dataUrl = `data:text/html;base64,${base64}`;
+      } catch {
+        // Fallback for environments without Buffer (unlikely in our API route)
+        const encodedHtml = encodeURIComponent(html);
+        dataUrl = `data:text/html;charset=utf-8,${encodedHtml}`;
+      }
 
       return {
         html,
@@ -182,6 +191,5 @@ export const tools = {
   ...elevenlabsTools,
   ...healthMonitoringTools,
   ...providerInsuranceTools,
+  ...dashboardTools,
 };
-
-

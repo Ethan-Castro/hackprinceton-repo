@@ -1,18 +1,32 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const [nextBaseConfig = {}, nextTypescriptConfig = {}, ...remainingConfigs] =
+  nextCoreWebVitals;
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
+const extendedRemainingConfigs = remainingConfigs.map((config) => {
+  if (config?.ignores) {
+    return {
+      ...config,
+      ignores: [...config.ignores, ".vercel/**", "node_modules.bak/**"],
+    };
+  }
+
+  return config;
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    ...nextBaseConfig,
     rules: {
+      ...(nextBaseConfig.rules ?? {}),
+      "@next/next/no-img-element": "off",
+      "@next/next/no-html-link-for-pages": "off",
+    },
+  },
+  {
+    ...nextTypescriptConfig,
+    rules: {
+      ...(nextTypescriptConfig.rules ?? {}),
       "@typescript-eslint/no-explicit-any": "off",
       // Treat unused vars as warnings and allow underscore-prefixed values
       "@typescript-eslint/no-unused-vars": [
@@ -24,10 +38,9 @@ const eslintConfig = [
       ],
       "no-unused-vars": "off",
       "@typescript-eslint/no-empty-object-type": "off",
-      "@next/next/no-img-element": "off",
-      "@next/next/no-html-link-for-pages": "off",
     },
   },
+  ...extendedRemainingConfigs,
 ];
 
 export default eslintConfig;

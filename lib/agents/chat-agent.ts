@@ -102,7 +102,7 @@ You have access to powerful tools for enhanced content presentation. Use these s
   return systemSections.join("\n\n");
 }
 
-export function createChatAgent(modelId: string) {
+export function createChatAgent(modelId: string, additionalSystemPrompt?: string) {
   const resolved = resolveModel(modelId);
 
   // Select appropriate tools for chat context
@@ -125,9 +125,14 @@ export function createChatAgent(modelId: string) {
         }
       : {};
 
+  const baseSystemPrompt = buildChatSystemPrompt(resolved.useTools);
+  const systemPrompt = additionalSystemPrompt 
+    ? `${baseSystemPrompt}\n\n${additionalSystemPrompt}`
+    : baseSystemPrompt;
+
   const agent = new Agent({
     model: resolved.model,
-    system: buildChatSystemPrompt(resolved.useTools),
+    system: systemPrompt,
     ...baseSettings,
   });
 

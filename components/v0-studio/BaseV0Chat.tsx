@@ -360,7 +360,11 @@ export function BaseV0Chat({
         if (mainFile?.content) {
           console.log("[BaseV0Chat] Setting generated code from:", mainFile.name);
           setGeneratedCode(mainFile.content);
-          setPreviewHtml(mainFile.content);
+          // Don't set previewHtml when we have a previewUrl - the URL will handle rendering
+          // Only set previewHtml if there's no demo URL (fallback for inline rendering)
+          if (!data.demo) {
+            setPreviewHtml(mainFile.content);
+          }
         }
       } else {
         console.warn("[BaseV0Chat] No files in response");

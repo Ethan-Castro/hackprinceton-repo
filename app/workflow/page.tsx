@@ -15,10 +15,27 @@ import {
   NodeTitle,
 } from '@/components/ai-elements/node';
 import { Panel } from '@/components/ai-elements/panel';
-import { Toolbar } from '@/components/ai-elements/toolbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Activity,
+  Code2,
+  Database,
+  GitBranch,
+  LayoutDashboard,
+  Plug,
+  Rocket,
+  ShieldCheck,
+} from 'lucide-react';
 
 // Node Types Definition
 const nodeTypes = {
@@ -29,40 +46,21 @@ const nodeTypes = {
       label: string;
       description: string;
       handles: { target: boolean; source: boolean };
-      content: string;
-      footer: string;
-      status?: 'default' | 'success' | 'warning' | 'error';
+      content?: string;
+      footer?: string;
     };
   }) => (
     <Node handles={data.handles}>
       <NodeHeader>
-        <div className="flex items-center justify-between">
-          <NodeTitle>{data.label}</NodeTitle>
-          {data.status && (
-            <Badge 
-              variant={data.status === 'default' ? 'secondary' : data.status === 'success' ? 'default' : data.status === 'warning' ? 'outline' : 'destructive'} 
-              className="text-[10px] h-5 px-1.5"
-            >
-              {data.status.toUpperCase()}
-            </Badge>
-          )}
-        </div>
+        <NodeTitle>{data.label}</NodeTitle>
         <NodeDescription>{data.description}</NodeDescription>
       </NodeHeader>
       <NodeContent>
-        <p className="text-sm text-muted-foreground">{data.content}</p>
+        <p className="text-sm text-muted-foreground">{data.content || 'test'}</p>
       </NodeContent>
       <NodeFooter>
-        <p className="text-muted-foreground text-xs font-mono">{data.footer}</p>
+        <p className="text-muted-foreground text-xs font-mono">{data.footer || 'test'}</p>
       </NodeFooter>
-      <Toolbar>
-        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs">
-          Details
-        </Button>
-        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs">
-          Logs
-        </Button>
-      </Toolbar>
     </Node>
   ),
 };
@@ -71,13 +69,116 @@ const nodeTypes = {
 const edgeTypes = {
   animated: Edge.Animated,
   temporary: Edge.Temporary,
-  default: Edge.Default,
+};
+
+const templateHighlights = [
+  {
+    title: 'Visual Workflow Builder',
+    description:
+      'Drag-and-drop canvas powered by React Flow and Workflow DevKit with execution logs that mirror production runs.',
+    badge: 'UI + DevKit',
+    icon: LayoutDashboard,
+  },
+  {
+    title: 'Ship-Ready Integrations',
+    description:
+      'Better Auth, Neon Postgres via Drizzle, and real connectors for Resend, Linear, Slack, external APIs, and SQL.',
+    badge: 'Auth · DB · Integrations',
+    icon: Plug,
+  },
+  {
+    title: 'Code Generation',
+    description:
+      'Convert workflows to type-safe TypeScript with the "use workflow" directive, error handling, and execution logging.',
+    badge: 'TypeScript',
+    icon: Code2,
+  },
+  {
+    title: 'Observability',
+    description:
+      'Execution history, run logs, and AI Gateway-powered generation with streaming for rapid iteration.',
+    badge: 'Runs & Logs',
+    icon: Activity,
+  },
+];
+
+const apiSections = [
+  {
+    title: 'Workflow Management',
+    endpoints: [
+      { method: 'GET', path: '/api/workflows', description: 'List workflows' },
+      { method: 'POST', path: '/api/workflows', description: 'Create workflow' },
+      { method: 'GET', path: '/api/workflows/{id}', description: 'Get workflow' },
+      { method: 'PUT', path: '/api/workflows/{id}', description: 'Update workflow' },
+      { method: 'DELETE', path: '/api/workflows/{id}', description: 'Delete workflow' },
+    ],
+  },
+  {
+    title: 'Execution',
+    endpoints: [
+      { method: 'POST', path: '/api/workflows/{id}/execute', description: 'Run workflow' },
+      { method: 'GET', path: '/api/workflows/{id}/executions', description: 'Execution history' },
+      { method: 'GET', path: '/api/workflows/executions/{executionId}/logs', description: 'Execution logs' },
+    ],
+  },
+  {
+    title: 'Code & AI Generation',
+    endpoints: [
+      { method: 'GET', path: '/api/workflows/{id}/generate-code', description: 'Generate TypeScript' },
+      { method: 'POST', path: '/api/workflows/{id}/generate-code', description: 'Generate with options' },
+      { method: 'POST', path: '/api/ai/generate-workflow', description: 'Create workflow from prompt' },
+    ],
+  },
+];
+
+const stackItems = [
+  { label: 'Framework', value: 'Next.js 16 + React 19', icon: Rocket },
+  { label: 'Engine', value: 'Workflow DevKit', icon: GitBranch },
+  { label: 'AI', value: 'OpenAI via AI Gateway', icon: Activity },
+  { label: 'Auth', value: 'Better Auth', icon: ShieldCheck },
+  { label: 'Database', value: 'Neon Postgres + Drizzle', icon: Database },
+  { label: 'UI', value: 'shadcn/ui + Tailwind', icon: LayoutDashboard },
+  { label: 'State', value: 'Jotai', icon: Code2 },
+  { label: 'Editor', value: 'Monaco', icon: Code2 },
+];
+
+const setupSteps = [
+  {
+    title: 'Install & migrate',
+    detail: 'pnpm install · pnpm db:push',
+    note: 'Neon Postgres is provisioned automatically on Vercel deploys.',
+  },
+  {
+    title: 'Configure env',
+    detail: 'DATABASE_URL · BETTER_AUTH_SECRET · BETTER_AUTH_URL · AI_GATEWAY_API_KEY',
+    note: 'Use .env.local locally; deployment prompts for required secrets.',
+  },
+  {
+    title: 'Run locally',
+    detail: 'pnpm dev',
+    note: 'Start building workflows at http://localhost:3000.',
+  },
+];
+
+const workflowTypes = {
+  triggers: ['Webhook', 'Schedule', 'Manual', 'Database Event'],
+  actions: ['Send Email (Resend)', 'Create Ticket (Linear)', 'Database Query', 'HTTP Request'],
 };
 
 // Time Saved Workflow Data
+const timeSavedIds = {
+  start: 'ts-start',
+  gateway: 'ts-gateway',
+  modelA: 'ts-model-a',
+  modelB: 'ts-model-b',
+  modelC: 'ts-model-c',
+  agg: 'ts-agg',
+  end: 'ts-end',
+};
+
 const timeSavedNodes = [
   {
-    id: 'ts-start',
+    id: timeSavedIds.start,
     type: 'workflow',
     position: { x: 0, y: 200 },
     data: {
@@ -86,11 +187,10 @@ const timeSavedNodes = [
       handles: { target: false, source: true },
       content: 'POST /api/generate\nPayload: 2.4KB',
       footer: 'T=0ms',
-      status: 'default',
     },
   },
   {
-    id: 'ts-gateway',
+    id: timeSavedIds.gateway,
     type: 'workflow',
     position: { x: 300, y: 200 },
     data: {
@@ -99,11 +199,10 @@ const timeSavedNodes = [
       handles: { target: true, source: true },
       content: 'Routing to optimal providers based on latency & cost',
       footer: 'Latency: 12ms',
-      status: 'success',
     },
   },
   {
-    id: 'ts-model-a',
+    id: timeSavedIds.modelA,
     type: 'workflow',
     position: { x: 700, y: 0 },
     data: {
@@ -112,11 +211,10 @@ const timeSavedNodes = [
       handles: { target: true, source: true },
       content: 'Llama 3 70B\nTokens: 450/s',
       footer: 'Duration: 145ms',
-      status: 'success',
     },
   },
   {
-    id: 'ts-model-b',
+    id: timeSavedIds.modelB,
     type: 'workflow',
     position: { x: 700, y: 200 },
     data: {
@@ -125,11 +223,10 @@ const timeSavedNodes = [
       handles: { target: true, source: true },
       content: 'Claude 3.5 Sonnet\nCode Analysis',
       footer: 'Duration: 850ms',
-      status: 'success',
     },
   },
   {
-    id: 'ts-model-c',
+    id: timeSavedIds.modelC,
     type: 'workflow',
     position: { x: 700, y: 400 },
     data: {
@@ -138,11 +235,10 @@ const timeSavedNodes = [
       handles: { target: true, source: true },
       content: 'Content Moderation\nPII Detection',
       footer: 'Duration: 45ms',
-      status: 'default',
     },
   },
   {
-    id: 'ts-agg',
+    id: timeSavedIds.agg,
     type: 'workflow',
     position: { x: 1100, y: 200 },
     data: {
@@ -151,11 +247,10 @@ const timeSavedNodes = [
       handles: { target: true, source: true },
       content: 'Combining streams and validating outputs',
       footer: 'Processing: 5ms',
-      status: 'success',
     },
   },
   {
-    id: 'ts-end',
+    id: timeSavedIds.end,
     type: 'workflow',
     position: { x: 1400, y: 200 },
     data: {
@@ -164,26 +259,35 @@ const timeSavedNodes = [
       handles: { target: true, source: false },
       content: 'Stream complete.\nTotal Latency Saved: 60%',
       footer: 'Total T=912ms',
-      status: 'success',
     },
   },
 ];
 
 const timeSavedEdges = [
-  { id: 'e-ts-1', source: 'ts-start', target: 'ts-gateway', type: 'animated' },
-  { id: 'e-ts-2', source: 'ts-gateway', target: 'ts-model-a', type: 'animated' },
-  { id: 'e-ts-3', source: 'ts-gateway', target: 'ts-model-b', type: 'animated' },
-  { id: 'e-ts-4', source: 'ts-gateway', target: 'ts-model-c', type: 'animated' },
-  { id: 'e-ts-5', source: 'ts-model-a', target: 'ts-agg', type: 'animated' },
-  { id: 'e-ts-6', source: 'ts-model-b', target: 'ts-agg', type: 'animated' },
-  { id: 'e-ts-7', source: 'ts-model-c', target: 'ts-agg', type: 'animated' },
-  { id: 'e-ts-8', source: 'ts-agg', target: 'ts-end', type: 'animated' },
+  { id: 'ts-e1', source: timeSavedIds.start, target: timeSavedIds.gateway, type: 'animated' },
+  { id: 'ts-e2', source: timeSavedIds.gateway, target: timeSavedIds.modelA, type: 'animated' },
+  { id: 'ts-e3', source: timeSavedIds.gateway, target: timeSavedIds.modelB, type: 'animated' },
+  { id: 'ts-e4', source: timeSavedIds.gateway, target: timeSavedIds.modelC, type: 'animated' },
+  { id: 'ts-e5', source: timeSavedIds.modelA, target: timeSavedIds.agg, type: 'animated' },
+  { id: 'ts-e6', source: timeSavedIds.modelB, target: timeSavedIds.agg, type: 'animated' },
+  { id: 'ts-e7', source: timeSavedIds.modelC, target: timeSavedIds.agg, type: 'animated' },
+  { id: 'ts-e8', source: timeSavedIds.agg, target: timeSavedIds.end, type: 'animated' },
 ];
 
 // Workflows Changed Data
+const changedIds = {
+  start: 'wc-start',
+  linearStart: 'wc-linear-start',
+  gateway: 'wc-gateway',
+  agent1: 'wc-agent-1',
+  agent2: 'wc-agent-2',
+  decision: 'wc-decision',
+  output: 'wc-output',
+};
+
 const workflowsChangedNodes = [
   {
-    id: 'wc-start',
+    id: changedIds.start,
     type: 'workflow',
     position: { x: 0, y: 250 },
     data: {
@@ -192,11 +296,10 @@ const workflowsChangedNodes = [
       handles: { target: false, source: true },
       content: 'CRON: Daily at 00:00\nBatch: 50k records',
       footer: 'Status: Active',
-      status: 'default',
     },
   },
   {
-    id: 'wc-linear-start',
+    id: changedIds.linearStart,
     type: 'workflow',
     position: { x: 300, y: 50 },
     data: {
@@ -205,11 +308,10 @@ const workflowsChangedNodes = [
       handles: { target: true, source: true },
       content: 'Step 1 -> Step 2 -> Step 3\nBlocking execution',
       footer: 'Avg Time: 4h 20m',
-      status: 'warning',
     },
   },
   {
-    id: 'wc-gateway',
+    id: changedIds.gateway,
     type: 'workflow',
     position: { x: 300, y: 400 },
     data: {
@@ -218,11 +320,10 @@ const workflowsChangedNodes = [
       handles: { target: true, source: true },
       content: 'Fan-out to multiple agents\nAsync processing',
       footer: 'Throughput: 100x',
-      status: 'success',
     },
   },
   {
-    id: 'wc-agent-1',
+    id: changedIds.agent1,
     type: 'workflow',
     position: { x: 700, y: 300 },
     data: {
@@ -231,11 +332,10 @@ const workflowsChangedNodes = [
       handles: { target: true, source: true },
       content: 'Searching vector DBs\nWeb scraping',
       footer: 'Time: 45s',
-      status: 'success',
     },
   },
   {
-    id: 'wc-agent-2',
+    id: changedIds.agent2,
     type: 'workflow',
     position: { x: 700, y: 500 },
     data: {
@@ -244,11 +344,10 @@ const workflowsChangedNodes = [
       handles: { target: true, source: true },
       content: 'Summarization\nSentiment Analysis',
       footer: 'Time: 30s',
-      status: 'success',
     },
   },
   {
-    id: 'wc-decision',
+    id: changedIds.decision,
     type: 'workflow',
     position: { x: 1100, y: 400 },
     data: {
@@ -257,11 +356,10 @@ const workflowsChangedNodes = [
       handles: { target: true, source: true },
       content: 'Compare results vs Legacy\nMerge streams',
       footer: 'Quality Score: 98%',
-      status: 'success',
     },
   },
   {
-    id: 'wc-output',
+    id: changedIds.output,
     type: 'workflow',
     position: { x: 1500, y: 250 },
     data: {
@@ -270,26 +368,34 @@ const workflowsChangedNodes = [
       handles: { target: true, source: false },
       content: 'Real-time dashboard update\nNotification sent',
       footer: 'Total Time: 2m 15s',
-      status: 'success',
     },
   },
 ];
 
 const workflowsChangedEdges = [
-  { id: 'e-wc-1', source: 'wc-start', target: 'wc-linear-start', type: 'temporary', label: 'Legacy Path' },
-  { id: 'e-wc-2', source: 'wc-start', target: 'wc-gateway', type: 'animated', label: 'New Path' },
-  { id: 'e-wc-3', source: 'wc-gateway', target: 'wc-agent-1', type: 'animated' },
-  { id: 'e-wc-4', source: 'wc-gateway', target: 'wc-agent-2', type: 'animated' },
-  { id: 'e-wc-5', source: 'wc-agent-1', target: 'wc-decision', type: 'animated' },
-  { id: 'e-wc-6', source: 'wc-agent-2', target: 'wc-decision', type: 'animated' },
-  { id: 'e-wc-7', source: 'wc-decision', target: 'wc-output', type: 'animated' },
-  { id: 'e-wc-8', source: 'wc-linear-start', target: 'wc-output', type: 'temporary' },
+  { id: 'wc-e1', source: changedIds.start, target: changedIds.linearStart, type: 'temporary', label: 'Legacy Path' },
+  { id: 'wc-e2', source: changedIds.start, target: changedIds.gateway, type: 'animated', label: 'New Path' },
+  { id: 'wc-e3', source: changedIds.gateway, target: changedIds.agent1, type: 'animated' },
+  { id: 'wc-e4', source: changedIds.gateway, target: changedIds.agent2, type: 'animated' },
+  { id: 'wc-e5', source: changedIds.agent1, target: changedIds.decision, type: 'animated' },
+  { id: 'wc-e6', source: changedIds.agent2, target: changedIds.decision, type: 'animated' },
+  { id: 'wc-e7', source: changedIds.decision, target: changedIds.output, type: 'animated' },
+  { id: 'wc-e8', source: changedIds.linearStart, target: changedIds.output, type: 'temporary' },
 ];
 
 // Innovation Workflow Data
+const innovationIds = {
+  ideation: 'in-ideation',
+  prototype: 'in-prototype',
+  test: 'in-test',
+  optimize: 'in-optimize',
+  deploy: 'in-deploy',
+  monitor: 'in-monitor',
+};
+
 const innovationNodes = [
   {
-    id: 'in-ideation',
+    id: innovationIds.ideation,
     type: 'workflow',
     position: { x: 0, y: 200 },
     data: {
@@ -298,11 +404,10 @@ const innovationNodes = [
       handles: { target: false, source: true },
       content: 'Goal: Auto-generated personalized newsletters',
       footer: 'Phase: Discovery',
-      status: 'success',
     },
   },
   {
-    id: 'in-prototype',
+    id: innovationIds.prototype,
     type: 'workflow',
     position: { x: 350, y: 200 },
     data: {
@@ -311,11 +416,10 @@ const innovationNodes = [
       handles: { target: true, source: true },
       content: 'Built with v0 & AI SDK\nConnected to test DB',
       footer: 'Time to MVP: 2 days',
-      status: 'success',
     },
   },
   {
-    id: 'in-test',
+    id: innovationIds.test,
     type: 'workflow',
     position: { x: 700, y: 200 },
     data: {
@@ -324,11 +428,10 @@ const innovationNodes = [
       handles: { target: true, source: true },
       content: 'Running 500 test cases\nChecking hallucination rate',
       footer: 'Accuracy: 94.5%',
-      status: 'success',
     },
   },
   {
-    id: 'in-optimize',
+    id: innovationIds.optimize,
     type: 'workflow',
     position: { x: 1050, y: 200 },
     data: {
@@ -337,11 +440,10 @@ const innovationNodes = [
       handles: { target: true, source: true },
       content: 'Caching enabled\nRate limits set',
       footer: 'Cost reduced: 40%',
-      status: 'success',
     },
   },
   {
-    id: 'in-deploy',
+    id: innovationIds.deploy,
     type: 'workflow',
     position: { x: 1400, y: 200 },
     data: {
@@ -350,11 +452,10 @@ const innovationNodes = [
       handles: { target: true, source: true },
       content: 'Vercel Edge Functions\nGlobal availability',
       footer: 'Status: Live',
-      status: 'success',
     },
   },
   {
-    id: 'in-monitor',
+    id: innovationIds.monitor,
     type: 'workflow',
     position: { x: 1750, y: 200 },
     data: {
@@ -363,17 +464,16 @@ const innovationNodes = [
       handles: { target: true, source: false },
       content: 'Real-time analytics\nUser feedback collection',
       footer: 'NPS: +62',
-      status: 'default',
     },
   },
 ];
 
 const innovationEdges = [
-  { id: 'e-in-1', source: 'in-ideation', target: 'in-prototype', type: 'animated' },
-  { id: 'e-in-2', source: 'in-prototype', target: 'in-test', type: 'animated' },
-  { id: 'e-in-3', source: 'in-test', target: 'in-optimize', type: 'animated' },
-  { id: 'e-in-4', source: 'in-optimize', target: 'in-deploy', type: 'animated' },
-  { id: 'e-in-5', source: 'in-deploy', target: 'in-monitor', type: 'animated' },
+  { id: 'in-e1', source: innovationIds.ideation, target: innovationIds.prototype, type: 'animated' },
+  { id: 'in-e2', source: innovationIds.prototype, target: innovationIds.test, type: 'animated' },
+  { id: 'in-e3', source: innovationIds.test, target: innovationIds.optimize, type: 'animated' },
+  { id: 'in-e4', source: innovationIds.optimize, target: innovationIds.deploy, type: 'animated' },
+  { id: 'in-e5', source: innovationIds.deploy, target: innovationIds.monitor, type: 'animated' },
 ];
 
 function InnovationWorkflow() {
@@ -443,6 +543,183 @@ function TimeSavedWorkflow() {
   );
 }
 
+function WorkflowTemplateTab() {
+  return (
+    <div className="max-w-6xl mx-auto w-full p-6 md:p-8 space-y-6">
+      <Card className="border-none shadow-sm bg-background">
+        <CardHeader className="gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="space-y-3">
+              <Badge variant="outline" className="w-fit">
+                AI Workflow Builder Template
+              </Badge>
+              <div className="space-y-2">
+                <CardTitle className="text-3xl md:text-4xl font-light tracking-tight">
+                  Build and deploy workflow automation faster
+                </CardTitle>
+                <CardDescription className="text-base md:text-lg">
+                  Full-stack template from Vercel Labs: visual workflow builder on Workflow DevKit with auth, database, integrations, and code generation ready to ship.
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">Neon Postgres</Badge>
+                <Badge variant="secondary">Better Auth</Badge>
+                <Badge variant="secondary">AI Gateway</Badge>
+                <Badge variant="secondary">React Flow</Badge>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+              <Button asChild>
+                <a href="https://github.com/vercel-labs/workflow-builder-template" target="_blank" rel="noreferrer">
+                  View repo
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a
+                  href="https://vercel.com/new/clone?demo-title=AI%20Workflow%20Builder&demo-description=Deploy%20the%20Vercel%20workflow%20builder%20template&repository-name=workflow-builder-template&repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fworkflow-builder-template"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Deploy with Vercel
+                </a>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          {templateHighlights.map((item) => (
+            <Card key={item.title} className="bg-muted/30 border-dashed">
+              <CardHeader className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4 text-primary" />
+                  <Badge variant="outline" className="text-[11px]">
+                    {item.badge}
+                  </Badge>
+                </div>
+                <CardTitle className="text-lg">{item.title}</CardTitle>
+                <CardDescription className="text-sm">{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="border border-primary/10 bg-muted/20">
+        <CardHeader>
+          <CardTitle className="text-xl">API surface</CardTitle>
+          <CardDescription>REST endpoints are ready for workflow CRUD, execution, codegen, and AI generation.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          {apiSections.map((section) => (
+            <div key={section.title} className="space-y-3 rounded-xl border border-border/50 bg-background p-4">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium">{section.title}</p>
+                <Badge variant="outline" className="text-[11px]">
+                  {section.endpoints.length} routes
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                {section.endpoints.map((endpoint) => (
+                  <div key={`${endpoint.method}-${endpoint.path}`} className="rounded-lg border border-dashed p-3 bg-muted/40">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary">
+                        {endpoint.method}
+                      </span>
+                      <code className="text-xs font-mono break-all text-foreground">{endpoint.path}</code>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{endpoint.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-background">
+        <CardHeader>
+          <CardTitle className="text-xl">Stack & integrations</CardTitle>
+          <CardDescription>Everything the template ships with on day one.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          {stackItems.map((item) => (
+            <div key={item.label} className="flex items-start gap-3 rounded-xl border p-3 bg-muted/30">
+              <item.icon className="h-4 w-4 text-primary mt-0.5" />
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.12em]">
+                  {item.label}
+                </p>
+                <p className="text-sm font-medium">{item.value}</p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="bg-muted/20 border-dashed">
+        <CardHeader>
+          <CardTitle className="text-xl">Build-ready workflow types</CardTitle>
+          <CardDescription>Triggers and actions included out of the box.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border bg-background p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">Triggers</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {workflowTypes.triggers.map((trigger) => (
+                <Badge key={trigger} variant="secondary" className="text-xs">
+                  {trigger}
+                </Badge>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border bg-background p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">Actions</Badge>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {workflowTypes.actions.map((action) => (
+                <Badge key={action} variant="secondary" className="text-xs">
+                  {action}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-background">
+        <CardHeader>
+          <CardTitle className="text-xl">Setup checklist</CardTitle>
+          <CardDescription>From clone to running workflows in minutes.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          {setupSteps.map((step) => (
+            <div key={step.title} className="rounded-xl border p-4 bg-muted/30 h-full flex flex-col gap-2">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-[0.12em]">
+                {step.title}
+              </p>
+              <p className="text-sm font-semibold">{step.detail}</p>
+              <p className="text-xs text-muted-foreground">{step.note}</p>
+            </div>
+          ))}
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Includes scripts for build, lint, format, and type-check plus db tooling (db:generate, db:push, db:studio).
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <a href="https://workflow-builder.dev" target="_blank" rel="noreferrer">
+              View live demo
+            </a>
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}
+
 export default function WorkflowPage() {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -460,6 +737,7 @@ export default function WorkflowPage() {
             <TabsTrigger value="workflows-changed">Workflows Changed</TabsTrigger>
             <TabsTrigger value="innovation">Innovation</TabsTrigger>
             <TabsTrigger value="interactive">Interactive</TabsTrigger>
+            <TabsTrigger value="template">Builder Template</TabsTrigger>
           </TabsList>
         </div>
         
@@ -526,6 +804,10 @@ export default function WorkflowPage() {
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="template" className="flex-1 overflow-y-auto border-t mt-0 bg-muted/30">
+          <WorkflowTemplateTab />
         </TabsContent>
       </Tabs>
     </div>

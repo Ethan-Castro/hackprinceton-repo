@@ -16,6 +16,7 @@ import {
   WebPreviewUrl,
   WebPreviewBody,
 } from "@/components/ai-elements";
+import { SandpackDashboardRenderer } from "@/components/sandpack-dashboard-renderer";
 
 export type ArtifactRendererData = {
   title?: string;
@@ -33,7 +34,7 @@ export type WebPreviewRendererData = {
 
 export type HtmlPreviewRendererData = {
   html: string;
-  dataUrl: string;
+  dataUrl?: string;
   title?: string;
   description?: string;
 };
@@ -138,12 +139,23 @@ export function HtmlPreviewRenderer({
 }) {
   const [showCode, setShowCode] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
+  const hasPreview = Boolean(data.html || data.dataUrl);
+  const previewUrl = data.dataUrl ?? "";
+  const previewSrcDoc = previewUrl ? undefined : data.html;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(data.html);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (!hasPreview) {
+    return (
+      <div className="my-4 rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+        Preview unavailable because no HTML was returned.
+      </div>
+    );
+  }
 
   return (
     <div className="my-4 space-y-2">
@@ -172,12 +184,10 @@ export function HtmlPreviewRenderer({
         >
           Code
         </Button>
-        {showCode && (
-          <Button variant="ghost" size="sm" onClick={handleCopy} className="ml-auto">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copied!" : "Copy"}
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" onClick={handleCopy} className="ml-auto">
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? "Copied!" : "Copy"}
+        </Button>
       </div>
       {showCode ? (
         <Artifact>
@@ -188,13 +198,45 @@ export function HtmlPreviewRenderer({
           </ArtifactContent>
         </Artifact>
       ) : (
-        <WebPreview defaultUrl={data.dataUrl} className="h-[600px]">
+        <WebPreview defaultUrl={previewUrl} className="h-[600px]">
           <WebPreviewNavigation>
             <WebPreviewUrl />
           </WebPreviewNavigation>
-          <WebPreviewBody />
+          <WebPreviewBody src={previewUrl || undefined} srcDoc={previewSrcDoc} />
         </WebPreview>
       )}
+    </div>
+  );
+}
+
+/**
+ * Data type for React Dashboard tool output
+ */
+export type ReactDashboardRendererData = {
+  code: string;
+  title?: string;
+  description?: string;
+  type?: "react-dashboard";
+};
+
+/**
+ * Renderer for generateReactDashboard tool output
+ * Uses Sandpack to render the generated React code in an iframe
+ */
+export function ReactDashboardRenderer({
+  data,
+}: {
+  data: ReactDashboardRendererData;
+}) {
+  return (
+    <div className="my-4">
+      <SandpackDashboardRenderer
+        code={data.code}
+        title={data.title}
+        description={data.description}
+        showEditor={false}
+        previewHeight={600}
+      />
     </div>
   );
 }

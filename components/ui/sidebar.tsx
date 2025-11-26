@@ -142,6 +142,7 @@ function SidebarProvider({
             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
             className
           )}
+          suppressHydrationWarning
           {...props}
         >
           {children}
@@ -457,6 +458,7 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
       data-slot="sidebar-menu"
       data-sidebar="menu"
       className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -468,6 +470,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
       data-slot="sidebar-menu-item"
       data-sidebar="menu-item"
       className={cn("group/menu-item relative", className)}
+      suppressHydrationWarning
       {...props}
     />
   )

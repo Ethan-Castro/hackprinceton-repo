@@ -1,16 +1,19 @@
 "use client";
 
-import { BaseV0Chat } from "./BaseV0Chat";
+import { ThemedV0Chat } from "./ThemedV0Chat";
 import { Briefcase } from "lucide-react";
 
 export function BusinessV0Chat() {
   return (
-    <BaseV0Chat
+    <ThemedV0Chat
       title="Business Studio"
       subtitle="AI-Powered Business Applications"
+      badge="Business OS"
       icon={<Briefcase className="h-5 w-5 text-blue-500" />}
+      primaryColor="#3b82f6"
       emptyStateTitle="What business tool should we create?"
       emptyStateDescription="Generate dashboards, analytics tools, CRM interfaces, and business applications with AI assistance."
+      placeholder="Describe your business tool..."
       examplePrompts={[
         "Create a sales dashboard with KPI metrics",
         "Build a customer relationship manager",

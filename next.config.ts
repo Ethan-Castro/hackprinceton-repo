@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ["recharts"],
+  // Turbopack is default in Next 16; keeping an explicit empty config signals we don't rely on custom webpack.
+  turbopack: {},
 };
 
 // Apply PWA plugin - disabled for now due to build issues

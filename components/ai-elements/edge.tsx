@@ -50,8 +50,6 @@ function TemporaryEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  style = {},
-  markerEnd,
 }: EdgeProps) {
   const [edgePath] = getBezierPath({
     sourceX,
@@ -66,47 +64,10 @@ function TemporaryEdge({
     <BaseEdge
       id={id}
       path={edgePath}
-      markerEnd={markerEnd}
       style={{
-        ...style,
         strokeWidth: 2,
-        stroke: 'hsl(var(--muted-foreground))',
+        stroke: 'hsl(var(--ring))',
         strokeDasharray: '5,5',
-        opacity: 0.6,
-      }}
-    />
-  );
-}
-
-function DefaultEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-}: EdgeProps) {
-  const [edgePath] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
-
-  return (
-    <BaseEdge
-      id={id}
-      path={edgePath}
-      markerEnd={markerEnd}
-      style={{
-        ...style,
-        strokeWidth: 2,
-        stroke: 'hsl(var(--border))',
       }}
     />
   );
@@ -115,5 +76,4 @@ function DefaultEdge({
 export const Edge = {
   Animated: AnimatedEdge,
   Temporary: TemporaryEdge,
-  Default: DefaultEdge,
 };

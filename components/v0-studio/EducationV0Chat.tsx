@@ -1,16 +1,19 @@
 "use client";
 
-import { BaseV0Chat } from "./BaseV0Chat";
+import { ThemedV0Chat } from "./ThemedV0Chat";
 import { GraduationCap } from "lucide-react";
 
 export function EducationV0Chat() {
   return (
-    <BaseV0Chat
+    <ThemedV0Chat
       title="Education Studio"
       subtitle="AI-Powered Educational Content"
-      icon={<GraduationCap className="h-5 w-5 text-primary" />}
+      badge="Education OS"
+      icon={<GraduationCap className="h-5 w-5 text-indigo-600" />}
+      primaryColor="#4f46e5"
       emptyStateTitle="What educational content should we create?"
       emptyStateDescription="Generate interactive lessons, quizzes, study materials, and educational apps with AI assistance."
+      placeholder="Describe your educational content..."
       examplePrompts={[
         "Create an interactive quiz on the water cycle",
         "Build a multiplication practice game for 3rd graders",

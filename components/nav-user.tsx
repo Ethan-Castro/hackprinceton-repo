@@ -46,6 +46,8 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { data: session, status } = useSession()
   const router = useRouter()
+  const triggerIdBase = "nav-user-trigger"
+  const menuIdBase = "nav-user-menu"
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" })
@@ -57,7 +59,11 @@ export function NavUser({
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger
+              asChild
+              id={`${triggerIdBase}-guest`}
+              aria-controls={`${menuIdBase}-guest`}
+            >
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -77,6 +83,8 @@ export function NavUser({
               side={isMobile ? "bottom" : "right"}
               align="end"
               sideOffset={4}
+              id={`${menuIdBase}-guest`}
+              aria-labelledby={`${triggerIdBase}-guest`}
             >
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
@@ -125,7 +133,11 @@ export function NavUser({
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger
+            asChild
+            id={triggerIdBase}
+            aria-controls={menuIdBase}
+          >
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -146,6 +158,8 @@ export function NavUser({
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
+            id={menuIdBase}
+            aria-labelledby={triggerIdBase}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">

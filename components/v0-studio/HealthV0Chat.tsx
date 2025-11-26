@@ -1,16 +1,19 @@
 "use client";
 
-import { BaseV0Chat } from "./BaseV0Chat";
+import { ThemedV0Chat } from "./ThemedV0Chat";
 import { Heart } from "lucide-react";
 
 export function HealthV0Chat() {
   return (
-    <BaseV0Chat
+    <ThemedV0Chat
       title="Health Studio"
       subtitle="AI-Powered Health Applications"
+      badge="Health OS"
       icon={<Heart className="h-5 w-5 text-red-500" />}
+      primaryColor="#ef4444"
       emptyStateTitle="What health application should we build?"
       emptyStateDescription="Create health tracking apps, medical dashboards, wellness tools, and patient-facing interfaces with AI."
+      placeholder="Describe your health application..."
       examplePrompts={[
         "Build a medication tracker with reminders",
         "Create a symptom checker interface",

@@ -180,20 +180,32 @@ WebPreviewNavigationButton.displayName = 'WebPreviewNavigationButton';
 const WebPreviewUrl = React.forwardRef<
   HTMLInputElement,
   React.ComponentPropsWithoutRef<typeof Input>
->(({ className, ...props }, ref) => {
+>(({ className, value: propValue, onChange: propOnChange, onKeyDown: propOnKeyDown, ...props }, ref) => {
   const { url, setUrl, goBack, goForward, refresh, canGoBack, canGoForward } =
     useWebPreview();
   const [inputValue, setInputValue] = React.useState(url);
 
   React.useEffect(() => {
-    setInputValue(url);
-  }, [url]);
+    if (propValue !== undefined) {
+      setInputValue(propValue);
+    } else {
+      setInputValue(url);
+    }
+  }, [propValue, url]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      setUrl(inputValue);
+      setUrl(e.currentTarget.value);
     }
+    propOnKeyDown?.(e);
   };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    propOnChange?.(e);
+  };
+
+  const displayValue = propValue ?? inputValue;
 
   return (
     <>
@@ -216,8 +228,8 @@ const WebPreviewUrl = React.forwardRef<
       </WebPreviewNavigationButton>
       <Input
         ref={ref}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        value={displayValue}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         className={cn('flex-1 h-8', className)}
         placeholder="Enter URL..."

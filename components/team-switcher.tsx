@@ -27,11 +27,15 @@ interface Team {
 
 export function TeamSwitcher({
   teams,
+  interactive = true,
 }: {
   teams: Team[]
+  interactive?: boolean
 }) {
   const { isMobile } = useSidebar()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const triggerId = "team-switcher-trigger"
+  const menuId = "team-switcher-menu"
 
   if (!activeTeam) {
     return null
@@ -39,11 +43,37 @@ export function TeamSwitcher({
 
   const ActiveLogo = activeTeam.logo
 
+  if (!interactive) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="lg"
+            disabled
+            className="cursor-default"
+          >
+            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              <ActiveLogo className="size-4" />
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium">{activeTeam.name}</span>
+              <span className="truncate text-xs">{activeTeam.plan}</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger
+            asChild
+            id={triggerId}
+            aria-controls={menuId}
+          >
             <SidebarMenuButton
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
@@ -63,6 +93,8 @@ export function TeamSwitcher({
             align="start"
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
+            id={menuId}
+            aria-labelledby={triggerId}
           >
             <DropdownMenuLabel className="text-muted-foreground text-xs">
               Teams
