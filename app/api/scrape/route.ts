@@ -24,7 +24,8 @@ export async function POST(req: Request) {
 
     const app = new FirecrawlApp({ apiKey });
 
-    const scrapeResult = await app.scrapeUrl(url, {
+    const scrapeResult = await app.scrape({
+      url,
       formats: ["markdown"],
     });
 
@@ -36,9 +37,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      text: scrapeResult.markdown || "",
-      title: scrapeResult.metadata?.title,
-      description: scrapeResult.metadata?.description,
+      text: scrapeResult.data?.[0]?.markdown || "",
+      title: scrapeResult.data?.[0]?.metadata?.title,
+      description: scrapeResult.data?.[0]?.metadata?.description,
     });
   } catch (error: any) {
     console.error("Scrape error:", error);
