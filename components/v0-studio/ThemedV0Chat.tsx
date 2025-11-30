@@ -60,6 +60,7 @@ export interface ThemedV0ChatProps {
   emptyStateDescription?: string;
   placeholder?: string;
   primaryColor?: string; // New prop for color theming
+  showModelSelector?: boolean; // Enable model selector for specific studios
 }
 
 function normalizeMessageContent(content: any): string {
@@ -137,6 +138,7 @@ export function ThemedV0Chat({
   emptyStateDescription = "Describe what you want to create, and I'll generate it for you.",
   placeholder = "Describe what you want to create...",
   primaryColor = "hsl(var(--primary))", // Default to primary if not provided
+  showModelSelector = false,
 }: ThemedV0ChatProps) {
   const { data: session, status } = useSession();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -151,6 +153,7 @@ export function ThemedV0Chat({
   const [loadingSavedChats, setLoadingSavedChats] = useState(false);
   const [loadingChatDetail, setLoadingChatDetail] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<"fast" | "amazing">("fast");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Derived colors
@@ -316,12 +319,18 @@ export function ThemedV0Chat({
     setError(null);
 
     try {
+      // Map model selection to actual model IDs
+      const modelId = selectedModel === "fast"
+        ? "cerebras/zai-glm-4.6"
+        : "google/gemini-3-pro";
+
       const response = await fetch("/api/v0-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
           chatId: chatId,
+          modelId: showModelSelector ? modelId : undefined,
           system: !chatId ? systemPrompt : undefined,
         }),
       });
@@ -414,7 +423,7 @@ export function ThemedV0Chat({
         </div>
 
         {/* Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 p-6 pb-2 flex items-start justify-between"
@@ -429,6 +438,26 @@ export function ThemedV0Chat({
              <p className="text-sm text-muted-foreground font-light max-w-[300px] leading-relaxed">
                 {subtitle}
              </p>
+             {showModelSelector && (
+               <div className="flex gap-2 mt-4">
+                 <Button
+                   variant={selectedModel === "fast" ? "default" : "outline"}
+                   size="sm"
+                   onClick={() => setSelectedModel("fast")}
+                   className="rounded-full text-xs font-medium"
+                 >
+                   ⚡ FAST
+                 </Button>
+                 <Button
+                   variant={selectedModel === "amazing" ? "default" : "outline"}
+                   size="sm"
+                   onClick={() => setSelectedModel("amazing")}
+                   className="rounded-full text-xs font-medium"
+                 >
+                   ✨ AMAZING
+                 </Button>
+               </div>
+             )}
           </div>
           {messages.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleNewChat} className="rounded-full border-dashed">

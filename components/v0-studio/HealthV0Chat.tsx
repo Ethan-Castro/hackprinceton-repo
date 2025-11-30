@@ -14,6 +14,7 @@ export function HealthV0Chat() {
       emptyStateTitle="What health application should we build?"
       emptyStateDescription="Create health tracking apps, medical dashboards, wellness tools, and patient-facing interfaces with AI."
       placeholder="Describe your health application..."
+      showModelSelector={true}
       examplePrompts={[
         "Build a medication tracker with reminders",
         "Create a symptom checker interface",

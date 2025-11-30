@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const {
       text,
       goal = "Create an interactive dashboard visualizing this data",
-      modelId = "anthropic/claude-sonnet-4.5",
+      modelId = DEFAULT_MODEL,
       currentCode,
       isRefinement = false,
       skipDataCleaning = false,
@@ -130,7 +130,7 @@ export async function GET() {
       "Direct generation for pre-structured data",
     ],
     supportedModels: SUPPORTED_MODELS,
-    defaultModel: "anthropic/claude-sonnet-4.5",
+    defaultModel: DEFAULT_MODEL,
   });
 }
 

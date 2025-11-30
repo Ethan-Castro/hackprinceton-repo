@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createCerebras } from "@ai-sdk/cerebras";
+import { gateway } from "@/lib/gateway";
 
 const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY ?? "",
 });
 
-const SUPPORTED_MODELS = ["gpt-oss-120b", "zai-glm-4.6"] as const;
-const DEFAULT_MODEL = SUPPORTED_MODELS[0];
+const CEREBRAS_MODELS = ["zai-glm-4.6", "gpt-oss-120b", "llama-3.3-70b"] as const;
+const GATEWAY_MODELS = ["google/gemini-3-pro", "anthropic/claude-opus-4.5"] as const;
+const DEFAULT_CEREBRAS_MODEL = CEREBRAS_MODELS[0];
 
 // System prompt for React component generation - generates JSX that works in browser
 const SYSTEM_PROMPT = `You are an expert React developer. Generate COMPLETE, production-ready React components using JavaScript (JSX) and Tailwind CSS.
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
   try {
     const { message, chatId, modelId, system } = await request.json();
 
-    console.log("[v0-chat] Cerebras request received:", {
+    console.log("[v0-chat] Request received:", {
       preview: message?.slice(0, 80),
       chatId,
       modelId,
@@ -116,7 +118,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.CEREBRAS_API_KEY) {
+    // Determine if using a gateway model or cerebras model
+    const isGatewayModel = modelId && GATEWAY_MODELS.some(m => modelId === m || modelId.includes(m));
+    const isCerebrasModel = !isGatewayModel && modelId && modelId.startsWith("cerebras/");
+
+    // Validate API keys
+    if (isGatewayModel && !process.env.AI_GATEWAY_API_KEY) {
+      return NextResponse.json(
+        {
+          error: "AI_GATEWAY_API_KEY not configured",
+          details: "Please add your AI Gateway API key to .env.local",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!isGatewayModel && !process.env.CEREBRAS_API_KEY) {
       console.error("[v0-chat] CEREBRAS_API_KEY not configured");
       return NextResponse.json(
         {
@@ -127,24 +144,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedModel =
-      typeof modelId === "string" && SUPPORTED_MODELS.includes(modelId as any)
-        ? (modelId as (typeof SUPPORTED_MODELS)[number])
-        : DEFAULT_MODEL;
-
     const combinedSystem = system
       ? `${system}\n\n${SYSTEM_PROMPT}`
       : SYSTEM_PROMPT;
 
-    console.log("[v0-chat] Generating React component with Cerebras model:", normalizedModel);
+    let result;
+    let usedModelId;
 
-    const result = await generateText({
-      model: cerebras(normalizedModel),
-      system: combinedSystem,
-      prompt: message,
-      temperature: 0.5,
-      maxOutputTokens: 4096,
-    });
+    if (isGatewayModel) {
+      // Use AI Gateway for models like Gemini 3 Pro, Claude Opus, etc.
+      usedModelId = modelId;
+      console.log("[v0-chat] Generating with Gateway model:", usedModelId);
+
+      result = await generateText({
+        model: gateway(usedModelId),
+        system: combinedSystem,
+        prompt: message,
+        temperature: 0.5,
+        maxOutputTokens: 4096,
+      });
+    } else {
+      // Use Cerebras for fast models
+      const normalizedModel = isCerebrasModel
+        ? modelId.replace(/^cerebras\//, "")
+        : CEREBRAS_MODELS.includes(modelId as any)
+        ? (modelId as (typeof CEREBRAS_MODELS)[number])
+        : DEFAULT_CEREBRAS_MODEL;
+
+      usedModelId = `cerebras/${normalizedModel}`;
+      console.log("[v0-chat] Generating with Cerebras model:", normalizedModel);
+
+      result = await generateText({
+        model: cerebras(normalizedModel),
+        system: combinedSystem,
+        prompt: message,
+        temperature: 0.5,
+        maxOutputTokens: 4096,
+      });
+    }
 
     const componentCode = cleanComponentCode(result.text);
     const responseChatId =
@@ -168,7 +205,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id: responseChatId,
       demo: demoHttpUrl,
-      model: `cerebras/${normalizedModel}`,
+      model: usedModelId,
       files: [
         {
           object: "file",

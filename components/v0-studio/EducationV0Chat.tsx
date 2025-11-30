@@ -14,6 +14,7 @@ export function EducationV0Chat() {
       emptyStateTitle="What educational content should we create?"
       emptyStateDescription="Generate interactive lessons, quizzes, study materials, and educational apps with AI assistance."
       placeholder="Describe your educational content..."
+      showModelSelector={true}
       examplePrompts={[
         "Create an interactive quiz on the water cycle",
         "Build a multiplication practice game for 3rd graders",

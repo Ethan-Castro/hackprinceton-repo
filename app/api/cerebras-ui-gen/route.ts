@@ -12,8 +12,8 @@ const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
 
-// Use GPT-OSS-120B for all UI generation
-const UI_GEN_MODEL = "gpt-oss-120b";
+// Use ZAI GLM 4.6 for all UI generation
+const UI_GEN_MODEL = "zai-glm-4.6";
 
 // Comprehensive v0-style system prompt for React component generation
 const V0_STYLE_SYSTEM_PROMPT = `You are an expert React developer specializing in creating beautiful, functional UI components using React, TypeScript, and Tailwind CSS.
