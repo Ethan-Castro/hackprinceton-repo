@@ -5,6 +5,26 @@ const nextConfig: NextConfig = {
   transpilePackages: ["recharts"],
   // Turbopack is default in Next 16; keeping an explicit empty config signals we don't rely on custom webpack.
   turbopack: {},
+  // Optimize build performance
+  swcMinify: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production" ? {
+      exclude: ["error", "warn"],
+    } : false,
+  },
+  // Experimental features for better performance
+  experimental: {
+    optimizePackageImports: [
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "lucide-react",
+      "recharts",
+    ],
+  },
 };
 
 // Apply PWA plugin - disabled for now due to build issues
