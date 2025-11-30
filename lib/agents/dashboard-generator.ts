@@ -227,7 +227,7 @@ Common modifications:
 export interface DashboardGenerationOptions {
   modelId?: string;
   temperature?: number;
-  maxTokens?: number;
+  maxOutputTokens?: number;
 }
 
 /**
@@ -245,7 +245,7 @@ export async function cleanAndStructureData(
     system: DATA_CLEANING_PROMPT,
     prompt: `Extract and structure the following text into clean JSON format:\n\n${rawText}`,
     temperature: 0.3, // Lower temperature for more consistent JSON output
-    maxTokens: 2000,
+    maxOutputTokens: 2000,
   });
 
   return result.text;
@@ -263,7 +263,7 @@ export async function generateDashboardCode(
   const { 
     modelId = DEFAULT_DASHBOARD_MODEL,
     temperature = 0.7,
-    maxTokens = 4096
+    maxOutputTokens = 4096
   } = options;
   
   const { model } = resolveModel(modelId);
@@ -280,7 +280,7 @@ ${structuredData}
 
 Generate a complete, self-contained React component that visualizes this data with interactive controls.`,
     temperature,
-    maxTokens,
+    maxOutputTokens,
   });
 
   return result;
@@ -326,7 +326,7 @@ ${structuredData}
 
 Generate a complete, self-contained React component that visualizes this data with interactive controls. Make it visually appealing with a modern design.`,
     temperature: 0.7,
-    maxTokens: 4096,
+    maxOutputTokens: 4096,
   });
 
   return result;
@@ -343,7 +343,7 @@ export async function refineDashboardCode(
   const { 
     modelId = DEFAULT_DASHBOARD_MODEL,
     temperature = 0.7,
-    maxTokens = 4096
+    maxOutputTokens = 4096
   } = options;
   
   const { model } = resolveModel(modelId);
@@ -361,7 +361,7 @@ User request: "${userRequest}"
 
 Modify the code according to the user's request. Output ONLY the complete modified React code.`,
     temperature,
-    maxTokens,
+    maxOutputTokens,
   });
 
   return result;

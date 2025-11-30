@@ -45,7 +45,7 @@ async function testModel(modelId: string): Promise<TestResult> {
     const result = await generateText({
       model,
       prompt: "Say hello in one sentence.",
-      maxTokens: 50,
+      maxOutputTokens: 50,
     });
 
     const responseTime = Date.now() - startTime;
