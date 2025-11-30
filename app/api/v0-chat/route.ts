@@ -64,18 +64,21 @@ function stripCodeFences(text: string): string {
 
 function cleanComponentCode(content: string): string {
   let cleaned = stripCodeFences(content).trim();
-  
+
+  // Remove ALL remaining code fences (including middle ones)
+  cleaned = cleaned.replace(/```(?:tsx|ts|jsx|js|javascript)?/gi, '');
+
   // Remove 'use client' directive
   cleaned = cleaned.replace(/'use client';?\s*/g, '');
   cleaned = cleaned.replace(/"use client";?\s*/g, '');
-  
+
   // Remove all import statements
   cleaned = cleaned.replace(/^import\s+.*$/gm, '');
-  
+
   // Remove TypeScript type declarations (in case AI still generates them)
   cleaned = cleaned.replace(/^type\s+\w+\s*=\s*\{[\s\S]*?\};\s*$/gm, '');
   cleaned = cleaned.replace(/^interface\s+\w+\s*\{[\s\S]*?\}\s*$/gm, '');
-  
+
   // Remove generic type parameters from hooks
   cleaned = cleaned.replace(/useState<[^>]+>/g, 'useState');
   cleaned = cleaned.replace(/useRef<[^>]+>/g, 'useRef');
@@ -84,20 +87,24 @@ function cleanComponentCode(content: string): string {
   cleaned = cleaned.replace(/useReducer<[^>]+>/g, 'useReducer');
   cleaned = cleaned.replace(/useContext<[^>]+>/g, 'useContext');
   cleaned = cleaned.replace(/createContext<[^>]+>/g, 'createContext');
-  
+
   // Remove type annotations from arrow function parameters
   cleaned = cleaned.replace(/\((\w+)\s*:\s*[^)]+\)/g, '($1)');
-  
+
   // Remove type annotations from function parameters (simple cases)
   cleaned = cleaned.replace(/:\s*React\.\w+(<[^>]+>)?/g, '');
   cleaned = cleaned.replace(/:\s*(string|number|boolean|null|undefined|void|any)\b/g, '');
-  
+
   // Remove 'as Type' assertions
   cleaned = cleaned.replace(/\s+as\s+\w+/g, '');
-  
+
+  // Remove any comments that contain code fence markers
+  cleaned = cleaned.replace(/\/\/.*```.*$/gm, '');
+  cleaned = cleaned.replace(/\/\*[\s\S]*?```[\s\S]*?\*\//g, '');
+
   // Clean up empty lines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
-  
+
   return cleaned.trim();
 }
 
