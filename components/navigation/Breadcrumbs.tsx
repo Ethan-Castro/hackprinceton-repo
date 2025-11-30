@@ -61,7 +61,7 @@ const breadcrumbsMap: Record<string, BreadcrumbItem[]> = {
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   const pathname = usePathname();
-  const breadcrumbs = items || breadcrumbsMap[pathname] || [{ label: 'Home', href: '/' }];
+  const breadcrumbs = items || (pathname ? breadcrumbsMap[pathname] : null) || [{ label: 'Home', href: '/' }];
 
   if (breadcrumbs.length <= 1) {
     return null;

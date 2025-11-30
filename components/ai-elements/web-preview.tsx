@@ -187,7 +187,7 @@ const WebPreviewUrl = React.forwardRef<
 
   React.useEffect(() => {
     if (propValue !== undefined) {
-      setInputValue(propValue);
+      setInputValue(String(propValue));
     } else {
       setInputValue(url);
     }

@@ -10,6 +10,10 @@ if (ELEVENLABS_API_KEY) {
   });
 }
 
+interface WebFormData {
+  get(name: string): FormDataEntryValue | null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!ELEVENLABS_API_KEY || !client) {
@@ -19,15 +23,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formData = await req.formData();
-    const audioFile = formData.get("audio") as File;
-    
-    if (!audioFile) {
+    const formData = (await req.formData()) as unknown as WebFormData;
+    const audioEntry = formData.get("audio");
+    if (!audioEntry || typeof audioEntry === "string") {
       return NextResponse.json(
         { error: "Audio file is required" },
         { status: 400 }
       );
     }
+    const audioFile = audioEntry as Blob & { type: string };
 
     // Convert File to Buffer
     const arrayBuffer = await audioFile.arrayBuffer();

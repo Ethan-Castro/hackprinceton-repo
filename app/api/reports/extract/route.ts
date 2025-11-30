@@ -6,6 +6,10 @@ type ExtractResponse = {
   meta?: Record<string, unknown>;
 };
 
+interface WebFormData {
+  get(name: string): FormDataEntryValue | null;
+}
+
 export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
 
@@ -21,13 +25,14 @@ export async function POST(req: Request) {
     }
 
     if (contentType.includes("multipart/form-data")) {
-      const form = await req.formData();
-      const file = form.get("file");
-      if (!(file instanceof File)) {
+      const form = (await req.formData()) as unknown as WebFormData;
+      const fileEntry = form.get("file");
+      if (!fileEntry || typeof fileEntry === "string") {
         return NextResponse.json({ error: "Missing file" }, { status: 400 });
       }
+      const file = fileEntry as Blob & { name?: string; type: string };
 
-      const filename = file.name?.toLowerCase() || "";
+      const filename = (file.name ?? "").toLowerCase();
       const isPdf = filename.endsWith(".pdf") || file.type === "application/pdf";
       const isImage =
         file.type.startsWith("image/") ||
