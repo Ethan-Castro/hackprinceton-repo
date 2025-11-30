@@ -8,10 +8,11 @@ import { query } from "@/lib/neon";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const previewId = params.id;
+    const { id } = await params;
+    const previewId = id;
 
     if (!previewId) {
       return new NextResponse("Preview ID required", { status: 400 });
