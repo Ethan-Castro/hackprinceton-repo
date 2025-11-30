@@ -124,6 +124,7 @@ const SCHEMA_DEFINITIONS = {
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       v0_project_id VARCHAR(255) NOT NULL,
+      is_deployment_project BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT NOW(),
       UNIQUE(user_id, v0_project_id)
     );
@@ -148,6 +149,24 @@ const SCHEMA_DEFINITIONS = {
       ip_address VARCHAR(45) NOT NULL,
       v0_chat_id VARCHAR(255) NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
+    );
+  `,
+
+  // V0 Deployments - track deployed components (permanent previews)
+  v0_deployments: `
+    CREATE TABLE IF NOT EXISTS v0_deployments (
+      id SERIAL PRIMARY KEY,
+      preview_id VARCHAR(255) UNIQUE NOT NULL,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      internal_chat_id VARCHAR(255) NOT NULL,
+      deployment_web_url TEXT NOT NULL,
+      component_code TEXT NOT NULL,
+      component_html TEXT NOT NULL,
+      model_used VARCHAR(100),
+      deployment_status VARCHAR(50) DEFAULT 'active',
+      error_message TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
     );
   `,
 
@@ -322,6 +341,11 @@ const SCHEMA_DEFINITIONS = {
     CREATE INDEX IF NOT EXISTS idx_chat_ownership_v0_chat_id ON chat_ownership(v0_chat_id);
     CREATE INDEX IF NOT EXISTS idx_anonymous_chat_log_ip ON anonymous_chat_log(ip_address);
     CREATE INDEX IF NOT EXISTS idx_anonymous_chat_log_created_at ON anonymous_chat_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_v0_deployments_preview_id ON v0_deployments(preview_id);
+    CREATE INDEX IF NOT EXISTS idx_v0_deployments_user_id ON v0_deployments(user_id);
+    CREATE INDEX IF NOT EXISTS idx_v0_deployments_internal_chat_id ON v0_deployments(internal_chat_id);
+    CREATE INDEX IF NOT EXISTS idx_v0_deployments_status ON v0_deployments(deployment_status);
+    CREATE INDEX IF NOT EXISTS idx_v0_deployments_created_at ON v0_deployments(created_at);
     CREATE INDEX IF NOT EXISTS idx_healthcare_providers_specialty ON healthcare_providers(specialty);
     CREATE INDEX IF NOT EXISTS idx_healthcare_providers_name ON healthcare_providers(name);
     CREATE INDEX IF NOT EXISTS idx_insurance_plans_provider ON insurance_plans(provider);
@@ -444,6 +468,7 @@ export async function resetDatabase(): Promise<{
     console.warn('⚠️  Resetting database - all data will be lost!');
 
     const tables = [
+      'v0_deployments',
       'anonymous_chat_log',
       'chat_ownership',
       'project_ownership',

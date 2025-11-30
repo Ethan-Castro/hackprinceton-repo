@@ -14,6 +14,7 @@ export function SustainabilityV0Chat() {
       emptyStateTitle="What sustainability tool should we build?"
       emptyStateDescription="Create carbon tracking apps, environmental dashboards, ESG reporting tools, and sustainability initiatives with AI."
       placeholder="Describe your sustainability tool..."
+      showModelSelector={true}
       examplePrompts={[
         "Build a carbon footprint calculator",
         "Create an ESG reporting dashboard",

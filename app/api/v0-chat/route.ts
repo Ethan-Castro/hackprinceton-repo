@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";
 import { createCerebras } from "@ai-sdk/cerebras";
 import { gateway } from "@/lib/gateway";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { query } from "@/lib/neon";
 
 const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY ?? "",
@@ -108,6 +111,54 @@ function cleanComponentCode(content: string): string {
   return cleaned.trim();
 }
 
+function createPreviewHTML(componentCode: string, componentName: string): string {
+  // Remove 'export default' to make function globally accessible
+  let processedCode = componentCode.replace(/export default function (\w+)/, 'function $1');
+  processedCode = processedCode.replace(/export default const (\w+)\s*=/g, 'const $1 =');
+  processedCode = processedCode.replace(/export default /g, '');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${componentName} - AI Generated Component</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    // Make React hooks available globally
+    const { useState, useEffect, useCallback, useMemo, useRef, useReducer, useContext, createContext, Fragment } = React;
+
+    // Component code (export default removed)
+    ${processedCode}
+
+    // Render after Babel processes the code above
+    setTimeout(function() {
+      try {
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        if (typeof ${componentName} !== 'undefined') {
+          root.render(React.createElement(${componentName}));
+        } else {
+          document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;">Component ${componentName} not found</div>';
+        }
+      } catch (err) {
+        console.error('Render error:', err);
+        document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red;">Error: ' + err.message + '</div>';
+      }
+    }, 200);
+  </script>
+</body>
+</html>`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { message, chatId, modelId, system } = await request.json();
@@ -209,9 +260,51 @@ export async function POST(request: NextRequest) {
     const componentName = componentNameMatch ? componentNameMatch[1] : "GeneratedComponent";
     const fileName = `${componentName}.jsx`;
 
+    // Create permanent preview for authenticated users
+    let permanentPreviewUrl = null;
+    try {
+      const session = await getServerSession(authOptions);
+      if (session?.user) {
+        const userId = (session.user as any).id;
+
+        // Generate unique preview ID
+        const previewId = typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        // Create full HTML for permanent storage
+        const previewHTML = createPreviewHTML(componentCode, componentName);
+
+        // Store in database
+        await query(
+          `INSERT INTO v0_deployments (
+            preview_id, user_id, internal_chat_id, deployment_web_url,
+            component_code, component_html, model_used, deployment_status
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            previewId,
+            userId,
+            responseChatId,
+            `${baseUrl}/api/preview/${previewId}`,
+            componentCode,
+            previewHTML,
+            usedModelId,
+            'active'
+          ]
+        );
+
+        permanentPreviewUrl = `${baseUrl}/api/preview/${previewId}`;
+        console.log("[v0-chat] Created permanent preview:", permanentPreviewUrl);
+      }
+    } catch (previewError) {
+      console.error("[v0-chat] Failed to create permanent preview:", previewError);
+      // Continue anyway - temporary preview still works
+    }
+
     return NextResponse.json({
       id: responseChatId,
       demo: demoHttpUrl,
+      deployment: permanentPreviewUrl ? { webUrl: permanentPreviewUrl } : null,
       model: usedModelId,
       files: [
         {

@@ -154,6 +154,7 @@ export function ThemedV0Chat({
   const [loadingChatDetail, setLoadingChatDetail] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"fast" | "amazing">("fast");
+  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Derived colors
@@ -348,6 +349,11 @@ export function ThemedV0Chat({
 
       if (data.demo) {
         setPreviewUrl(data.demo);
+      }
+
+      if (data.deployment?.webUrl) {
+        setDeploymentUrl(data.deployment.webUrl);
+        console.log("[ThemedV0Chat] Permanent deployment URL:", data.deployment.webUrl);
       }
 
       if (data.files && data.files.length > 0) {
@@ -663,6 +669,19 @@ export function ThemedV0Chat({
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
+                  </Button>
+                )}
+                {deploymentUrl && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => window.open(deploymentUrl, "_blank")}
+                    className="h-8 gap-2"
+                    title="Open permanent public URL"
+                    style={{ backgroundColor: glowColor }}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Public Link
                   </Button>
                 )}
                 <Button

@@ -5,6 +5,7 @@ import {
   Leaf,
   Sparkles,
   Hammer,
+  Info,
   type LucideIcon,
 } from "lucide-react"
 
@@ -40,6 +41,12 @@ export const navigationConfig: NavigationConfig = {
           title: "Home",
           url: "/",
           description: "Platform overview and getting started",
+        },
+        {
+          title: "About",
+          url: "/about",
+          icon: Info,
+          description: "Learn more about Augment and our mission",
         },
         {
           title: "Universal Assistant",

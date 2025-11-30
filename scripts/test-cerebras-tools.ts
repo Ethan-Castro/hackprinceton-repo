@@ -10,12 +10,11 @@ async function testCerebrasWithTools() {
   console.log("🧪 Testing Cerebras Models WITH Tools\n");
   console.log("=".repeat(60));
 
+  // Models confirmed to support tool calling with streaming
   const cerebraModels = [
-    "cerebras/llama3.1-8b",
+    "cerebras/zai-glm-4.6",
     "cerebras/llama-3.3-70b",
     "cerebras/gpt-oss-120b",
-    "cerebras/qwen-3-32b",
-    "cerebras/qwen-3-235b-a22b-instruct-2507",
   ];
 
   for (const modelId of cerebraModels) {

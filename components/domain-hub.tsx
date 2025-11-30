@@ -42,6 +42,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DomainHeroAnimation, type DomainType } from "@/components/three";
 
 const iconMap = {
   Activity,
@@ -173,6 +174,18 @@ interface DomainHubProps {
 }
 
 export function DomainHub({ config }: DomainHubProps) {
+  // Determine domain type from config
+  const getDomainType = (): DomainType => {
+    const badge = config.hero.badge.toLowerCase();
+    if (badge.includes('business') || badge.includes('enterprise')) return 'business';
+    if (badge.includes('health')) return 'health';
+    if (badge.includes('education') || badge.includes('learning')) return 'education';
+    if (badge.includes('sustainability') || badge.includes('climate')) return 'sustainability';
+    return 'business'; // default fallback
+  };
+
+  const domain = getDomainType();
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 space-y-24">
@@ -374,6 +387,9 @@ export function DomainHub({ config }: DomainHubProps) {
             </motion.section>
           );
         })()}
+
+        {/* Three.js Animation - Bottom of Page */}
+        <DomainHeroAnimation domain={domain} className="mb-8" />
 
       </div>
     </div>

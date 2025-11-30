@@ -1,16 +1,18 @@
 export const DEFAULT_MODEL = "cerebras/zai-glm-4.6";
 
-// Cerebras models that support tools (all Cerebras models must support tools)
-// Previously removed models that don't support tools with streaming:
+// Cerebras models that support tool calling with streaming
+// Reference: https://inference-docs.cerebras.ai/
+// All models below support: Object Generation, Tool Usage, Tool Streaming
+//
+// Models removed due to incompatibilities:
 // - cerebras/llama3.1-8b (response_format incompatibility)
 // - cerebras/qwen-3-coder-480b (not available)
-// Note: Some models below may have limited compatibility with streaming + tools
+// - cerebras/qwen-3-235b-a22b-instruct-2507 (schema format field not supported)
+// - cerebras/qwen-3-235b-a22b-thinking-2507 (schema format field not supported)
 export const CEREBRAS_MODELS = [
+  "cerebras/zai-glm-4.6",
   "cerebras/llama-3.3-70b",
   "cerebras/gpt-oss-120b",
-  "cerebras/qwen-3-235b-a22b-instruct-2507",
-  "cerebras/qwen-3-235b-a22b-thinking-2507",
-  "cerebras/zai-glm-4.6",
 ];
 
 // Gateway models (via @ai-sdk/gateway)
@@ -37,18 +39,16 @@ export interface ModelMetadata {
 export const MODEL_METADATA: Record<string, ModelMetadata> = {
   // Reasoning-capable models
   "moonshotai/kimi-k2-thinking-turbo": { supportsReasoning: true },
-  "cerebras/qwen-3-235b-a22b-thinking-2507": { supportsReasoning: true },
   "cerebras/zai-glm-4.6": { supportsReasoning: true },
+  "anthropic/claude-opus-4.5": { supportsReasoning: true },
+  "google/gemini-3-pro": { supportsReasoning: true },
 
   // Non-reasoning models (explicitly false or omitted)
   "cerebras/llama-3.3-70b": { supportsReasoning: false },
   "cerebras/gpt-oss-120b": { supportsReasoning: false },
-  "cerebras/qwen-3-235b-a22b-instruct-2507": { supportsReasoning: false },
   "anthropic/claude-haiku-4.5": { supportsReasoning: false },
   "anthropic/claude-sonnet-4.5": { supportsReasoning: false },
-  "anthropic/claude-opus-4.5": { supportsReasoning: true },
   "google/gemini-2.5-flash": { supportsReasoning: false },
-  "google/gemini-3-pro": { supportsReasoning: true },
   "xai/grok-4-fast-non-reasoning": { supportsReasoning: false },
   "groq/moonshotai/kimi-k2-instruct-0905": { supportsReasoning: false },
   "groq/qwen/qwen3-32b": { supportsReasoning: false },

@@ -13,6 +13,7 @@ export function ExperimentsV0Chat() {
       emptyStateTitle="What can we build together?"
       emptyStateDescription="Experimental playground for the v0.dev clone. Generate React components with Tailwind CSS using the latest Vercel AI SDK."
       placeholder="Describe the component you want to build..."
+      showModelSelector={true}
       examplePrompts={[
         "Create a responsive navbar with Tailwind CSS",
         "Build a todo app with React and Framer Motion",

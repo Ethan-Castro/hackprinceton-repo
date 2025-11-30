@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SpeedLightningAnimation } from "@/components/three";
 
 const container = {
   hidden: { opacity: 0 },
@@ -315,6 +316,9 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </motion.section>
+
+        {/* Three.js Lightning Animation - Bottom of Page */}
+        <SpeedLightningAnimation className="mb-8" />
 
       </div>
     </div>

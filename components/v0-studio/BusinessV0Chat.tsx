@@ -14,6 +14,7 @@ export function BusinessV0Chat() {
       emptyStateTitle="What business tool should we create?"
       emptyStateDescription="Generate dashboards, analytics tools, CRM interfaces, and business applications with AI assistance."
       placeholder="Describe your business tool..."
+      showModelSelector={true}
       examplePrompts={[
         "Create a sales dashboard with KPI metrics",
         "Build a customer relationship manager",
