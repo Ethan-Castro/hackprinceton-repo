@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/navigation/CommandPalette";
 import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
+import { DynamicFavicon } from "@/components/dynamic-favicon";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Augment" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        {/* Default favicon - will be updated dynamically based on theme */}
+        <link rel="icon" type="image/png" href="/Augment Logo light.png" />
+        <link rel="apple-touch-icon" href="/Augment Logo light.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -68,6 +70,9 @@ export default function RootLayout({
 
             {/* Toast Notifications */}
             <Toaster position="top-right" />
+            
+            {/* Dynamic Favicon */}
+            <DynamicFavicon />
           </ThemeProvider>
         </SessionProvider>
       </body>

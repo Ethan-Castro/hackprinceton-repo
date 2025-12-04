@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { GalleryVerticalEnd } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -15,13 +14,14 @@ import {
 } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { navigationConfig, userData, teamsData } from "@/config/navigation"
+import { LogoIcon } from "@/components/logo-icon"
 
 // Prepare teams data with actual icon component
 const data = {
   user: userData,
   teams: teamsData.map(team => ({
     ...team,
-    logo: GalleryVerticalEnd,
+    logo: LogoIcon,
   })),
   navMain: navigationConfig.navMain,
 }

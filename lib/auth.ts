@@ -55,8 +55,10 @@ export interface User {
  */
 // Set environment variables if not already set (development only)
 if (process.env.NODE_ENV !== 'production') {
-  if (!process.env.NEXTAUTH_SECRET) {
-    process.env.NEXTAUTH_SECRET = 'development-secret-change-in-production';
+  if (!process.env.NEXTAUTH_SECRET && !process.env.AUTH_SECRET) {
+    const devSecret = 'development-secret-change-in-production';
+    process.env.NEXTAUTH_SECRET = devSecret;
+    process.env.AUTH_SECRET = devSecret;
   }
   if (!process.env.NEXTAUTH_URL) {
     process.env.NEXTAUTH_URL = process.env.VERCEL_URL 
@@ -66,16 +68,18 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const getNextAuthSecret = (): string => {
+  const resolvedSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+
   // During build time, use a placeholder to allow builds to complete
   // The actual secret will be validated at runtime
   if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NEXT_RUNTIME === undefined) {
-    return process.env.NEXTAUTH_SECRET || 'build-time-placeholder-secret';
+    return resolvedSecret || 'build-time-placeholder-secret';
   }
   // In production runtime, secret must be set
-  if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
-    throw new Error('NEXTAUTH_SECRET is required in production');
+  if (process.env.NODE_ENV === 'production' && !resolvedSecret) {
+    throw new Error('NEXTAUTH_SECRET (or AUTH_SECRET) is required in production');
   }
-  return process.env.NEXTAUTH_SECRET || 'development-secret-change-in-production';
+  return resolvedSecret || 'development-secret-change-in-production';
 };
 
 const getNextAuthUrl = (): string | undefined => {

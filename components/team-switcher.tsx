@@ -52,8 +52,8 @@ export function TeamSwitcher({
             disabled
             className="cursor-default"
           >
-            <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-              <ActiveLogo className="size-4" />
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+              <ActiveLogo className="size-full object-contain" />
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeTeam.name}</span>
@@ -78,8 +78,8 @@ export function TeamSwitcher({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <ActiveLogo className="size-4" />
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                <ActiveLogo className="size-full object-contain" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{activeTeam.name}</span>
@@ -107,8 +107,8 @@ export function TeamSwitcher({
                   onClick={() => setActiveTeam(team)}
                   className="gap-2 p-2"
                 >
-                  <div className="flex size-6 items-center justify-center rounded-md border">
-                    <TeamLogo className="size-3.5 shrink-0" />
+                  <div className="flex size-6 items-center justify-center rounded-md border overflow-hidden">
+                    <TeamLogo className="size-full object-contain shrink-0" />
                   </div>
                   {team.name}
                   <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>

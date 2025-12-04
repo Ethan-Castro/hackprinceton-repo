@@ -10,9 +10,15 @@
   "theme_color": "#4285f4",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/Augment Logo light.png",
       "sizes": "any",
-      "type": "image/x-icon",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Augment Logo dark.png",
+      "sizes": "any",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
@@ -39,8 +45,9 @@
       "url": "/health",
       "icons": [
         {
-          "src": "/favicon.ico",
-          "sizes": "any"
+          "src": "/Augment Logo light.png",
+          "sizes": "any",
+          "type": "image/png"
         }
       ]
     },
@@ -51,8 +58,9 @@
       "url": "/business",
       "icons": [
         {
-          "src": "/favicon.ico",
-          "sizes": "any"
+          "src": "/Augment Logo light.png",
+          "sizes": "any",
+          "type": "image/png"
         }
       ]
     },
@@ -63,8 +71,9 @@
       "url": "/education",
       "icons": [
         {
-          "src": "/favicon.ico",
-          "sizes": "any"
+          "src": "/Augment Logo light.png",
+          "sizes": "any",
+          "type": "image/png"
         }
       ]
     }

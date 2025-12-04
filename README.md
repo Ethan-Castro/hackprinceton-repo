@@ -181,7 +181,7 @@ AI_GATEWAY_API_KEY=your_gateway_api_key_here
 V0_API_KEY=your_v0_api_key_here
 
 # NextAuth (required for authentication)
-NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_SECRET=your_nextauth_secret_here # or AUTH_SECRET=your_nextauth_secret_here
 NEXTAUTH_URL=http://localhost:3000
 ```
 
