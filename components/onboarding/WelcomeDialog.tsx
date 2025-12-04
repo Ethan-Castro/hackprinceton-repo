@@ -36,14 +36,14 @@ export function WelcomeDialog({ open, onStart, onSkip }: WelcomeDialogProps) {
       }}
     >
       <DialogContent
-        className="max-w-3xl p-0 overflow-hidden border-none shadow-2xl bg-background/95 backdrop-blur-xl"
+        className="max-w-3xl p-0 overflow-y-auto md:overflow-hidden max-h-[90vh] border-none shadow-2xl bg-background/95 backdrop-blur-xl"
         onEscapeKeyDown={onSkip}
         onPointerDownOutside={onSkip}
       >
-        <div className="flex flex-col md:flex-row h-full min-h-[500px]">
+        <div className="flex flex-col md:flex-row h-auto md:h-full md:min-h-[500px]">
           
           {/* Left Side: Visual / Branding */}
-          <div className="w-full md:w-2/5 bg-muted/30 p-8 flex flex-col justify-between relative overflow-hidden border-r border-border/40">
+          <div className="w-full md:w-2/5 bg-muted/30 p-6 md:p-8 flex flex-col justify-between relative overflow-hidden border-r border-border/40">
             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none" />
             <div className="absolute top-[-20%] right-[50%] w-[300px] h-[300px] rounded-full bg-primary/5 blur-3xl" />
             
@@ -84,7 +84,7 @@ export function WelcomeDialog({ open, onStart, onSkip }: WelcomeDialogProps) {
           </div>
 
           {/* Right Side: Content & Actions */}
-          <div className="w-full md:w-3/5 p-8 md:p-10 flex flex-col">
+          <div className="w-full md:w-3/5 p-6 md:p-10 flex flex-col">
             <DialogHeader className="mb-6">
               <DialogTitle className="text-2xl font-medium tracking-tight">Initialize Workspace</DialogTitle>
               <DialogDescription className="text-base text-muted-foreground">

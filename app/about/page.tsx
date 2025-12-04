@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Target, Globe, Award, Zap } from "lucide-react";
+import { Users, Target, Zap, Rocket, Lightbulb, Linkedin, ExternalLink } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 const container = {
   hidden: { opacity: 0 },
@@ -21,25 +22,23 @@ const item = {
   show: { opacity: 1, y: 0 }
 };
 
-const values = [
+const ideas = [
   {
-    title: "Innovation First",
+    title: "For Builders",
+    icon: Rocket,
+    description: "Replit, Vercel v0, and Lovable should consider using Cerebras and Groq for MVPs. Waiting 2-3 minutes for an agent that might fail is a bottleneck."
+  },
+  {
+    title: "Cost Efficiency",
     icon: Zap,
-    description: "Pushing the boundaries of what's possible with AI and human collaboration."
+    description: "Models like Kimi, GLM, or Qwen are ~1/3 the price of frontier models. Use them for speed, with Sonnet/Opus as the orchestrator."
   },
   {
-    title: "Global Impact",
-    icon: Globe,
-    description: "Creating solutions that scale across borders and industries."
-  },
-  {
-    title: "User Centric",
-    icon: Users,
-    description: "Designing with the end-user in mind to create seamless experiences."
+    title: "Fast Design Mode",
+    icon: Lightbulb,
+    description: "Imagine code editors creating 3 previews of a site within seconds. A visual 'choose your own adventure' for design iteration."
   }
 ];
-
-const teamPlaceholders = [1, 2, 3, 4];
 
 export default function AboutPage() {
   return (
@@ -60,10 +59,10 @@ export default function AboutPage() {
             Our Mission
           </Badge>
           <h1 className="text-4xl sm:text-5xl md:text-8xl font-light tracking-tighter text-foreground">
-            About <span className="font-serif italic text-muted-foreground">Augment</span>
+            About <span className="font-serif italic text-muted-foreground">Augmenting.work</span>
           </h1>
           <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl font-light leading-relaxed text-balance">
-            Building the bridge between human intent and artificial intelligence. We are redefining how the world interacts with technology.
+            Demonstrating the value of faster inference. If we are to augment with AI and save time, let's not create a new type of downtime waiting for responses.
           </p>
         </motion.section>
 
@@ -74,47 +73,57 @@ export default function AboutPage() {
             variants={container}
             initial="hidden"
             animate="show"
-            className="lg:col-span-7 space-y-6 sm:space-y-8"
+            className="lg:col-span-7 space-y-8"
           >
             <div className="flex items-center gap-2 border-b pb-4 mb-6">
               <Target className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">Our Story</h2>
+              <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">The Thesis</h2>
             </div>
             
             <div className="space-y-6 text-muted-foreground leading-relaxed text-lg font-light">
               <motion.p variants={item}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                Frontier models have pretty fast inference, though not fast enough for test-time compute/reasoning and 10+ tool calls.
               </motion.p>
               <motion.p variants={item}>
-                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+                We used <strong>Cerebras</strong> as our inference provider to create websites, analysis, and textbook chapters within <strong>2 seconds</strong>. We typically hit around <strong>2000 tokens/s</strong>.
               </motion.p>
               <motion.p variants={item}>
-                Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+                <strong>The Details:</strong> We are using Cerebras and Groq as inference providers with models like GLM 4.6, GPT-OSS-120B, and Qwen.
+              </motion.p>
+              <motion.p variants={item} className="text-base italic border-l-2 border-primary/20 pl-4">
+                "I just wanted to start posting updates for posterity because Groq and IBM partnered after I started this and I don't want to miss anymore news regarding the benefit of fast inference when it comes to tool-calling, Reasoning, Enterprise, and healthcare need for speed."
               </motion.p>
             </div>
 
-            {/* Team Section Placeholder */}
+            {/* Team Section */}
             <div className="mt-12 pt-8 border-t">
                <div className="flex items-center gap-2 border-b pb-4 mb-6">
                 <Users className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">The Team</h2>
+                <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">The Builder</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {teamPlaceholders.map((_, i) => (
-                  <motion.div key={i} variants={item}>
-                     <div className="aspect-square rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20 flex items-center justify-center">
-                        <div className="text-center space-y-2">
-                          <div className="w-16 h-16 mx-auto rounded-full bg-muted/50" />
-                          <div className="h-3 w-20 mx-auto bg-muted/50 rounded" />
-                        </div>
-                     </div>
-                  </motion.div>
-                ))}
-              </div>
+              <motion.div variants={item} className="flex items-start gap-6">
+                 <div className="h-24 w-24 rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20 flex items-center justify-center shrink-0">
+                    <Users className="h-10 w-10 text-muted-foreground/50" />
+                 </div>
+                 <div className="space-y-2">
+                    <h3 className="text-xl font-medium">Ethan Castro</h3>
+                    <p className="text-muted-foreground text-sm max-w-md">
+                      Working on this small project to demonstrate the true potential of real-time AI inference.
+                    </p>
+                    <Link 
+                      href="https://www.linkedin.com/in/ethan-castro-926537165/" 
+                      target="_blank" 
+                      className="inline-flex items-center gap-2 text-sm text-primary hover:underline mt-2"
+                    >
+                      <Linkedin className="h-4 w-4" />
+                      Connect on LinkedIn
+                    </Link>
+                 </div>
+              </motion.div>
             </div>
           </motion.div>
 
-          {/* Sidebar Column (Values) */}
+          {/* Sidebar Column (Values/Ideas) */}
             <motion.div 
               variants={container}
               initial="hidden"
@@ -122,23 +131,23 @@ export default function AboutPage() {
               className="lg:col-span-5 space-y-6 sm:space-y-8"
             >
              <div className="flex items-center gap-2 border-b pb-4 mb-6">
-              <Award className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">Our Values</h2>
+              <Lightbulb className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-medium tracking-wide uppercase text-muted-foreground">Fast Inference Ideas</h2>
             </div>
 
             <div className="space-y-4">
-              {values.map((value, i) => (
+              {ideas.map((idea, i) => (
                 <motion.div key={i} variants={item}>
                   <Card className="hover:shadow-md transition-shadow duration-300 border-none bg-muted/20">
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2 mb-2">
-                        <value.icon className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-lg font-serif">{value.title}</CardTitle>
+                        <idea.icon className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-lg font-serif">{idea.title}</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {value.description}
+                        {idea.description}
                       </p>
                     </CardContent>
                   </Card>
@@ -146,16 +155,33 @@ export default function AboutPage() {
               ))}
             </div>
 
-            {/* Contact / Location Placeholder */}
+            {/* Acknowledgements */}
             <motion.div 
               variants={item}
               className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/10 relative overflow-hidden"
             >
-              <h3 className="text-lg font-medium mb-4">Get in Touch</h3>
-              <div className="space-y-4 font-mono text-xs sm:text-sm text-muted-foreground">
-                <p>123 Innovation Drive<br/>San Francisco, CA 94105</p>
-                <p>hello@augment.ai</p>
+              <h3 className="text-lg font-medium mb-4">Acknowledgements</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Special thanks to the innovators pushing the boundaries of inference speed.
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs font-mono text-primary/70">
+                <Badge variant="secondary">@GroqInc</Badge>
+                <Badge variant="secondary">@Cerebras</Badge>
+                <Badge variant="secondary">@IBM</Badge>
+                <Badge variant="secondary">@Replit</Badge>
+                <Badge variant="secondary">@Vercel</Badge>
               </div>
+            </motion.div>
+
+            <motion.div variants={item} className="pt-4">
+              <Link 
+                href="https://augmenting.work" 
+                target="_blank"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Visit augmenting.work
+              </Link>
             </motion.div>
 
           </motion.div>
@@ -164,4 +190,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
