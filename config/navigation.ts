@@ -6,6 +6,9 @@ import {
   Sparkles,
   Hammer,
   Info,
+  Home,
+  MessageSquare,
+  Beaker,
   type LucideIcon,
 } from "lucide-react"
 
@@ -40,6 +43,7 @@ export const navigationConfig: NavigationConfig = {
         {
           title: "Home",
           url: "/",
+          icon: Home,
           description: "Platform overview and getting started",
         },
         {
@@ -51,32 +55,36 @@ export const navigationConfig: NavigationConfig = {
         {
           title: "Universal Assistant",
           url: "/chat",
+          icon: MessageSquare,
           description: "Multi-domain AI chat with advanced tool support",
         },
         {
-          title: "Workflows",
-          url: "/workflow",
-          description: "Visual workflow diagrams and automation",
-        },
-        {
-          title: "Interactive Insights",
-          url: "/interactive",
-          description: "Article analysis with embedded AI chat",
-        },
-        {
-          title: "Interactive Demos",
-          url: "/interactive-demos",
-          description: "Generate AI demos from any URL",
-        },
-        {
-          title: "v0 Builder",
-          url: "/experiments",
-          description: "Split-screen UI builder with AI preview",
-        },
-        {
-          title: "Agents Lab",
-          url: "/experiments/agents",
-          description: "Interactive agent playground and documentation",
+          title: "Experiments",
+          url: "#",
+          icon: Beaker,
+          description: "Experimental features and demos",
+          items: [
+            {
+              title: "Workflows",
+              url: "/workflow",
+            },
+            {
+              title: "Interactive Insights",
+              url: "/interactive",
+            },
+            {
+              title: "Interactive Demos",
+              url: "/interactive-demos",
+            },
+            {
+              title: "v0 Builder",
+              url: "/experiments",
+            },
+            {
+              title: "Agents Lab",
+              url: "/experiments/agents",
+            },
+          ],
         },
       ],
     },

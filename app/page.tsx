@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SpeedLightningAnimation } from "@/components/three";
+import { Logo } from "@/components/logo";
 
 const container = {
   hidden: { opacity: 0 },
@@ -317,8 +317,10 @@ export default function LandingPage() {
           </div>
         </motion.section>
 
-        {/* Three.js Lightning Animation - Bottom of Page */}
-        <SpeedLightningAnimation className="mb-8" />
+        {/* Logo Footer */}
+        <div className="flex justify-center py-8">
+          <Logo width={48} height={48} />
+        </div>
 
       </div>
     </div>

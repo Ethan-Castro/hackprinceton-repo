@@ -15,48 +15,86 @@ const GATEWAY_MODELS = ["google/gemini-3-pro", "anthropic/claude-opus-4.5"] as c
 const DEFAULT_CEREBRAS_MODEL = CEREBRAS_MODELS[0];
 
 // System prompt for React component generation - generates JSX that works in browser
-const SYSTEM_PROMPT = `You are an expert React developer. Generate COMPLETE, production-ready React components using JavaScript (JSX) and Tailwind CSS.
+const SYSTEM_PROMPT = `You are an elite UI/UX designer and React developer. Generate stunning, production-ready React components using JavaScript (JSX) and Tailwind CSS that look like they belong on Dribbble or Awwwards.
 
-CRITICAL RULES FOR BROWSER PREVIEW:
-1. Generate plain JavaScript/JSX - NO TypeScript (no type annotations, no interfaces, no generics)
-2. Do NOT include any import statements - React and hooks are available globally
-3. Do NOT use 'use client' directive
-4. Use Tailwind CSS for ALL styling
+TECHNICAL REQUIREMENTS:
+1. Plain JavaScript/JSX only - NO TypeScript
+2. NO import statements - React and hooks (useState, useEffect, useRef, useMemo, useCallback) are globally available
+3. NO 'use client' directive
+4. Use Tailwind CSS exclusively for styling
 5. Export as: export default function ComponentName() { ... }
-6. Make components fully self-contained
-7. Include responsive design (mobile-first)
-8. Add accessibility attributes
+6. Self-contained with NO external dependencies, assets, or data fetching
+7. Use inline SVGs for icons (simple, elegant paths)
 
-REQUIRED STRUCTURE (NO IMPORTS, NO TYPES):
+CODE QUALITY RULES:
+- Return ONE complete, parseable component - no partial code, ellipses, or TODOs
+- All JSX tags must be properly closed
+- All strings properly quoted
+- Wrap response in single \`\`\`jsx ... \`\`\` block
+- Component must be syntactically valid for Babel
+- Never truncate or cut off code; finish every attribute value and closing tag. If output might be long, simplify the design instead of stopping early.
+- Do not place numbers directly before identifiers (avoid patterns like 80bg-foo)
+
+DESIGN EXCELLENCE GUIDELINES:
+
+Visual Hierarchy:
+- Clear focal points with size, color, and spacing contrast
+- Typography scale: text-4xl/5xl for heroes, text-xl/2xl for headings, text-base for body
+- Generous whitespace - don't crowd elements (p-8, p-12, gap-6, gap-8, space-y-6)
+
+Color & Contrast:
+- Use modern, sophisticated palettes (slate, zinc, neutral for bases)
+- Strategic accent colors for CTAs and highlights
+- Subtle gradients: bg-gradient-to-br from-indigo-500 to-purple-600
+- Ensure WCAG AA contrast minimums
+
+Polish & Refinement:
+- Smooth transitions: transition-all duration-300 ease-out
+- Subtle hover states: hover:scale-[1.02], hover:shadow-lg, hover:-translate-y-1
+- Soft shadows: shadow-sm, shadow-md, shadow-xl with shadow-black/5
+- Rounded corners consistently: rounded-lg, rounded-xl, rounded-2xl
+- Border accents: border border-white/10 or border-gray-200
+
+Layout Patterns:
+- Full viewport heroes: min-h-screen with centered content
+- Card grids: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
+- Max-width containers: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
+- Flexbox centering: flex items-center justify-center
+
+Interactive Elements:
+- Buttons: px-6 py-3 rounded-lg font-medium with hover/focus states
+- Focus rings: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+- Cursor feedback: cursor-pointer on interactive elements
+- Active states: active:scale-95
+
+Responsive Design:
+- Mobile-first approach
+- Breakpoints: sm:640px, md:768px, lg:1024px, xl:1280px
+- Stack on mobile, grid on desktop
+- Appropriate text scaling across breakpoints
+
+Accessibility:
+- Semantic HTML (header, main, nav, section, article, button)
+- ARIA labels for icon-only buttons
+- Role attributes where needed
+- Keyboard navigable
+
+COMPONENT STRUCTURE:
 \`\`\`jsx
 export default function ComponentName() {
   const [state, setState] = useState(initialValue);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      {/* Component JSX here */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Component content */}
+      </div>
     </div>
   );
 }
 \`\`\`
 
-IMPORTANT - DO NOT USE:
-- TypeScript type annotations (: string, : number, etc.)
-- Generic types like useState<Type>() - just use useState()
-- Interface or type declarations
-- Import statements
-- 'use client' directive
-
-STYLING GUIDELINES:
-- Use Tailwind utility classes exclusively
-- Modern, clean, professional design
-- Good color contrast
-- Hover states for interactive elements
-- Focus rings for accessibility
-- Mobile-responsive (sm:, md:, lg: breakpoints)
-
-Respond with ONLY the component code wrapped in \`\`\`jsx...\`\`\`.
-No explanations, no text before or after. Just the code.`;
+OUTPUT: Only the component code in \`\`\`jsx ... \`\`\`. No explanations.`;
 
 function stripCodeFences(text: string): string {
   return text
@@ -107,6 +145,13 @@ function cleanComponentCode(content: string): string {
 
   // Clean up empty lines
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+
+  // Ensure JSX comments are balanced; if an opening comment is left hanging, close it.
+  const openJsxComments = (cleaned.match(/\{\/\*/g) || []).length;
+  const closeJsxComments = (cleaned.match(/\*\/\}/g) || []).length;
+  if (openJsxComments > closeJsxComments) {
+    cleaned = `${cleaned}\n${"*/}".repeat(openJsxComments - closeJsxComments)}`;
+  }
 
   return cleaned.trim();
 }
@@ -219,7 +264,7 @@ export async function POST(request: NextRequest) {
         system: combinedSystem,
         prompt: message,
         temperature: 0.5,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 50000,
       });
     } else {
       // Use Cerebras for fast models
@@ -237,11 +282,40 @@ export async function POST(request: NextRequest) {
         system: combinedSystem,
         prompt: message,
         temperature: 0.5,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 50000,
       });
     }
 
-    const componentCode = cleanComponentCode(result.text);
+    const componentCode = cleanComponentCode(result?.text ?? "");
+
+    // Check if component code is valid
+    let safeComponentCode = componentCode;
+    const hasComponent =
+      /export default (function|const)\s+\w+/.test(componentCode) &&
+      componentCode.includes("return") &&
+      !componentCode.includes("```"); // Ensure no markdown fences remain
+
+    if (!hasComponent) {
+      console.warn("[v0-chat] Generated code appears malformed, using fallback");
+      safeComponentCode = `
+export default function GeneratedComponent() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+      <div className="bg-white rounded-xl shadow-sm p-8 max-w-md w-full text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-2">Preview Unavailable</h1>
+        <p className="text-gray-600 mb-4">
+          The AI generated incomplete code. Please try generating again.
+        </p>
+        <div className="p-4 bg-gray-100 rounded text-left text-xs overflow-auto max-h-40 text-gray-500 font-mono">
+          {/* Debug info for development */}
+          Code validation failed.
+        </div>
+      </div>
+    </div>
+  );
+}`;
+    }
+
     const responseChatId =
       chatId ||
       (typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -249,14 +323,14 @@ export async function POST(request: NextRequest) {
         : `cerebras-${Date.now()}`);
 
     console.log("[v0-chat] Generated React component");
-    const encodedCode = Buffer.from(componentCode, "utf8").toString("base64url");
+    const encodedCode = Buffer.from(safeComponentCode, "utf8").toString("base64url");
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : request.nextUrl.origin);
     const demoHttpUrl = `${baseUrl}/api/v0-chat/preview?data=${encodedCode}&id=${encodeURIComponent(responseChatId)}&type=react`;
 
     // Determine component name from code
-    const componentNameMatch = componentCode.match(/export default function (\w+)/);
+    const componentNameMatch = safeComponentCode.match(/export default function (\w+)/);
     const componentName = componentNameMatch ? componentNameMatch[1] : "GeneratedComponent";
     const fileName = `${componentName}.jsx`;
 
@@ -273,7 +347,7 @@ export async function POST(request: NextRequest) {
         : `preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
       // Create full HTML for permanent storage
-      const previewHTML = createPreviewHTML(componentCode, componentName);
+      const previewHTML = createPreviewHTML(safeComponentCode, componentName);
 
       // Store in database (user_id can be null for anonymous users)
       await query(
@@ -286,7 +360,7 @@ export async function POST(request: NextRequest) {
           userId,
           responseChatId,
           `${baseUrl}/api/preview/${previewId}`,
-          componentCode,
+          safeComponentCode,
           previewHTML,
           usedModelId,
           'active'
@@ -309,7 +383,7 @@ export async function POST(request: NextRequest) {
         {
           object: "file",
           name: fileName,
-          content: componentCode,
+          content: safeComponentCode,
           locked: false,
         },
       ],

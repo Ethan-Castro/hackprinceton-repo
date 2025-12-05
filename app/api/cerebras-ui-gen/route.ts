@@ -30,7 +30,8 @@ CRITICAL RULES:
 7. Include responsive design (mobile-first approach)
 8. Add accessibility attributes (aria-labels, roles, semantic HTML)
 9. Handle loading and error states gracefully
-10. Use semantic HTML elements
+ 10. Use semantic HTML elements
+11. Never truncate or cut off code; finish every attribute value and closing tag. If output might be long, simplify the design instead of stopping early.
 
 REQUIRED STRUCTURE:
 \`\`\`tsx
