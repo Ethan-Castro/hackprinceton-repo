@@ -10,7 +10,6 @@ import { OnboardingManager } from "@/components/onboarding/OnboardingManager";
 import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
 import { DynamicFavicon } from "@/components/dynamic-favicon";
-import { ConditionalFooter } from "@/components/conditional-footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,14 +54,11 @@ export default function RootLayout({
           >
             <SidebarProvider>
               <AppSidebar />
-              <SidebarInset className="flex flex-col min-h-screen">
+              <SidebarInset>
                 <div className="fixed left-3 top-3 z-50 md:hidden">
                   <SidebarTrigger className="shadow-border-medium bg-background/90 backdrop-blur-sm border border-border hover:shadow-border-medium" />
                 </div>
-                <div className="flex-1">
-                  {children}
-                </div>
-                <ConditionalFooter />
+                {children}
               </SidebarInset>
             </SidebarProvider>
 
