@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Copy, ExternalLink, Check } from "lucide-react";
+import { AlertCircle, Copy, ExternalLink, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -147,6 +147,7 @@ export function BaseV0Chat({
   const [loadingSavedChats, setLoadingSavedChats] = useState(false);
   const [loadingChatDetail, setLoadingChatDetail] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -342,12 +343,16 @@ export function BaseV0Chat({
         setChatId(data.id);
       }
 
-      // Update preview URL with v0 demo link
-      if (data.demo) {
-        console.log("[BaseV0Chat] Setting preview URL:", data.demo);
+      // Prefer deployment URL (permanent) over demo URL (temporary)
+      if (data.deployment?.webUrl) {
+        setDeploymentUrl(data.deployment.webUrl);
+        setPreviewUrl(data.deployment.webUrl);
+        console.log("[BaseV0Chat] Using permanent deployment URL:", data.deployment.webUrl);
+      } else if (data.demo) {
         setPreviewUrl(data.demo);
+        console.log("[BaseV0Chat] Using temporary demo URL:", data.demo);
       } else {
-        console.warn("[BaseV0Chat] No demo URL in response");
+        console.warn("[BaseV0Chat] No preview URL in response");
       }
 
       // Extract code from files if available
@@ -591,6 +596,17 @@ export function BaseV0Chat({
                         Copy Code
                       </>
                     )}
+                  </Button>
+                )}
+                {deploymentUrl && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => window.open(deploymentUrl, "_blank")}
+                    title="Open permanent public URL"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Public Link
                   </Button>
                 )}
                 <Button

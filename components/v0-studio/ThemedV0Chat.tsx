@@ -347,13 +347,14 @@ export function ThemedV0Chat({
         setChatId(data.id);
       }
 
-      if (data.demo) {
-        setPreviewUrl(data.demo);
-      }
-
+      // Prefer deployment URL (permanent) over demo URL (temporary)
       if (data.deployment?.webUrl) {
         setDeploymentUrl(data.deployment.webUrl);
-        console.log("[ThemedV0Chat] Permanent deployment URL:", data.deployment.webUrl);
+        setPreviewUrl(data.deployment.webUrl);
+        console.log("[ThemedV0Chat] Using permanent deployment URL:", data.deployment.webUrl);
+      } else if (data.demo) {
+        setPreviewUrl(data.demo);
+        console.log("[ThemedV0Chat] Using temporary demo URL:", data.demo);
       }
 
       if (data.files && data.files.length > 0) {

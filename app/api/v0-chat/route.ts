@@ -260,42 +260,41 @@ export async function POST(request: NextRequest) {
     const componentName = componentNameMatch ? componentNameMatch[1] : "GeneratedComponent";
     const fileName = `${componentName}.jsx`;
 
-    // Create permanent preview for authenticated users
+    // Create permanent preview for all users (authenticated or not)
     let permanentPreviewUrl = null;
     try {
+      // Get user ID if authenticated, otherwise use null
       const session = await getServerSession(authOptions);
-      if (session?.user) {
-        const userId = (session.user as any).id;
+      const userId = session?.user ? (session.user as any).id : null;
 
-        // Generate unique preview ID
-        const previewId = typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      // Generate unique preview ID
+      const previewId = typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `preview-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-        // Create full HTML for permanent storage
-        const previewHTML = createPreviewHTML(componentCode, componentName);
+      // Create full HTML for permanent storage
+      const previewHTML = createPreviewHTML(componentCode, componentName);
 
-        // Store in database
-        await query(
-          `INSERT INTO v0_deployments (
-            preview_id, user_id, internal_chat_id, deployment_web_url,
-            component_code, component_html, model_used, deployment_status
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            previewId,
-            userId,
-            responseChatId,
-            `${baseUrl}/api/preview/${previewId}`,
-            componentCode,
-            previewHTML,
-            usedModelId,
-            'active'
-          ]
-        );
+      // Store in database (user_id can be null for anonymous users)
+      await query(
+        `INSERT INTO v0_deployments (
+          preview_id, user_id, internal_chat_id, deployment_web_url,
+          component_code, component_html, model_used, deployment_status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          previewId,
+          userId,
+          responseChatId,
+          `${baseUrl}/api/preview/${previewId}`,
+          componentCode,
+          previewHTML,
+          usedModelId,
+          'active'
+        ]
+      );
 
-        permanentPreviewUrl = `${baseUrl}/api/preview/${previewId}`;
-        console.log("[v0-chat] Created permanent preview:", permanentPreviewUrl);
-      }
+      permanentPreviewUrl = `${baseUrl}/api/preview/${previewId}`;
+      console.log("[v0-chat] Created permanent preview:", permanentPreviewUrl);
     } catch (previewError) {
       console.error("[v0-chat] Failed to create permanent preview:", previewError);
       // Continue anyway - temporary preview still works

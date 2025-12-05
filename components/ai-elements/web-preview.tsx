@@ -42,9 +42,11 @@ interface WebPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const WebPreview = React.forwardRef<HTMLDivElement, WebPreviewProps>(
-  ({ defaultUrl = '', onUrlChange, className, children, ...props }, ref) => {
-    const [url, setUrlState] = React.useState(defaultUrl || '');
-    const [history, setHistory] = React.useState<string[]>(defaultUrl ? [defaultUrl] : []);
+  ({ defaultUrl, onUrlChange, className, children, ...props }, ref) => {
+    // Treat empty strings as undefined
+    const normalizedDefaultUrl = defaultUrl && defaultUrl.trim() ? defaultUrl : '';
+    const [url, setUrlState] = React.useState(normalizedDefaultUrl);
+    const [history, setHistory] = React.useState<string[]>(normalizedDefaultUrl ? [normalizedDefaultUrl] : []);
     const [historyIndex, setHistoryIndex] = React.useState(0);
     const [refreshKey, setRefreshKey] = React.useState(0);
 
@@ -251,14 +253,17 @@ const WebPreviewBody = React.forwardRef<HTMLIFrameElement, WebPreviewBodyProps>(
     const { url } = useWebPreview();
     const [isLoading, setIsLoading] = React.useState(true);
 
-    const iframeSrc = src || url || undefined;
+    // Only use valid URLs - empty strings should be treated as undefined
+    const contextUrl = url && url.trim() ? url : undefined;
+    const iframeSrc = (src && src.trim()) ? src : contextUrl;
     const iframeSrcDoc = srcDoc || undefined;
 
     React.useEffect(() => {
       setIsLoading(true);
     }, [iframeSrc, iframeSrcDoc]);
 
-    const hasContent = Boolean(iframeSrc || iframeSrcDoc);
+    // Check for actual content - empty strings don't count
+    const hasContent = Boolean((iframeSrc && iframeSrc.trim()) || iframeSrcDoc);
 
     return (
       <div className="relative flex-1 bg-background">
