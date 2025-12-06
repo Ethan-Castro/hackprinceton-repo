@@ -1,20 +1,48 @@
-import { Experimental_Agent as Agent, stepCountIs } from "ai";
-import { webSearch } from "@exalabs/ai-sdk";
+import { Experimental_Agent as Agent, stepCountIs, tool as createTool } from "ai";
+import { webSearch as exaWebSearch } from "@exalabs/ai-sdk";
+import { z } from "zod";
 import { tools } from "@/lib/tools";
 import { resolveModel } from "@/lib/agents/model-factory";
 import { createToolLogger } from "@/lib/agents/tool-logging";
 
+// Wrap Exa webSearch with error handling to prevent breaking the conversation
+function createSafeWebSearch() {
+  const originalTool = exaWebSearch({
+    type: "auto",
+    numResults: 10,
+    contents: {
+      text: { maxCharacters: 5000 },
+      livecrawl: "fallback",
+    },
+  });
+
+  return createTool({
+    description: originalTool.description || "Search the web for up-to-date information",
+    inputSchema: z.object({
+      query: z.string().describe("The search query"),
+    }),
+    execute: async ({ query }) => {
+      try {
+        if (!originalTool.execute) {
+          throw new Error("Tool execute function not available");
+        }
+        return await originalTool.execute({ query }, { toolCallId: "", messages: [] });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        console.error("[webSearch] Tool error:", errorMessage);
+        return {
+          error: true,
+          message: `Web search failed: ${errorMessage}. Please try rephrasing your query or provide information without web search.`,
+        };
+      }
+    },
+  });
+}
+
 function buildChatTools() {
   return {
     ...tools,
-    webSearch: webSearch({
-      type: "auto",
-      numResults: 5,
-      contents: {
-        text: { maxCharacters: 2000 },
-        livecrawl: "fallback",
-      },
-    }),
+    webSearch: createSafeWebSearch(),
   };
 }
 
@@ -78,26 +106,86 @@ Augment offers specialized AI studios for domain-specific work. Suggest these wh
     systemSections.push(
       `## Available Tools
 
-${fullToolAccess ? `### Full Toolbelt
-- **Research & scraping**: webSearch, runParallelAgent, searchArXiv/getArXivPaper, scrapeWebsite, firecrawl, Google Docs readers, Gamma exports
-- **Visualization & design**: generateChart, generateMermaidDiagram/Flowchart/ERDiagram, canvas tools, generateHtmlPreview, displayWebPreview
-- **Code & data**: executePython/analyzeDataset, executeSQL/describeTable, runParallelAgent, dashboard builders
-- **Content & documents**: displayArtifact, textbook generators, business analysis tools, template renderers
-- **Health & operations**: medical research suite, appointments, medications, health monitoring, provider/insurance checks
-- **Notifications**: SendGrid email flows and ElevenLabs voice alerts
+${fullToolAccess ? "You have **FULL ACCESS** to all tools listed below." : "You currently have access to core tools. Full toolbelt is available when enabled."}
 
-Use any combination of tools that moves the task forward.` : `### Core Tools
-- **displayArtifact / displayWebPreview / generateHtmlPreview** — Show results with clean previews
-- **webSearch** — Search the web for current information
+### Search & Research Tools
+| Tool | Description | Best For |
+|------|-------------|----------|
+| **webSearch** | Exa-powered web search with live crawling | General web queries, news, current events |
+| **valyuWebSearch** | Valyu real-time web search | Alternative web search, cross-reference results |
+| **financeSearch** | Stock prices, earnings, balance sheets, income statements, cash flows, insider transactions | Financial data, stock analysis, company financials |
+| **paperSearch** | Full-text search of PubMed, arXiv, bioRxiv, medRxiv scholarly articles | Academic research, scientific papers |
+| **bioSearch** | Clinical trials, FDA drug labels, biomedical research | Medical research, drug information, clinical data |
+| **patentSearch** | USPTO full-text patent search | Intellectual property, patent research |
+| **secSearch** | SEC filings (10-K, 10-Q, 8-K, regulatory disclosures) | Company filings, regulatory disclosures |
+| **economicsSearch** | BLS, FRED, World Bank, USAspending economic data | Economic indicators, government data |
+| **companyResearch** | Comprehensive company research and intelligence reports | Business intelligence, competitive analysis |
+| **searchArXiv / getArXivPaper** | arXiv paper search and retrieval | Physics, math, CS, ML research papers |
+| **scrapeWebsite** | Firecrawl web scraping with content extraction | Extract content from specific URLs |
 
-Use these proactively when they add value.`}
+### Visualization & Display Tools
+| Tool | Description |
+|------|-------------|
+| **displayArtifact** | Show code, documents, or structured content in a clean container |
+| **displayWebPreview** | Live iframe preview of URLs |
+| **generateHtmlPreview** | Render HTML/CSS/JS code as live preview |
+| **generateChart** | Create Recharts-based data visualizations (bar, line, pie, area charts) |
+| **generateMermaidDiagram** | Create Mermaid diagrams (flowcharts, sequence, state, class diagrams) |
+| **generateFlowchart** | Specialized flowchart generation |
+| **generateERDiagram** | Entity-relationship diagrams for database design |
+
+### Code & Data Tools
+| Tool | Description |
+|------|-------------|
+| **executePython** | Run Python code via E2B sandbox (data analysis, calculations, file processing) |
+| **analyzeDataset** | Analyze data files and generate statistical insights |
+| **executeSQL** | Run SQL queries against connected databases |
+| **describeTable** | Get schema information for database tables |
+| **runParallelAgent** | Execute multiple AI agents in parallel for complex tasks |
+
+### Domain-Specific Tools
+| Category | Tools |
+|----------|-------|
+| **Healthcare** | medicalResearch, appointments, medications, healthMonitoring, providerInsurance |
+| **Education** | textbook generators, lesson planning, quiz creation |
+| **Business** | business plans, market analysis, reports, templates |
+| **Sustainability** | ESG reports, carbon tracking |
+
+### Communication Tools
+| Tool | Description |
+|------|-------------|
+| **sendEmail** | Send emails via SendGrid |
+| **voiceAlert** | Send voice alerts via ElevenLabs |
+
+## Parallel Tool Execution
+
+**CRITICAL: You MUST call multiple tools in parallel when they are independent. This is faster and more efficient.**
+
+### When to Use Parallel Tools
+- **Multi-topic research**: User asks about multiple subjects → search for each in parallel
+- **Cross-referencing**: Need data from multiple sources → query all sources simultaneously
+- **Comprehensive analysis**: Comparing companies, papers, or data points → fetch all in parallel
+- **Financial research**: Stock data + SEC filings + company research → all in parallel
+- **Health research**: Web search + medical papers + clinical trials → all in parallel
+
+### Examples of Parallel Execution
+1. "Compare Tesla and Ford financials" → Call \`financeSearch\` for TSLA AND \`financeSearch\` for F in parallel
+2. "Research ketogenic diet" → Call \`webSearch\` + \`paperSearch\` + \`bioSearch\` ALL in parallel
+3. "Latest AI news and ML papers" → Call \`webSearch\` + \`searchArXiv\` in parallel
+4. "Company analysis for Apple" → Call \`financeSearch\` + \`secSearch\` + \`companyResearch\` ALL in parallel
+5. "Economic outlook" → Call \`economicsSearch\` for unemployment + inflation + GDP ALL in parallel
+6. "Drug interactions for metformin" → Call \`bioSearch\` + \`paperSearch\` + \`webSearch\` ALL in parallel
+
+### How to Execute in Parallel
+Call multiple tools in the SAME response. They execute concurrently and you receive all results together. DO NOT wait for one search to complete before starting another.
 
 ### Tool Usage Guidelines
 1. **Use tools proactively** when they genuinely help the user
-2. **One web search per turn** unless the user asks for multiple topics
-3. **Prefer charts/diagrams** over describing data in text
-4. **Use artifacts** for code files, not for short snippets
-5. **Combine tools** when appropriate (e.g., search then visualize)`
+2. **ALWAYS execute searches in PARALLEL** when researching multiple topics or sources
+3. **Use specialized search tools** — financeSearch for stocks, paperSearch for academic work, bioSearch for medical, etc.
+4. **Prefer charts/diagrams** over describing data in text
+5. **Use artifacts** for code files, not for short snippets
+6. **Combine results** — Run parallel searches, then synthesize and visualize`
     );
   }
 

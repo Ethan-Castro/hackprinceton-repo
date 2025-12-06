@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Copy, Download } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Check, Copy, Download, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Artifact,
   ArtifactHeader,
@@ -17,6 +25,7 @@ import {
   WebPreviewBody,
 } from "@/components/ai-elements";
 import { SandpackDashboardRenderer } from "@/components/sandpack-dashboard-renderer";
+import { getToolDisplayName } from "@/lib/tool-display-names";
 
 export type ArtifactRendererData = {
   title?: string;
@@ -45,6 +54,9 @@ export function ArtifactRenderer({
   data: ArtifactRendererData;
 }) {
   const [copied, setCopied] = React.useState(false);
+  const [isExportingPdf, setIsExportingPdf] = React.useState(false);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const artifactRef = React.useRef<HTMLDivElement>(null);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(data.content);
@@ -52,27 +64,96 @@ export function ArtifactRenderer({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([data.content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `artifact-${Date.now()}.${
-      data.contentType === "code" ? data.language || "txt" : "txt"
-    }`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownloadPdf = async () => {
+    if (!artifactRef.current) return;
+    
+    setIsExportingPdf(true);
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      // Capture the artifact with better quality
+      const canvas = await html2canvas(artifactRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: artifactRef.current.scrollWidth,
+        windowHeight: artifactRef.current.scrollHeight,
+      });
+
+      const imgData = canvas.toDataURL("image/png", 1.0);
+      
+      // Calculate PDF dimensions maintaining aspect ratio
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+      const pageHeight = 297; // A4 height in mm
+      
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // Handle multi-page content
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight, undefined, "FAST");
+      heightLeft -= pageHeight;
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, pdfWidth, pdfHeight, undefined, "FAST");
+        heightLeft -= pageHeight;
+      }
+      
+      // Generate filename
+      const filename = data.title
+        ? `${data.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.pdf`
+        : `artifact-${Date.now()}.pdf`;
+      
+      pdf.save(filename);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      // Fallback to text download
+      const blob = new Blob([data.content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `artifact-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   return (
-    <Artifact className="my-4">
-      <ArtifactHeader>
-        <div>
-          {data.title && <ArtifactTitle>{data.title}</ArtifactTitle>}
+    <Artifact 
+      ref={artifactRef}
+      className="my-6 rounded-xl border border-border/50 bg-card shadow-lg shadow-black/5 dark:shadow-black/20 transition-all duration-200 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30 overflow-hidden"
+    >
+      <ArtifactHeader className="border-b border-border/50 bg-muted/30 backdrop-blur-sm">
+        <div className="space-y-1">
+          {data.title && (
+            <ArtifactTitle className="text-lg font-semibold text-foreground">
+              {data.title}
+            </ArtifactTitle>
+          )}
           {data.description && (
-            <ArtifactDescription>{data.description}</ArtifactDescription>
+            <ArtifactDescription className="text-sm text-muted-foreground">
+              {data.description}
+            </ArtifactDescription>
           )}
         </div>
         <ArtifactActions>
@@ -81,24 +162,65 @@ export function ArtifactRenderer({
             label="Copy"
             icon={copied ? Check : Copy}
             onClick={handleCopy}
+            className="hover:bg-accent/50 transition-colors"
           />
-          <ArtifactAction
-            tooltip="Download"
-            label="Download"
-            icon={Download}
-            onClick={handleDownload}
-          />
+          {isExportingPdf ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="h-8 w-8"
+                    aria-label="Exporting PDF..."
+                  >
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Exporting PDF...</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <ArtifactAction
+              tooltip="Download as PDF"
+              label="Download PDF"
+              icon={Download}
+              onClick={handleDownloadPdf}
+              className="hover:bg-accent/50 transition-colors"
+            />
+          )}
         </ArtifactActions>
       </ArtifactHeader>
-      <ArtifactContent>
+      <ArtifactContent 
+        ref={contentRef}
+        className="p-6 md:p-8 bg-gradient-to-b from-card to-muted/20"
+      >
         {data.contentType === "code" ? (
-          <pre className="text-sm overflow-x-auto bg-muted/30 p-4 rounded-lg">
-            <code className={data.language ? `language-${data.language}` : ""}>
+          <div className="rounded-lg border border-border/50 bg-muted/40 p-6 shadow-inner overflow-x-auto">
+            <pre className="text-sm leading-relaxed font-mono">
+              <code className={data.language ? `language-${data.language}` : ""}>
+                {data.content}
+              </code>
+            </pre>
+          </div>
+        ) : data.contentType === "markdown" ? (
+          <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground/90 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-code:text-primary prose-code:bg-muted/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted/40 prose-pre:border prose-pre:border-border/50 prose-blockquote:border-l-primary prose-blockquote:bg-muted/20 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r prose-table:border-collapse prose-th:border prose-th:border-border/50 prose-th:bg-muted/30 prose-th:p-2 prose-td:border prose-td:border-border/50 prose-td:p-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {data.content}
-            </code>
-          </pre>
+            </ReactMarkdown>
+          </div>
+        ) : data.contentType === "html" ? (
+          <div 
+            className="prose prose-sm md:prose-base dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: data.content }}
+          />
         ) : (
-          <div className="prose dark:prose-invert max-w-none">{data.content}</div>
+          <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none whitespace-pre-wrap text-foreground/90 leading-relaxed">
+            {data.content}
+          </div>
         )}
       </ArtifactContent>
     </Artifact>
@@ -290,13 +412,8 @@ export function GenericToolRenderer({
     }
   };
 
-  // Format tool name for display (convert camelCase to Title Case)
-  const formatToolName = (name: string) => {
-    return name
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase())
-      .trim();
-  };
+  // Use shared tool display name utility
+  const formatToolName = getToolDisplayName;
 
   return (
     <div className={`my-4 rounded-lg border ${data.state === "error" ? "border-red-500/50" : "border-border"} bg-card p-4 shadow-sm transition-all duration-200`}>

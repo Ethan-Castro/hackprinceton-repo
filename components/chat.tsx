@@ -154,6 +154,8 @@ export function Chat({
     providers,
   } = useModelManager(modelId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAnimationFrameRef = useRef<number | null>(null);
   const lastApiEndpointRef = useRef(apiEndpoint);
   const [tokenUsage, setTokenUsage] = useState({
     inputTokens: 0,
@@ -177,7 +179,10 @@ export function Chat({
                 }
             });
         }
-    }
+    },
+    body: {
+      enableAllTools: true,  // Enable all 40+ tools including Valyu search suite
+    },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
 
@@ -222,13 +227,49 @@ export function Chat({
     embedded ? "min-h-[720px] bg-background" : (hasMessages ? "h-screen overflow-hidden" : "min-h-screen overflow-y-auto bg-background")
   );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const [shouldAutoscroll, setShouldAutoscroll] = useState(true);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      setShouldAutoscroll(distanceFromBottom < 160);
+    };
+
+    handleScroll();
+    container.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, [hasMessages]);
+
+  useEffect(() => {
+    if (!shouldAutoscroll) {
+      return;
+    }
+
+    if (scrollAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(scrollAnimationFrameRef.current);
+    }
+
+    scrollAnimationFrameRef.current = requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: status === "streaming" ? "auto" : "smooth",
+      });
+    });
+
+    return () => {
+      if (scrollAnimationFrameRef.current !== null) {
+        cancelAnimationFrame(scrollAnimationFrameRef.current);
+        scrollAnimationFrameRef.current = null;
+      }
+    };
+  }, [messages, status, shouldAutoscroll]);
 
   useEffect(() => {
     const averageCharsPerToken = 4;
@@ -279,6 +320,7 @@ export function Chat({
     stop();
     setMessages([]);
     setInput("");
+    setShouldAutoscroll(true);
   };
 
   const renderTokenUsage = () => {
@@ -420,7 +462,10 @@ export function Chat({
         {hasMessages && (
           <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full animate-fade-in overflow-hidden">
             <ProvidersWarning providers={providers} className="mb-4" />
-            <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 hide-scrollbar">
+            <div
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto px-4 md:px-8 py-4 hide-scrollbar"
+            >
               <div className="flex flex-col gap-4 md:gap-6 pb-4">
                 {messages.map((m, messageIndex) => (
                   <div

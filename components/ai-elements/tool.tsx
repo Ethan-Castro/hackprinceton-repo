@@ -5,6 +5,7 @@ import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
 import { ChevronDown, Wrench, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { getToolDisplayName } from "@/lib/tool-display-names"
 import type { ToolUIPart } from "ai"
 
 // Context for managing the tool state
@@ -15,17 +16,6 @@ const ToolContext = React.createContext<{
   isOpen: false,
   setIsOpen: () => {},
 })
-
-// Helper to get tool name from type
-function getToolName(type: string): string {
-  // Remove "tool-" prefix if present
-  const name = type.replace(/^tool-/, "")
-  // Convert snake_case or kebab-case to Title Case
-  return name
-    .split(/[-_]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ")
-}
 
 // Helper to get status badge info
 function getStatusInfo(state: ToolUIPart["state"]) {
@@ -111,7 +101,7 @@ const ToolHeader = React.forwardRef<
   ToolHeaderProps
 >(({ className, type, state, ...props }, ref) => {
   const { isOpen } = React.useContext(ToolContext)
-  const toolName = getToolName(type)
+  const toolName = getToolDisplayName(type)
   const statusInfo = getStatusInfo(state)
   const StatusIcon = statusInfo.icon
 
