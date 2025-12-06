@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Users, Target, Zap, Rocket, Lightbulb, Linkedin, ExternalLink } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -44,10 +43,6 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background px-4 py-8 sm:px-6 md:px-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-12 md:space-y-16">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
-        
         {/* Hero Section */}
         <motion.section 
           initial={{ opacity: 0, y: 30 }}

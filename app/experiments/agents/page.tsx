@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
+import ReactMarkdown from "react-markdown";
 
 const container = {
   hidden: { opacity: 0 },
@@ -159,18 +160,30 @@ export default function AgentExperimentsPage() {
     id: "agent-lab-chat",
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      body: {
+        enableAllTools: true,
+        toolScope: "all",
+      },
     }),
   });
 
   const isRunning = status === "streaming" || status === "submitted";
 
   const renderPart = (part: any, key: string) => {
+    const state = (part as any)?.state ?? (part as any)?.status;
+    const normalizedState =
+      state === "output" ? "output-available" :
+      state === "error" ? "output-error" :
+      state;
+
     // Handle text parts
     if (part?.type === "text") {
       return (
-        <p key={key} className="leading-relaxed text-sm whitespace-pre-wrap text-foreground/90">
-          {part.text}
-        </p>
+        <div key={key} className="prose prose-sm dark:prose-invert max-w-none text-foreground/90">
+          <ReactMarkdown>
+            {typeof part.text === "string" ? part.text : ""}
+          </ReactMarkdown>
+        </div>
       );
     }
 
@@ -205,11 +218,10 @@ export default function AgentExperimentsPage() {
     // Handle tool invocations
     const partType: string | undefined = part?.type;
     if (partType && partType.startsWith("tool-")) {
-      const state = (part as any).state;
       const toolName = partType.replace("tool-", "");
 
       // Tool input streaming/available
-      if (state === "input-streaming" || state === "input-available") {
+      if (normalizedState === "input-streaming" || normalizedState === "input-available") {
         return (
           <div key={key} className="rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/50 p-3 my-2">
             <div className="flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
@@ -224,7 +236,7 @@ export default function AgentExperimentsPage() {
       }
 
       // Tool output available
-      if (state === "output-available") {
+      if (normalizedState === "output-available") {
         return (
           <div key={key} className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 p-3 my-2">
             <div className="flex items-center gap-2 text-xs font-medium text-green-700 dark:text-green-400 mb-2">
@@ -241,7 +253,7 @@ export default function AgentExperimentsPage() {
       }
 
       // Tool error
-      if (state === "output-error") {
+      if (normalizedState === "output-error") {
         return (
           <div key={key} className="rounded-md bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50 p-3 my-2">
             <div className="flex items-center gap-2 text-xs font-medium text-red-700 dark:text-red-400 mb-1">
@@ -254,6 +266,22 @@ export default function AgentExperimentsPage() {
           </div>
         );
       }
+    }
+
+    // Generic tool result with toolName/output if type didn't match
+    if (part?.toolName && (part.output || part.result)) {
+      const output = part.output ?? part.result;
+      return (
+        <div key={key} className="rounded-md bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/50 p-3 my-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-green-700 dark:text-green-400 mb-2">
+            <span>✓</span>
+            <span>Result: <span className="font-mono">{part.toolName}</span></span>
+          </div>
+          <pre className="text-[10px] text-green-700 dark:text-green-200 whitespace-pre-wrap break-words font-mono bg-white/50 dark:bg-black/10 p-2 rounded max-h-40 overflow-y-auto">
+            {typeof output === "string" ? output : JSON.stringify(output, null, 2)}
+          </pre>
+        </div>
+      );
     }
 
     // Fallback for unknown part types
@@ -302,7 +330,7 @@ export default function AgentExperimentsPage() {
           </h1>
           
           <p className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-3xl font-light leading-relaxed text-balance">
-            Interactive playground for the AI SDK Agent class. Experiment with LLMs that use tools in a loop to accomplish tasks through multi-step reasoning.
+            Interactive playground for the AI SDK Agent class. Experiment with LLMs that use tools in a loop to accomplish tasks through multi-step reasoning. Full toolbelt is enabled here: search, charts/diagrams, Python, SQL, scraping, previews, and notifications.
           </p>
 
           <div className="flex w-full flex-col sm:flex-row gap-3 sm:gap-4 pt-3 sm:pt-4">
@@ -337,19 +365,21 @@ export default function AgentExperimentsPage() {
             <motion.div variants={item}>
               <Card className="border-none shadow-sm bg-muted/30 overflow-hidden">
                 <CardHeader className="pb-4 border-b border-border/5 bg-white/40 dark:bg-black/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <Bot className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base font-medium">Agent Session</CardTitle>
-                        <CardDescription className="text-xs font-mono">/api/chat • {status ?? "ready"}</CardDescription>
-                      </div>
-                    </div>
-                    {error && (
-                      <Badge variant="destructive" className="text-[10px]">Error</Badge>
-                    )}
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <Bot className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base font-medium">Agent Session</CardTitle>
+                        <CardDescription className="text-xs font-mono">
+                          /api/chat • full toolbelt • {status ?? "ready"}
+                        </CardDescription>
+                          </div>
+                        </div>
+                        {error && (
+                          <Badge variant="destructive" className="text-[10px]">Error</Badge>
+                        )}
                   </div>
                 </CardHeader>
                 

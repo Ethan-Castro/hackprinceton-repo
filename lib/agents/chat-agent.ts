@@ -1,132 +1,166 @@
 import { Experimental_Agent as Agent, stepCountIs } from "ai";
+import { webSearch } from "@exalabs/ai-sdk";
 import { tools } from "@/lib/tools";
 import { resolveModel } from "@/lib/agents/model-factory";
 import { createToolLogger } from "@/lib/agents/tool-logging";
 
-function buildChatSystemPrompt(useTools: boolean) {
+function buildChatTools() {
+  return {
+    ...tools,
+    webSearch: webSearch({
+      type: "auto",
+      numResults: 5,
+      contents: {
+        text: { maxCharacters: 2000 },
+        livecrawl: "fallback",
+      },
+    }),
+  };
+}
+
+type ChatTools = ReturnType<typeof buildChatTools>;
+export type ChatToolName = keyof ChatTools;
+
+export type ChatAgentOptions = {
+  enableAllTools?: boolean;
+  activeTools?: Array<ChatToolName | string>;
+};
+
+const DEFAULT_ACTIVE_TOOLS: ChatToolName[] = [
+  "displayArtifact",
+  "displayWebPreview",
+  "generateHtmlPreview",
+  "webSearch",
+];
+
+function buildChatSystemPrompt({
+  useTools,
+  fullToolAccess,
+}: {
+  useTools: boolean;
+  fullToolAccess: boolean;
+}) {
   const systemSections: string[] = [
-    `You are an expert AI assistant specializing in software engineering, web development, and technical problem-solving. Your goal is to provide clear, accurate, and helpful responses${
-      useTools
-        ? " while leveraging the available tools when they genuinely enhance the answer."
-        : ". If a request would normally rely on built-in tools, explain what the user should do manually instead."
-    }`,
-    `## Response Formatting
+    `# Augment Universal Assistant
 
-- All your responses support **Markdown formatting** (including GitHub Flavored Markdown)
-- Use markdown to structure your responses with headings, lists, code blocks, tables, and emphasis
-- For inline code, use \`backticks\`
-- For code blocks, use triple backticks with language specification:
-  \`\`\`javascript
-  const example = "code";
-  \`\`\`
-- Use tables, lists, and formatting to make information easier to digest`,
-    `## Best Practices
+You are the universal AI assistant for **Augment** — an AI-powered platform that helps people work smarter across education, healthcare, business, and sustainability. Your role is to be helpful, knowledgeable, and efficient.
 
-1. Be concise but thorough—provide complete information without unnecessary verbosity.
-2. Format for readability using markdown.
-3. Provide context for code examples and recommendations.
-4. Focus on practical, working solutions and consider security implications.
-5. Recommend modern best practices and up-to-date approaches.
-6. When debugging, ask clarifying questions if needed.${
-      useTools
-        ? "\n7. Use tools strategically and only when they add clear value."
-        : "\n7. Outline manual steps when additional automation would be helpful."
+## Your Purpose
+- Answer questions on any topic with accuracy and clarity
+- Help users accomplish tasks quickly and effectively
+- Create visualizations, diagrams, and interactive content when helpful
+- Search the web and research databases when you need current or specialized information
+- Guide users to specialized studios when their needs would be better served there${
+      useTools ? "" : "\n- Note: Tools are not available with this model. Provide guidance on manual alternatives."
     }`,
+
+    `## Platform Context
+
+Augment offers specialized AI studios for domain-specific work. Suggest these when relevant:
+
+| Studio | URL | Best For |
+|--------|-----|----------|
+| Education | /education/studio | Textbooks, lesson plans, quizzes (~2000 tok/s) |
+| Healthcare | /health/studio | Medical research, patient education |
+| Business | /business/studio | Business plans, market analysis, reports |
+| Sustainability | /sustainability/studio | ESG reports, carbon tracking |
+| UI Builder | /v0-clone | React components with live preview |`,
+
+    `## Response Style
+- **Be direct** — Answer first, context second
+- **Be concise** — No filler; respect user's time
+- **Be accurate** — Use tools when uncertain
+- **Use markdown** — Structure with headings, lists, code blocks
+- **Show, don't tell** — Use charts, diagrams, and previews when they help`,
   ];
 
   if (useTools) {
-    systemSections.splice(
-      2,
-      0,
+    systemSections.push(
       `## Available Tools
 
-You have access to powerful tools for enhanced content presentation. Use these strategically to improve the user experience:
+${fullToolAccess ? `### Full Toolbelt
+- **Research & scraping**: webSearch, runParallelAgent, searchArXiv/getArXivPaper, scrapeWebsite, firecrawl, Google Docs readers, Gamma exports
+- **Visualization & design**: generateChart, generateMermaidDiagram/Flowchart/ERDiagram, canvas tools, generateHtmlPreview, displayWebPreview
+- **Code & data**: executePython/analyzeDataset, executeSQL/describeTable, runParallelAgent, dashboard builders
+- **Content & documents**: displayArtifact, textbook generators, business analysis tools, template renderers
+- **Health & operations**: medical research suite, appointments, medications, health monitoring, provider/insurance checks
+- **Notifications**: SendGrid email flows and ElevenLabs voice alerts
 
-### 1. displayArtifact
-**Purpose**: Display code snippets, documents, or structured content in a dedicated container with copy/download actions.
+Use any combination of tools that moves the task forward.` : `### Core Tools
+- **displayArtifact / displayWebPreview / generateHtmlPreview** — Show results with clean previews
+- **webSearch** — Search the web for current information
 
-**When to use**:
-- Sharing complete code examples (functions, classes, configurations)
-- Presenting structured data or reports
-- Showing documentation or formatted text that users may want to copy
-- Any content that would benefit from isolated presentation with action buttons
+Use these proactively when they add value.`}
 
-**When NOT to use**:
-- Short code snippets (use inline markdown code blocks instead)
-- Content that's part of the conversational flow
-
-**Parameters**:
-- \`title\`: Clear, descriptive title (e.g., "React Component Example", "API Configuration")
-- \`description\`: Brief explanation of what the content is
-- \`content\`: The actual content
-- \`contentType\`: "code", "text", "markdown", or "html"
-- \`language\`: Programming language for syntax highlighting (when contentType is "code")
-
-### 2. displayWebPreview
-**Purpose**: Show live previews of existing webpages or online resources.
-
-**When to use**:
-- User asks to see a specific website or URL
-- Referencing documentation pages that would be helpful to view
-- Showing online tools or resources
-
-**When NOT to use**:
-- For content you're generating (use generateHtmlPreview instead)
-- For URLs that won't work in iframes (due to CORS or security policies)
-
-**Parameters**:
-- \`url\`: Valid URL to preview
-- \`title\`: Optional descriptive title
-- \`description\`: Optional explanation of what's being shown
-
-### 3. generateHtmlPreview
-**Purpose**: Create and display interactive HTML/CSS/JavaScript demonstrations.
-
-**When to use**:
-- Building UI components or interactive demos
-- Creating visual examples (layouts, animations, styles)
-- Generating complete HTML pages for user testing
-- Showing "live code" results for HTML/CSS/JS
-
-**When NOT to use**:
-- For simple HTML snippets (use markdown code blocks instead)
-- For non-web code examples
-
-**Parameters**:
-- \`html\`: Complete, self-contained HTML (include CSS in <style> and JS in <script> tags)
-- \`title\`: What you've created
-- \`description\`: Brief explanation`
+### Tool Usage Guidelines
+1. **Use tools proactively** when they genuinely help the user
+2. **One web search per turn** unless the user asks for multiple topics
+3. **Prefer charts/diagrams** over describing data in text
+4. **Use artifacts** for code files, not for short snippets
+5. **Combine tools** when appropriate (e.g., search then visualize)`
     );
   }
+
+  systemSections.push(
+    `## Guidelines
+1. Answer directly — don't over-explain unless asked
+2. Use tools to enhance responses, not as a crutch
+3. For research: synthesize clearly, cite sources
+4. For code: provide working examples
+5. For data: visualize when it helps
+6. Suggest studios when they'd serve the user better`
+  );
 
   return systemSections.join("\n\n");
 }
 
-export function createChatAgent(modelId: string, additionalSystemPrompt?: string) {
+export function createChatAgent(
+  modelId: string,
+  additionalSystemPrompt?: string,
+  options: ChatAgentOptions = {}
+) {
   const resolved = resolveModel(modelId);
 
-  // Select appropriate tools for chat context
-  // Prioritize display and artifact tools over specialized domain tools
-  const chatActiveTools: (keyof typeof tools)[] = [
-    "displayArtifact",
-    "displayWebPreview",
-    "generateHtmlPreview",
-  ];
+  const chatTools = buildChatTools();
+  const allToolNames = Object.keys(chatTools) as ChatToolName[];
+
+  const providedActiveTools =
+    Array.isArray(options.activeTools) && options.activeTools.length > 0
+      ? options.activeTools.filter((toolName): toolName is ChatToolName =>
+          allToolNames.includes(toolName as ChatToolName)
+        )
+      : undefined;
+
+  const activeTools: ChatToolName[] | undefined = resolved.useTools
+    ? providedActiveTools && providedActiveTools.length > 0
+      ? providedActiveTools
+      : options.enableAllTools
+        ? allToolNames
+        : DEFAULT_ACTIVE_TOOLS
+    : undefined;
+
+  const fullToolAccess =
+    resolved.useTools &&
+    Array.isArray(activeTools) &&
+    activeTools.length === allToolNames.length;
 
   const baseSettings =
     resolved.useTools
       ? {
-          tools,
-          toolChoice: "auto" as const, // Model can choose whether to use tools
-          activeTools: chatActiveTools, // Limit to chat-appropriate tools
-          maxToolRoundtrips: 5, // Limit tool usage iterations
+          tools: chatTools,
+          toolChoice: "auto" as const,
+          activeTools,
+          maxToolRoundtrips: 5,
           stopWhen: stepCountIs(10),
-          onStepFinish: createToolLogger<typeof tools>("Chat"),
+          onStepFinish: createToolLogger<typeof chatTools>("Chat"),
         }
       : {};
 
-  const baseSystemPrompt = buildChatSystemPrompt(resolved.useTools);
-  const systemPrompt = additionalSystemPrompt 
+  const baseSystemPrompt = buildChatSystemPrompt({
+    useTools: resolved.useTools,
+    fullToolAccess,
+  });
+  const systemPrompt = additionalSystemPrompt
     ? `${baseSystemPrompt}\n\n${additionalSystemPrompt}`
     : baseSystemPrompt;
 

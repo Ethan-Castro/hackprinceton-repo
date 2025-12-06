@@ -182,6 +182,5 @@ export const teamsData = [
   {
     name: "Augment",
     logo: "GalleryVerticalEnd" as const,
-    plan: "Hacker",
   },
 ]

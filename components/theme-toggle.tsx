@@ -2,8 +2,9 @@
 
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Palette } from "lucide-react";
+import { Moon, Sun, Palette, Type } from "lucide-react";
 import { useEffect, useState } from "react";
+import { applyFontSelection, CustomFont, isCustomFont } from "@/lib/font-preferences";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +22,22 @@ const CUSTOM_THEMES = [
   { id: "ocean", label: "Ocean", color: "#082f49", type: "dark" },
 ] as const;
 
+const CUSTOM_FONTS = [
+  { id: "geist", label: "Geist", description: "Modern, clean" },
+  { id: "editorial", label: "Editorial", description: "Elegant, editorial" },
+  { id: "professional", label: "Professional", description: "Fresh, professional" },
+  { id: "creative", label: "Creative", description: "Futuristic, creative" },
+  { id: "classic", label: "Classic", description: "Warm, classic" },
+  { id: "technical", label: "Technical", description: "Technical, crisp" },
+] as const;
+
 type CustomTheme = (typeof CUSTOM_THEMES)[number]["id"];
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [customTheme, setCustomTheme] = useState<CustomTheme | null>(null);
+  const [customFont, setCustomFont] = useState<CustomFont | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -36,7 +47,22 @@ export function ThemeToggle() {
       setCustomTheme(savedCustomTheme);
       applyCustomTheme(savedCustomTheme);
     }
+
+    // Check if there's a saved custom font
+    const savedCustomFont = localStorage.getItem("custom-font");
+    if (isCustomFont(savedCustomFont)) {
+      setCustomFont(savedCustomFont);
+      applyCustomFont(savedCustomFont);
+    } else {
+      applyCustomFont(null);
+    }
   }, []);
+
+  // Re-apply the chosen font whenever theme changes to ensure color theme switches don't drop font overrides.
+  useEffect(() => {
+    if (!mounted) return;
+    applyFontSelection(customFont ?? null);
+  }, [customFont, theme, mounted]);
 
   const applyCustomTheme = (themeId: CustomTheme | null) => {
     // Remove all custom theme classes
@@ -52,6 +78,16 @@ export function ThemeToggle() {
     }
   };
 
+  const applyCustomFont = (fontId: CustomFont | null) => {
+    if (fontId) {
+      localStorage.setItem("custom-font", fontId);
+    } else {
+      localStorage.removeItem("custom-font");
+    }
+
+    applyFontSelection(fontId);
+  };
+
   const handleCustomTheme = (themeId: CustomTheme) => {
     const themeConfig = CUSTOM_THEMES.find((t) => t.id === themeId);
     if (!themeConfig) return;
@@ -60,6 +96,11 @@ export function ThemeToggle() {
     setTheme(themeConfig.type);
     setCustomTheme(themeId);
     applyCustomTheme(themeId);
+  };
+
+  const handleCustomFont = (fontId: CustomFont) => {
+    setCustomFont(fontId);
+    applyCustomFont(fontId);
   };
 
   const handleBaseTheme = (baseTheme: "light" | "dark") => {
@@ -111,9 +152,9 @@ export function ThemeToggle() {
             <Palette className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            Custom Themes
+            Color Themes
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
@@ -168,6 +209,41 @@ export function ThemeToggle() {
               {customTheme === t.id && (
                 <span className="ml-auto text-xs text-muted-foreground">✓</span>
               )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Font Style Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shadow-border-small hover:shadow-border-medium bg-background/80 backdrop-blur-sm border-0 hover:bg-background hover:scale-[1.02] transition-all duration-150 ease"
+          >
+            <Type className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            Font Styles
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          {CUSTOM_FONTS.map((font) => (
+            <DropdownMenuItem
+              key={font.id}
+              onClick={() => handleCustomFont(font.id)}
+              className="gap-2 flex-col items-start"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="font-medium">{font.label}</span>
+                {(customFont === font.id || (!customFont && font.id === "geist")) && (
+                  <span className="text-xs text-muted-foreground">✓</span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">{font.description}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

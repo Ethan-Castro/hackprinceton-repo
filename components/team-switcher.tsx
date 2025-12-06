@@ -22,7 +22,7 @@ import {
 interface Team {
   name: string
   logo: React.ComponentType<{ className?: string }>
-  plan: string
+  plan?: string
 }
 
 export function TeamSwitcher({
@@ -57,7 +57,9 @@ export function TeamSwitcher({
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeTeam.name}</span>
-              <span className="truncate text-xs">{activeTeam.plan}</span>
+              {activeTeam.plan && (
+                <span className="truncate text-xs">{activeTeam.plan}</span>
+              )}
             </div>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -83,7 +85,9 @@ export function TeamSwitcher({
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                {activeTeam.plan && (
+                  <span className="truncate text-xs">{activeTeam.plan}</span>
+                )}
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>

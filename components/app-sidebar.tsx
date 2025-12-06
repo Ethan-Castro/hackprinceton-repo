@@ -36,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex items-center justify-between px-2 py-2">
+        <div className="flex items-center justify-between px-2 py-2 group-data-[collapsible=icon]:hidden">
           <span className="text-xs text-muted-foreground">Appearance</span>
           <ThemeToggle />
         </div>

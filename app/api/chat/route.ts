@@ -10,7 +10,16 @@ export async function POST(req: Request) {
     const {
       messages,
       modelId = DEFAULT_MODEL,
-    }: { messages: UIMessage[]; modelId: string } = await req.json();
+      enableAllTools = false,
+      activeTools,
+      toolScope,
+    }: {
+      messages: UIMessage[];
+      modelId: string;
+      enableAllTools?: boolean;
+      activeTools?: Array<string>;
+      toolScope?: string;
+    } = await req.json();
 
     if (!SUPPORTED_MODELS.includes(modelId)) {
       return new Response(
@@ -19,7 +28,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const { agent, supportsReasoning } = createChatAgent(modelId);
+    const normalizedActiveTools = Array.isArray(activeTools)
+      ? activeTools.filter((toolName): toolName is string => typeof toolName === "string")
+      : undefined;
+
+    const { agent, supportsReasoning } = createChatAgent(modelId, undefined, {
+      enableAllTools: enableAllTools || toolScope === "all",
+      activeTools: normalizedActiveTools,
+    });
 
   const result = agent.stream({
     messages: convertToModelMessages(messages),

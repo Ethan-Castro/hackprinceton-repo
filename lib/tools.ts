@@ -21,6 +21,7 @@ import { elevenlabsTools } from './elevenlabs-tools';
 import { healthMonitoringTools } from './health-monitoring-tools';
 import { providerInsuranceTools } from './provider-insurance-tools';
 import { dashboardTools } from './dashboard-tools';
+import { valyuTools } from './valyu-tools';
 
 /**
  * Tool for displaying content in an artifact container
@@ -192,4 +193,5 @@ export const tools = {
   ...healthMonitoringTools,
   ...providerInsuranceTools,
   ...dashboardTools,
+  ...valyuTools,
 };

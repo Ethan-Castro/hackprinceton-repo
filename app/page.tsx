@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/logo";
 
 const container = {
@@ -76,10 +75,6 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background px-4 py-8 sm:px-6 md:px-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-12 md:space-y-16">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
-        
         {/* Hero Section */}
         <motion.section 
           initial={{ opacity: 0, y: 30 }}
