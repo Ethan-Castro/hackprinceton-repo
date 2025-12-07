@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, useInView } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { applyHtml2CanvasSafePalette } from '@/lib/html2canvas-safe';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -126,6 +127,7 @@ export const TextbookChapter: React.FC<TextbookChapterProps> = ({
       scale: 2,
       logging: false,
       useCORS: true,
+      onclone: applyHtml2CanvasSafePalette,
     });
 
     const imgData = canvas.toDataURL('image/png');

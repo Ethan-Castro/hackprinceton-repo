@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Leaf, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2 } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed } from "./AppCustomizationForm";
+import { Leaf, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Sparkles, Download } from "lucide-react";
+import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader } from "@/components/ai-elements/loader";
@@ -20,22 +29,105 @@ interface PreviewEntry {
   error?: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert sustainability application developer specializing in creating environmental impact tracking and ESG tools. Create applications with:
+const SYSTEM_PROMPT = `You are an elite sustainability and ESG application developer. Create beautiful, impactful environmental dashboards that inspire action and showcase commitment to our planet.
 
-- Environmental metrics and KPIs
-- Carbon footprint calculations and visualizations
-- Sustainability goal tracking
-- Impact dashboards with charts
-- ESG (Environmental, Social, Governance) reporting
-- Green/eco-friendly color schemes
-- Data visualization for environmental data
-- Actionable insights and recommendations
+USER VISION FIRST:
+- Corporate ESG = different from personal carbon tracker = different from supply chain = different from energy monitoring
+- Match their specific sustainability focus and industry
+- If they mention brand colors or specific metrics, use THOSE
+- A consumer app feels different from an enterprise reporting tool
 
-Focus on accurate environmental metrics, clear data presentation, and actionable sustainability insights. Use React, Tailwind CSS with green/earth-tone color schemes, and Recharts for environmental data visualization.`;
+SUSTAINABILITY UX PRINCIPLES:
+- Earth-inspired aesthetics: greens, earth tones, natural feeling
+- Data-driven impact: show real numbers and their meaning
+- Positive framing: emphasize progress and potential, not just problems
+- Clear calls-to-action: what can users do next?
+- Trust through transparency: show data sources and calculations
+
+MUST-HAVE ELEMENTS:
+- Carbon/emissions metrics with clear units (kg CO₂, tonnes)
+- Progress toward sustainability goals
+- Comparison charts (vs last period, vs industry average)
+- Impact equivalents (e.g., "equivalent to 50 trees planted")
+- Action items and recommendations
+
+SUSTAINABILITY-SPECIFIC PATTERNS:
+- Carbon footprint card: large CO₂ number, trend arrow, comparison
+- Goal progress: target, current, percentage, visual bar
+- Impact metrics: icon, value, unit, equivalency statement
+- ESG scores: E/S/G individual scores with overall rating
+- Activity timeline: date, action, impact value
+
+EXAMPLE - Carbon Impact Card:
+\`\`\`jsx
+export default function CarbonCard() {
+  const [data] = useState({ current: 2.4, target: 3.0, trend: -12 });
+
+  return (
+    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
+            </svg>
+          </div>
+          <span className="font-medium text-slate-700">Carbon Footprint</span>
+        </div>
+        <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
+          ↓ {Math.abs(data.trend)}% vs last month
+        </span>
+      </div>
+      <div className="flex items-baseline gap-2 mb-4">
+        <span className="text-4xl font-bold text-slate-900">{data.current}</span>
+        <span className="text-lg text-slate-500">tonnes CO₂</span>
+      </div>
+      <div className="mb-2">
+        <div className="flex justify-between text-sm mb-1">
+          <span className="text-slate-600">Monthly Target</span>
+          <span className="font-medium text-slate-900">{data.target}t</span>
+        </div>
+        <div className="w-full bg-emerald-100 rounded-full h-3">
+          <div className="bg-emerald-500 h-3 rounded-full" style={{width: \`\${(data.current/data.target)*100}%\`}}></div>
+        </div>
+      </div>
+      <p className="text-sm text-emerald-700 bg-emerald-100 rounded-lg p-2 mt-3">
+        🌱 Equivalent to saving 24 trees this month
+      </p>
+    </div>
+  );
+}
+\`\`\`
+
+COLOR PALETTE FOR SUSTAINABILITY:
+- Primary: emerald-500/600 (growth, nature, sustainability)
+- Secondary: teal-500 (water, ocean, clean energy)
+- Accent: amber-500 (energy, solar, attention)
+- Positive: green-500 (improvements, on-track)
+- Warning: orange-500 (needs attention, off-track)
+- Background: slate-50 with subtle green tints
+- Earth tones: stone, warm grays for grounding
+
+IMPACT VISUALIZATION:
+- Use progress bars showing goal completion
+- Show trends with arrows (↑ bad for emissions, ↓ good)
+- Include real-world equivalencies (trees, car miles, flights)
+- Use CSS-based bar charts for comparisons
+- Icons: leaves, globes, water drops, sun, wind
+
+ESG SCORE DISPLAY:
+- E (Environmental): emerald badge
+- S (Social): sky/blue badge
+- G (Governance): violet badge
+- Overall: combined score with letter grade (A, B+, etc.)
+
+The user will describe what sustainability tool they need. Create something that would make a Fortune 500 CSO proud to present to the board.`;
 
 export function SustainabilityV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
+  const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -44,6 +136,11 @@ export function SustainabilityV0Chat() {
   const [viewportMode, setViewportMode] = useState<"desktop" | "mobile">("desktop");
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [refineDialogOpen, setRefineDialogOpen] = useState(false);
+  const [refinePrompt, setRefinePrompt] = useState("");
+  const [previewToRefine, setPreviewToRefine] = useState<PreviewEntry | null>(null);
+  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   // Get the current preview (looping)
@@ -63,20 +160,43 @@ export function SustainabilityV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed) => {
+  const generatePreviews = async (
+    prompt: string,
+    model: ModelSpeed,
+    baseCode?: string,
+    refinementInstructions?: string,
+    images?: ImageData[]
+  ) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
+    setRefineDialogOpen(false);
+    setCurrentPreviewIndex(0);
+    
+    // Build the final prompt - if refining, include the base code and instructions
+    let finalPrompt = prompt;
+    if (baseCode && refinementInstructions) {
+      finalPrompt = `I have an existing React component that I want to iterate on.
+Here is the current code:
+\`\`\`jsx
+${baseCode}
+\`\`\`
+
+Refinement Instructions: ${refinementInstructions}
+
+Please generate a NEW variation of this component that incorporates these changes.
+Keep the parts that work but modify the design/functionality according to the instructions.`;
+    }
     
     // Initialize 3 preview entries in loading state
     const initialPreviews: PreviewEntry[] = [
-      { id: "preview-1", status: "loading" },
-      { id: "preview-2", status: "loading" },
-      { id: "preview-3", status: "loading" },
+      { id: `preview-${Date.now()}-1`, status: "loading" },
+      { id: `preview-${Date.now()}-2`, status: "loading" },
+      { id: `preview-${Date.now()}-3`, status: "loading" },
     ];
     setPreviews(initialPreviews);
 
     // Map model selection to actual model IDs
-    const modelId = model === "fast" ? "cerebras/zai-glm-4.6" : "google/gemini-3-pro";
+    const modelId = model === "fast" ? "cerebras/gpt-oss-120b" : "google/gemini-3-pro";
 
     // Fire 3 parallel requests
     const requests = initialPreviews.map(async (entry) => {
@@ -85,9 +205,10 @@ export function SustainabilityV0Chat() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            message: prompt,
+            message: finalPrompt,
             modelId,
             system: SYSTEM_PROMPT,
+            images: images,
           }),
         });
 
@@ -143,15 +264,17 @@ export function SustainabilityV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed) => {
+  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
     setInitialPrompt(prompt);
+    setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
-    generatePreviews(prompt, model);
+    setInitialImages(images);
+    generatePreviews(prompt, model, undefined, undefined, images);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel);
+      generatePreviews(initialPrompt, selectedModel, undefined, undefined, initialImages);
     }
   };
 
@@ -164,11 +287,43 @@ export function SustainabilityV0Chat() {
     }
   };
 
+  const exportCode = (preview?: PreviewEntry) => {
+    const previewToExport = preview || previews.find((p) => p.id === selectedPreviewId);
+    if (!previewToExport?.generatedCode) return;
+
+    const previewIndex = previews.findIndex((p) => p.id === previewToExport.id);
+    const filename = `v0-generation-${previewIndex >= 0 ? previewIndex + 1 : 1}.tsx`;
+    const blob = new Blob([previewToExport.generatedCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNewSession = () => {
     setInitialPrompt(null);
+    setInitialDisplayPrompt(null);
     setPreviews([]);
     setSelectedPreviewId(null);
     setIsGenerating(false);
+  };
+
+  const handleOpenRefine = (preview: PreviewEntry) => {
+    setPreviewToRefine(preview);
+    setRefinePrompt("");
+    setRefineDialogOpen(true);
+  };
+
+  const submitRefinement = () => {
+    if (!previewToRefine?.generatedCode || !refinePrompt.trim()) return;
+    generatePreviews(
+      initialPrompt || "Sustainability App",
+      selectedModel,
+      previewToRefine.generatedCode,
+      refinePrompt
+    );
   };
 
   const scrollFeed = (direction: "left" | "right") => {
@@ -247,6 +402,19 @@ export function SustainabilityV0Chat() {
               </Button>
             </div>
             
+            {/* Refine this preview */}
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenRefine(expandedPreview)}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Refine
+              </Button>
+            )}
+            
             {/* Select this preview */}
             <Button
               variant={selectedPreviewId === expandedPreviewId ? "default" : "outline"}
@@ -259,6 +427,17 @@ export function SustainabilityV0Chat() {
               <Check className="h-4 w-4 mr-2" />
               {selectedPreviewId === expandedPreviewId ? "Selected" : "Select This"}
             </Button>
+            
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCode(expandedPreview)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Code
+              </Button>
+            )}
             
             {/* Open in new tab */}
             {expandedPreview.previewUrl && (
@@ -364,6 +543,43 @@ export function SustainabilityV0Chat() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/20">
+      {/* Refine Dialog */}
+      <Dialog open={refineDialogOpen} onOpenChange={setRefineDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Iterate on this design</DialogTitle>
+            <DialogDescription>
+              Describe how you want to change this version. We'll generate 3 new variations based on your feedback.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="refine-prompt">Refinement Instructions</Label>
+              <Textarea
+                id="refine-prompt"
+                placeholder="e.g. Make it dark mode, add more charts, use a different color scheme..."
+                value={refinePrompt}
+                onChange={(e) => setRefinePrompt(e.target.value)}
+                className="min-h-[100px] resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRefineDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitRefinement}
+              disabled={!refinePrompt.trim() || isGenerating}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate Variations
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between border-b bg-background/80 backdrop-blur-sm px-6 py-4">
         <div className="flex items-center gap-3">
@@ -405,6 +621,15 @@ export function SustainabilityV0Chat() {
             )}
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCode()}
+            disabled={!selectedPreview?.generatedCode}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Code
+          </Button>
+          <Button
             size="sm"
             onClick={handleDeploy}
             disabled={!selectedPreviewId || deploying}
@@ -417,11 +642,37 @@ export function SustainabilityV0Chat() {
       </div>
 
       {/* Prompt Display */}
-      <div className="px-6 py-3 border-b bg-muted/30">
-        <p className="text-sm">
-          <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
-          <span className="text-foreground">{initialPrompt}</span>
-        </p>
+      <div className="px-6 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Prompt visibility</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserPrompt((prev) => !prev)}
+            >
+              {showUserPrompt ? "Hide your prompt" : "Show your prompt"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSystemPrompt((prev) => !prev)}
+            >
+              {showSystemPrompt ? "Hide system prompt" : "Show system prompt"}
+            </Button>
+          </div>
+        </div>
+        {showUserPrompt && initialPrompt && (
+          <p className="text-sm">
+            <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
+            <span className="text-foreground">{initialDisplayPrompt || initialPrompt}</span>
+          </p>
+        )}
+        {showSystemPrompt && (
+          <div className="rounded-md border border-dashed border-border/50 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {SYSTEM_PROMPT}
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -538,6 +789,34 @@ export function SustainabilityV0Chat() {
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
                               <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-emerald-600"
+                                    title="Refine this version"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenRefine(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -618,19 +897,49 @@ export function SustainabilityV0Chat() {
                               <span className="text-sm font-medium">Mobile</span>
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Expand preview"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedPreviewId(getCurrentPreview()!.preview.id);
-                                  setViewportMode("mobile");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-emerald-600"
+                                    title="Refine this version"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenRefine(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Expand preview"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreviewId(getCurrentPreview()!.preview.id);
+                                    setViewportMode("mobile");
+                                  }}
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                           

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { generateText } from "ai";
+import { gateway } from "@/lib/gateway";
 
 type ExtractResponse = {
   text: string;
@@ -9,6 +11,8 @@ type ExtractResponse = {
 interface WebFormData {
   get(name: string): FormDataEntryValue | null;
 }
+
+const VISION_MODEL_ID = "google/gemini-2.5-flash";
 
 export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") || "";
@@ -55,13 +59,57 @@ export async function POST(req: Request) {
       }
 
       if (isImage) {
+        // Prefer vision model extraction when available
+        if (process.env.AI_GATEWAY_API_KEY) {
+          try {
+            const { text } = await generateText({
+              model: gateway(VISION_MODEL_ID),
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "text",
+                      text: `Extract every readable word exactly as shown; do not paraphrase. Capture headings, body copy, labels, form fields, table cells, and small print. Describe layout and styling with precision.
+
+OUTPUT FORMAT:
+1) Plain Text: verbatim transcription in reading order (top-left to bottom-right). Preserve section breaks with blank lines when spacing implies separation.
+2) Layout Map: numbered sections/cards/panels with their relative position (top/center/bottom, left/center/right), approximate sizing (full-width/half/third), and nesting (e.g., "Section 2 contains table + CTA row").
+3) Style & Visuals: for each section, list colors (background/text/accent/CTA) with approximate hex-like values when visible; gradients; borders; corner radius; shadows; dividers; spacing (padding/margins/gaps). Include typography cues (serif vs sans, weight, size hierarchy like h1/h2/body/small).
+4) Key Elements: bullets of CTAs, inputs, form fields, tables, charts, icons/logos/images with: label/text, location, style (color, border, radius), and any values shown.
+5) Data Capture: for tables/lists/charts, enumerate headers and row/label-value pairs; include axis labels and units if present.
+
+If unsure about a detail, say "unclear" rather than guessing.`,
+                    },
+                    { type: "image", image: buffer },
+                  ],
+                },
+              ],
+              maxOutputTokens: 2048,
+            });
+
+            const visionText = (text || "").trim();
+            if (visionText) {
+              const response: ExtractResponse = {
+                text: visionText,
+                contentType: "image",
+                meta: { model: VISION_MODEL_ID, extractedWith: "vision" },
+              };
+              return NextResponse.json(response);
+            }
+          } catch (visionError) {
+            console.error("Vision extraction failed, falling back to Tesseract:", visionError);
+          }
+        }
+
+        // Fallback to local OCR if vision path unavailable or failed
         const Tesseract = await import("tesseract.js");
         const { data } = await Tesseract.recognize(buffer, "eng", { logger: () => {} });
         const text = (data?.text || "").trim();
         const response: ExtractResponse = {
           text,
           contentType: "image",
-          meta: { confidence: data?.confidence },
+          meta: { confidence: data?.confidence, extractedWith: "tesseract" },
         };
         return NextResponse.json(response);
       }
@@ -75,5 +123,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to extract text" }, { status: 500 });
   }
 }
-
-

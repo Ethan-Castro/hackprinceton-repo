@@ -24,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { applyHtml2CanvasSafePalette } from "@/lib/html2canvas-safe";
 import { cn } from "@/lib/utils";
 import type { TemplateBlock, TemplateDocument, TemplateMetric, TemplateSection, TemplateTimelineStep } from "@/types/template-document";
 
@@ -81,6 +82,7 @@ export function DynamicTemplateDocument({
       useCORS: true,
       logging: false,
       backgroundColor: null,
+      onclone: applyHtml2CanvasSafePalette,
     });
 
     const imgData = canvas.toDataURL("image/png");

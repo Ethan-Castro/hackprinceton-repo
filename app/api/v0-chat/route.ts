@@ -10,89 +10,114 @@ const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY ?? "",
 });
 
-const CEREBRAS_MODELS = ["zai-glm-4.6", "gpt-oss-120b", "llama-3.3-70b"] as const;
+const CEREBRAS_MODELS = ["gpt-oss-120b", "zai-glm-4.6", "llama-3.3-70b"] as const;
 const GATEWAY_MODELS = ["google/gemini-3-pro", "anthropic/claude-opus-4.5"] as const;
 const DEFAULT_CEREBRAS_MODEL = CEREBRAS_MODELS[0];
 
+// Vision models for image recognition
+const VISION_MODEL_FAST = "google/gemini-2.5-flash";
+const VISION_MODEL_AMAZING = "google/gemini-3-pro";
+
+// Image description system prompt
+const IMAGE_DESCRIPTION_PROMPT = `You are an expert UI/UX designer analyzing a reference image for web development inspiration.
+
+Describe this image in comprehensive detail for a UI developer who will recreate or be inspired by it. Include:
+
+1. **Overall Layout**: Structure, sections, and spatial arrangement
+2. **Color Palette**: Primary, secondary, accent colors (use specific color names or hex codes if identifiable)
+3. **Typography**: Font styles, sizes, weights, and hierarchy
+4. **UI Components**: Buttons, cards, navigation, forms, icons, and their styles
+5. **Visual Effects**: Shadows, gradients, borders, rounded corners, animations implied
+6. **Imagery & Graphics**: Photos, illustrations, icons, patterns, backgrounds
+7. **Spacing & Alignment**: Margins, padding, grid system
+8. **Interactive Elements**: Hover states, CTAs, clickable areas
+9. **Mood & Aesthetic**: Professional, playful, minimal, bold, etc.
+10. **Responsive Hints**: Mobile/desktop considerations visible
+
+Be specific and actionable. A developer should be able to recreate the essence of this design from your description alone.`;
+
+interface ImageData {
+  data: string; // base64 encoded
+  mediaType: string;
+}
+
 // System prompt for React component generation - generates JSX that works in browser
-const SYSTEM_PROMPT = `You are an elite UI/UX designer and React developer. Generate stunning, production-ready React components using JavaScript (JSX) and Tailwind CSS that look like they belong on Dribbble or Awwwards.
+const SYSTEM_PROMPT = `You are an expert React developer. Generate production-ready components using JavaScript (JSX) and Tailwind CSS.
+
+CRITICAL - USER VISION FIRST:
+- The user's description is your primary guide - match THEIR vision, not a template
+- If they mention colors, styles, or themes - USE THOSE, not defaults
+- If they describe a mood (playful, professional, minimal, bold) - reflect that in every choice
+- Be creative and unique - no two requests should look the same
+- The examples below show CODE QUALITY, not styles to copy
 
 TECHNICAL REQUIREMENTS:
 1. Plain JavaScript/JSX only - NO TypeScript
-2. NO import statements - React and hooks (useState, useEffect, useRef, useMemo, useCallback) are globally available
+2. NO import statements - React hooks are globally available (useState, useEffect, useRef, useMemo, useCallback)
 3. NO 'use client' directive
-4. Use Tailwind CSS exclusively for styling
+4. Tailwind CSS exclusively for styling
 5. Export as: export default function ComponentName() { ... }
-6. Self-contained with NO external dependencies, assets, or data fetching
-7. Use inline SVGs for icons (simple, elegant paths)
+6. Self-contained with NO external dependencies
+7. Icons: inline SVG paths only
 
-CODE QUALITY RULES:
-- Return ONE complete, parseable component - no partial code, ellipses, or TODOs
-- All JSX tags must be properly closed
-- All strings properly quoted
-- Wrap response in single \`\`\`jsx ... \`\`\` block
-- Component must be syntactically valid for Babel
-- Never truncate or cut off code; finish every attribute value and closing tag. If output might be long, simplify the design instead of stopping early.
-- Do not place numbers directly before identifiers (avoid patterns like 80bg-foo)
+CODE RULES (STRICT - violations break rendering):
+- Return ONE complete component in a single \`\`\`jsx block
+- Code fence format EXACTLY: \`\`\`jsx on its own line, then code, then \`\`\` on its own line
+- NO text, explanation, or comments outside the code block
+- All JSX tags properly closed with matching opening/closing tags
+- All string attributes use double quotes: className="..." not className='...'
+- Never truncate code - if complex, simplify the design instead
+- No partial code, ellipses, comments like "// ... rest of code", or TODOs
 
-DESIGN EXCELLENCE GUIDELINES:
+SYNTAX REQUIREMENTS (CRITICAL):
+- NO TypeScript: no types, interfaces, generics like useState<string>, or "as Type" assertions
+- NO import statements of any kind - hooks are global (useState, useEffect, useRef, useMemo, useCallback)
+- NO 'use client' or 'use server' directives
+- Single root element in return statement (wrap in <> </> or <div> if needed)
+- All curly braces, brackets, and parentheses MUST be balanced
+- Event handlers: onClick={() => fn()} not onClick={fn}
+- Conditional rendering: {condition && <Element />} or {condition ? <A /> : <B />}
+- Array mapping: {items.map((item, index) => <Element key={index} />)} - always include key prop
+- NO JSX comments that break structure - use {/* comment */} syntax only INSIDE JSX
 
-Visual Hierarchy:
-- Clear focal points with size, color, and spacing contrast
-- Typography scale: text-4xl/5xl for heroes, text-xl/2xl for headings, text-base for body
-- Generous whitespace - don't crowd elements (p-8, p-12, gap-6, gap-8, space-y-6)
+DESIGN FLEXIBILITY (choose based on user's request):
+- Colors: ANY Tailwind colors work - match the user's brand/mood (red, blue, green, purple, orange, pink, etc.)
+- Style: minimal, bold, playful, corporate, dark mode, glassmorphic - whatever fits
+- Layout: cards, lists, grids, heroes, sidebars - whatever the content needs
+- Personality: serious, fun, elegant, techy, warm - read the user's intent
 
-Color & Contrast:
-- Use modern, sophisticated palettes (slate, zinc, neutral for bases)
-- Strategic accent colors for CTAs and highlights
-- Subtle gradients: bg-gradient-to-br from-indigo-500 to-purple-600
-- Ensure WCAG AA contrast minimums
+DEFAULT PATTERNS (only if user doesn't specify):
+- Container: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
+- Responsive: mobile-first with sm:/md:/lg: breakpoints
+- Accessibility: semantic HTML, focus states, ARIA labels
 
-Polish & Refinement:
-- Smooth transitions: transition-all duration-300 ease-out
-- Subtle hover states: hover:scale-[1.02], hover:shadow-lg, hover:-translate-y-1
-- Soft shadows: shadow-sm, shadow-md, shadow-xl with shadow-black/5
-- Rounded corners consistently: rounded-lg, rounded-xl, rounded-2xl
-- Border accents: border border-white/10 or border-gray-200
-
-Layout Patterns:
-- Full viewport heroes: min-h-screen with centered content
-- Card grids: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
-- Max-width containers: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
-- Flexbox centering: flex items-center justify-center
-
-Interactive Elements:
-- Buttons: px-6 py-3 rounded-lg font-medium with hover/focus states
-- Focus rings: focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-- Cursor feedback: cursor-pointer on interactive elements
-- Active states: active:scale-95
-
-Responsive Design:
-- Mobile-first approach
-- Breakpoints: sm:640px, md:768px, lg:1024px, xl:1280px
-- Stack on mobile, grid on desktop
-- Appropriate text scaling across breakpoints
-
-Accessibility:
-- Semantic HTML (header, main, nav, section, article, button)
-- ARIA labels for icon-only buttons
-- Role attributes where needed
-- Keyboard navigable
-
-COMPONENT STRUCTURE:
+EXAMPLE (for code structure only - DO NOT copy the style):
 \`\`\`jsx
-export default function ComponentName() {
-  const [state, setState] = useState(initialValue);
+export default function ExampleComponent() {
+  const [active, setActive] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Component content */}
-      </div>
+    <div className="p-6 rounded-xl">
+      <h2 className="text-2xl font-bold mb-4">Title</h2>
+      <button
+        onClick={() => setActive(!active)}
+        className="px-4 py-2 rounded-lg transition-all"
+      >
+        {active ? 'Active' : 'Click me'}
+      </button>
     </div>
   );
 }
 \`\`\`
+
+VARIETY IS KEY:
+- Coffee shop? Warm browns, cream backgrounds, cozy feeling
+- Tech startup? Clean whites, blue accents, modern and sharp
+- Kids app? Bright colors, rounded corners, playful elements
+- Luxury brand? Dark backgrounds, gold accents, elegant typography
+- Each generation should feel custom-made for that specific request
+
+The user will describe what they want. Build exactly what THEY envision, not a generic template.
 
 OUTPUT: Only the component code in \`\`\`jsx ... \`\`\`. No explanations.`;
 
@@ -206,17 +231,21 @@ function createPreviewHTML(componentCode: string, componentName: string): string
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatId, modelId, system } = await request.json();
+    const { message, chatId, modelId, system, images } = await request.json();
 
     console.log("[v0-chat] Request received:", {
       preview: message?.slice(0, 80),
       chatId,
       modelId,
+      hasImages: Array.isArray(images) && images.length > 0,
+      imageCount: Array.isArray(images) ? images.length : 0,
     });
 
-    if (!message || typeof message !== "string" || message.trim().length === 0) {
+    const hasImages = Array.isArray(images) && images.length > 0;
+
+    if ((!message || typeof message !== "string" || message.trim().length === 0) && !hasImages) {
       return NextResponse.json(
-        { error: "Message is required" },
+        { error: "Message or image is required" },
         { status: 400 }
       );
     }
@@ -226,7 +255,7 @@ export async function POST(request: NextRequest) {
     const isCerebrasModel = !isGatewayModel && modelId && modelId.startsWith("cerebras/");
 
     // Validate API keys
-    if (isGatewayModel && !process.env.AI_GATEWAY_API_KEY) {
+    if ((isGatewayModel || hasImages) && !process.env.AI_GATEWAY_API_KEY) {
       return NextResponse.json(
         {
           error: "AI_GATEWAY_API_KEY not configured",
@@ -236,7 +265,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isGatewayModel && !process.env.CEREBRAS_API_KEY) {
+    if (!isGatewayModel && !hasImages && !process.env.CEREBRAS_API_KEY) {
       console.error("[v0-chat] CEREBRAS_API_KEY not configured");
       return NextResponse.json(
         {
@@ -245,6 +274,65 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
+    }
+
+    // Process images if present - use vision model to describe them
+    let augmentedMessage = message || "Create a web interface inspired by the attached image";
+    
+    if (hasImages) {
+      console.log("[v0-chat] Processing images with vision model...");
+      
+      // Select vision model based on selected model tier
+      const visionModel = isGatewayModel && modelId?.includes("gemini-3") 
+        ? VISION_MODEL_AMAZING 
+        : VISION_MODEL_FAST;
+      
+      console.log("[v0-chat] Using vision model:", visionModel);
+
+      try {
+        // Build the content array with text and images for multimodal input
+        const imageContents = (images as ImageData[]).map((img) => ({
+          type: "image" as const,
+          image: img.data, // base64 data
+          mimeType: img.mediaType,
+        }));
+
+        const visionResult = await generateText({
+          model: gateway(visionModel),
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: IMAGE_DESCRIPTION_PROMPT },
+                ...imageContents,
+              ],
+            },
+          ],
+          temperature: 0.3,
+          maxOutputTokens: 4000,
+        });
+
+        const imageDescription = visionResult?.text || "";
+        
+        if (imageDescription) {
+          console.log("[v0-chat] Image description generated, length:", imageDescription.length);
+          
+          // Augment the user message with the image description
+          augmentedMessage = `The user sent this image for inspiration. Here is a detailed description of what they want to recreate or be inspired by:
+
+---IMAGE DESCRIPTION START---
+${imageDescription}
+---IMAGE DESCRIPTION END---
+
+User's additional instructions: ${message || "Create a similar design with this inspiration."}
+
+Based on the image description above, create a React component that captures the essence, style, colors, and layout of the reference image while being a complete, functional UI.`;
+        }
+      } catch (visionError: any) {
+        console.error("[v0-chat] Vision model error:", visionError);
+        // Continue with original message if vision fails
+        augmentedMessage = `${message || "Create an interface"} (Note: Image processing failed, using text description only)`;
+      }
     }
 
     const combinedSystem = system
@@ -262,9 +350,9 @@ export async function POST(request: NextRequest) {
       result = await generateText({
         model: gateway(usedModelId),
         system: combinedSystem,
-        prompt: message,
+        prompt: augmentedMessage,
         temperature: 0.5,
-        maxOutputTokens: 50000,
+        maxOutputTokens: 40000,
       });
     } else {
       // Use Cerebras for fast models
@@ -280,9 +368,9 @@ export async function POST(request: NextRequest) {
       result = await generateText({
         model: cerebras(normalizedModel),
         system: combinedSystem,
-        prompt: message,
-        temperature: 0.5,
-        maxOutputTokens: 50000,
+        prompt: augmentedMessage,
+        temperature: 0.3,
+        maxOutputTokens: 40000,
       });
     }
 

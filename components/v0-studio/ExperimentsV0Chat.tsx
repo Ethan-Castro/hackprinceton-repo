@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Sparkles, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2 } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed } from "./AppCustomizationForm";
+import { Sparkles, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
+import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,20 +19,83 @@ interface PreviewEntry {
   error?: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert React developer specializing in Tailwind CSS. You are running in an experimental "v0 clone" environment.
-      
-Your goal is to generate high-quality, responsive, and interactive UI components.
-- Use React functional components
-- Use Tailwind CSS for styling
-- Use Lucide React for icons
-- Ensure code is clean and production-ready
-- If requested, use Framer Motion for animations
+const SYSTEM_PROMPT = `You are an elite UI developer creating stunning, award-worthy interfaces. This is your playground to push creative boundaries and deliver components that would trend on Dribbble.
 
-Always return the full code for the component.`;
+USER VISION IS EVERYTHING:
+- Their description is your creative brief - interpret it with flair
+- If they want dark and moody, go dark and moody
+- If they want bright and playful, go bright and playful
+- No two generations should ever look alike - each is a unique creative piece
+- The example below is just ONE style - there are infinite possibilities
+
+CREATIVE FREEDOM:
+- Experiment with bold gradients, glassmorphism, neumorphism
+- Try unique layouts and unconventional compositions
+- Use creative micro-interactions and state changes
+- Push the boundaries of what's possible with pure CSS
+- Make something that makes people say "wow, how did they do that?"
+
+DESIGN EXCELLENCE:
+- Striking visual hierarchy that guides the eye
+- Thoughtful use of negative space
+- Smooth, delightful hover and active states
+- Cohesive color stories (not just random colors)
+- Typography that enhances the design
+
+MODERN TECHNIQUES:
+- Glassmorphism: backdrop-blur-xl bg-white/10 border-white/20
+- Gradients: bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500
+- Shadows: shadow-2xl shadow-purple-500/25 (colored shadows)
+- Animations: CSS transitions, transform, hover effects
+- 3D effects: perspective, rotateX/Y with CSS transforms
+
+EXAMPLE - Glassmorphic Card:
+\`\`\`jsx
+export default function GlassCard() {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 flex items-center justify-center p-8">
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={\`relative backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 p-8 max-w-sm transition-all duration-500 \${isHovered ? 'scale-105 shadow-2xl shadow-purple-500/50' : 'shadow-xl'}\`}
+      >
+        <div className="absolute -top-6 -right-6 w-24 h-24 bg-gradient-to-br from-pink-500 to-orange-400 rounded-2xl flex items-center justify-center shadow-lg transform rotate-12">
+          <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold text-white mb-3">Premium Feature</h3>
+        <p className="text-white/70 mb-6">Experience the next level of design with our cutting-edge glassmorphic interface.</p>
+        <button className="w-full bg-white/20 hover:bg-white/30 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 border border-white/30">
+          Get Started
+        </button>
+      </div>
+    </div>
+  );
+}
+\`\`\`
+
+STYLE DIRECTIONS TO TRY:
+- Dark mode: slate-900 backgrounds, vibrant accents
+- Light & airy: white/slate-50, subtle shadows, clean lines
+- Bold & vibrant: saturated gradients, high contrast
+- Minimal luxury: lots of whitespace, thin borders, elegant typography
+- Playful: rounded corners, bouncy interactions, fun colors
+
+ICON APPROACH:
+- Use inline SVGs for all icons (simple, elegant paths)
+- Keep icons minimal and consistent in style
+- Match icon stroke width to your design weight
+
+The user will describe what they want. Create something that stops them mid-scroll and makes them want to share it.`;
 
 export function ExperimentsV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
+  const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -41,6 +104,8 @@ export function ExperimentsV0Chat() {
   const [viewportMode, setViewportMode] = useState<"desktop" | "mobile">("desktop");
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const getCurrentPreview = () => {
@@ -59,7 +124,7 @@ export function ExperimentsV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed) => {
+  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -70,7 +135,7 @@ export function ExperimentsV0Chat() {
     ];
     setPreviews(initialPreviews);
 
-    const modelId = model === "fast" ? "cerebras/zai-glm-4.6" : "google/gemini-3-pro";
+    const modelId = model === "fast" ? "cerebras/gpt-oss-120b" : "google/gemini-3-pro";
 
     const requests = initialPreviews.map(async (entry) => {
       try {
@@ -81,6 +146,7 @@ export function ExperimentsV0Chat() {
             message: prompt,
             modelId,
             system: SYSTEM_PROMPT,
+            images: images,
           }),
         });
 
@@ -134,15 +200,17 @@ export function ExperimentsV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed) => {
+  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
     setInitialPrompt(prompt);
+    setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
-    generatePreviews(prompt, model);
+    setInitialImages(images);
+    generatePreviews(prompt, model, images);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel);
+      generatePreviews(initialPrompt, selectedModel, initialImages);
     }
   };
 
@@ -155,8 +223,24 @@ export function ExperimentsV0Chat() {
     }
   };
 
+  const exportCode = (preview?: PreviewEntry) => {
+    const previewToExport = preview || previews.find((p) => p.id === selectedPreviewId);
+    if (!previewToExport?.generatedCode) return;
+
+    const previewIndex = previews.findIndex((p) => p.id === previewToExport.id);
+    const filename = `v0-generation-${previewIndex >= 0 ? previewIndex + 1 : 1}.tsx`;
+    const blob = new Blob([previewToExport.generatedCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNewSession = () => {
     setInitialPrompt(null);
+    setInitialDisplayPrompt(null);
     setPreviews([]);
     setSelectedPreviewId(null);
     setIsGenerating(false);
@@ -185,6 +269,7 @@ export function ExperimentsV0Chat() {
   const successfulPreviews = previews.filter(p => p.status === "success");
   const allLoading = previews.every(p => p.status === "loading");
   const allFailed = previews.length > 0 && previews.every(p => p.status === "error");
+  const selectedPreview = selectedPreviewId ? previews.find((p) => p.id === selectedPreviewId) : null;
 
   if (expandedPreviewId && expandedPreview) {
     const expandedIndex = previews.findIndex(p => p.id === expandedPreviewId);
@@ -233,6 +318,17 @@ export function ExperimentsV0Chat() {
               <Check className="h-4 w-4 mr-2" />
               {selectedPreviewId === expandedPreviewId ? "Selected" : "Select This"}
             </Button>
+            
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCode(expandedPreview)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Code
+              </Button>
+            )}
             
             {expandedPreview.previewUrl && (
               <Button
@@ -374,6 +470,15 @@ export function ExperimentsV0Chat() {
             )}
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCode()}
+            disabled={!selectedPreview?.generatedCode}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Code
+          </Button>
+          <Button
             size="sm"
             onClick={handleDeploy}
             disabled={!selectedPreviewId || deploying}
@@ -385,11 +490,37 @@ export function ExperimentsV0Chat() {
         </div>
       </div>
 
-      <div className="px-6 py-3 border-b bg-muted/30">
-        <p className="text-sm">
-          <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
-          <span className="text-foreground">{initialPrompt}</span>
-        </p>
+      <div className="px-6 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Prompt visibility</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserPrompt((prev) => !prev)}
+            >
+              {showUserPrompt ? "Hide your prompt" : "Show your prompt"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSystemPrompt((prev) => !prev)}
+            >
+              {showSystemPrompt ? "Hide system prompt" : "Show system prompt"}
+            </Button>
+          </div>
+        </div>
+        {showUserPrompt && initialPrompt && (
+          <p className="text-sm">
+            <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
+            <span className="text-foreground">{initialDisplayPrompt || initialPrompt}</span>
+          </p>
+        )}
+        {showSystemPrompt && (
+          <div className="rounded-md border border-dashed border-border/50 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {SYSTEM_PROMPT}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden p-6">
@@ -493,14 +624,28 @@ export function ExperimentsV0Chat() {
                               )}
                               {getCurrentPreview()!.preview.status === "error" && (
                                 <Badge variant="destructive" className="text-xs">Failed</Badge>
-                              )}
-                            </div>
-                            {getCurrentPreview()!.preview.status === "success" && (
-                              <div className="flex items-center gap-1">
+                            )}
+                          </div>
+                          {getCurrentPreview()!.preview.status === "success" && (
+                            <div className="flex items-center gap-1">
+                              {getCurrentPreview()!.preview.generatedCode && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6"
+                                  title="Download code"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    exportCode(getCurrentPreview()!.preview);
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
                                   title="Expand preview"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -574,19 +719,35 @@ export function ExperimentsV0Chat() {
                               <span className="text-sm font-medium">Mobile</span>
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Expand preview"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedPreviewId(getCurrentPreview()!.preview.id);
-                                  setViewportMode("mobile");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Expand preview"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreviewId(getCurrentPreview()!.preview.id);
+                                    setViewportMode("mobile");
+                                  }}
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                           

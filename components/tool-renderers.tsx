@@ -25,6 +25,7 @@ import {
   WebPreviewBody,
 } from "@/components/ai-elements";
 import { SandpackDashboardRenderer } from "@/components/sandpack-dashboard-renderer";
+import { applyHtml2CanvasSafePalette } from "@/lib/html2canvas-safe";
 import { getToolDisplayName } from "@/lib/tool-display-names";
 
 export type ArtifactRendererData = {
@@ -80,6 +81,7 @@ export function ArtifactRenderer({
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
+        onclone: applyHtml2CanvasSafePalette,
         windowWidth: artifactRef.current.scrollWidth,
         windowHeight: artifactRef.current.scrollHeight,
       });

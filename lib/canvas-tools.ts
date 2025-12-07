@@ -64,6 +64,29 @@ export const generateDiagram = createTool({
         };
       }
 
+      // Normalize content (mindmap inputs sometimes include their own "mindmap" header)
+      let normalizedContent = content;
+      if (diagramType === "mindmap") {
+        const leadingMindmapLine = /^\s*mindmap[^\n]*\n?/i;
+        normalizedContent = normalizedContent.replace(leadingMindmapLine, "");
+        normalizedContent = normalizedContent.replace(/^\s*\n/, "");
+        if (/^\S/.test(normalizedContent)) {
+          normalizedContent = `  ${normalizedContent}`;
+        }
+      } else {
+        normalizedContent = normalizedContent.trim();
+      }
+
+      if (normalizedContent.trim().length === 0) {
+        return {
+          title,
+          description,
+          diagramType,
+          mermaidCode: "",
+          success: false,
+        };
+      }
+
       // Build Mermaid code with diagram configuration
       let mermaidCode = "";
 
@@ -81,9 +104,9 @@ export const generateDiagram = createTool({
 
       // For pie charts, include title in the diagram type
       if (diagramType === "pie") {
-        mermaidCode = `pie title "${title}"\n${content}`;
+        mermaidCode = `pie title "${title}"\n${normalizedContent}`;
       } else {
-        mermaidCode = `${diagramHeader[diagramType]}\n${content}`;
+        mermaidCode = `${diagramHeader[diagramType]}\n${normalizedContent}`;
       }
 
       // Add title as comment for non-pie diagrams

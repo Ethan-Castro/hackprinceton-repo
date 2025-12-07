@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { GraduationCap, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2 } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed } from "./AppCustomizationForm";
+import { GraduationCap, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
+import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,21 +19,113 @@ interface PreviewEntry {
   error?: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert educational content creator specializing in creating comprehensive, engaging educational materials. Create well-structured content with:
+const SYSTEM_PROMPT = `You are an elite educational technology developer. Create engaging, interactive learning experiences that make students excited to learn and teachers proud to use.
 
-- Clear explanations appropriate for the target age/grade level
-- Interactive elements that engage students
-- Visual aids, diagrams, and examples
-- Practice exercises and assessments
-- Accessibility features for diverse learners
-- Modern, mobile-friendly responsive design
-- Gamification elements when appropriate
+USER VISION FIRST:
+- Elementary school = different from university = different from corporate training
+- Match their subject, age group, and teaching style
+- Math app looks different from language learning from art tutorials
+- If they mention a brand aesthetic or colors, use THOSE
 
-Focus on pedagogy-first design with learning objectives clearly addressed. Use React and Tailwind CSS for implementation.`;
+EDUCATION UX PRINCIPLES:
+- Fun but focused: vibrant colors without being distracting
+- Clear learning pathways with visible progress
+- Immediate feedback on interactions (right/wrong, progress updates)
+- Encouraging tone: celebrate successes, gently guide through mistakes
+- Accessibility: works for all learners, clear fonts, good contrast
+
+MUST-HAVE ELEMENTS:
+- Progress indicators (stars, badges, completion bars)
+- Interactive quiz elements with instant feedback
+- Clear section headers with learning objectives
+- Visual representations of concepts (diagrams, illustrations)
+- Call-to-action buttons that encourage next steps
+
+EDUCATION-SPECIFIC PATTERNS:
+- Quiz cards: question, multiple choice options, submit button, feedback state
+- Progress tracker: current lesson, completed lessons, remaining lessons
+- Flashcards: front/back with flip interaction
+- Lesson cards: thumbnail, title, duration, difficulty badge
+- Achievement badges: icon, title, description, earned state
+
+EXAMPLE - Interactive Quiz Card:
+\`\`\`jsx
+export default function QuizCard() {
+  const [selected, setSelected] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+  const correctAnswer = 2;
+  const options = ['Photosynthesis', 'Respiration', 'Mitosis', 'Osmosis'];
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-indigo-100 p-6 max-w-lg">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded">Question 3 of 10</span>
+        <div className="flex-1 bg-slate-100 rounded-full h-2">
+          <div className="bg-indigo-500 h-2 rounded-full" style={{width: '30%'}}></div>
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">What process do plants use to convert sunlight into energy?</h3>
+      <div className="space-y-2 mb-4">
+        {options.map((option, i) => (
+          <button
+            key={i}
+            onClick={() => !submitted && setSelected(i)}
+            className={\`w-full text-left p-3 rounded-lg border-2 transition-all \${
+              submitted
+                ? i === correctAnswer
+                  ? 'border-green-500 bg-green-50'
+                  : selected === i
+                  ? 'border-red-500 bg-red-50'
+                  : 'border-slate-200'
+                : selected === i
+                ? 'border-indigo-500 bg-indigo-50'
+                : 'border-slate-200 hover:border-indigo-300'
+            }\`}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      {!submitted ? (
+        <button
+          onClick={() => setSubmitted(true)}
+          disabled={selected === null}
+          className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+        >
+          Check Answer
+        </button>
+      ) : (
+        <div className={\`p-3 rounded-lg \${selected === correctAnswer ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}\`}>
+          {selected === correctAnswer ? '🎉 Correct! Great job!' : '💡 Not quite. The answer is Photosynthesis.'}
+        </div>
+      )}
+    </div>
+  );
+}
+\`\`\`
+
+COLOR PALETTE FOR EDUCATION:
+- Primary: indigo-500/600 or violet-500/600 (engaging, scholarly)
+- Success: green-500 (correct answers, completed)
+- Incorrect: rose-500 (wrong answers, needs review)
+- Highlight: amber-400 (stars, achievements)
+- Background: slate-50, white (clean, focused)
+- Fun accents: sky, purple, pink for gamification elements
+
+GAMIFICATION ELEMENTS:
+- Stars (⭐) for achievements
+- Streaks for consecutive correct answers
+- XP or points system
+- Level indicators
+- Celebration animations (confetti, checkmarks)
+
+The user will describe what educational tool they need. Create something that makes learning feel like a game kids want to play.`;
 
 export function EducationV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
+  const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,6 +134,8 @@ export function EducationV0Chat() {
   const [viewportMode, setViewportMode] = useState<"desktop" | "mobile">("desktop");
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const getCurrentPreview = () => {
@@ -60,7 +154,7 @@ export function EducationV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed) => {
+  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -71,7 +165,7 @@ export function EducationV0Chat() {
     ];
     setPreviews(initialPreviews);
 
-    const modelId = model === "fast" ? "cerebras/zai-glm-4.6" : "google/gemini-3-pro";
+    const modelId = model === "fast" ? "cerebras/gpt-oss-120b" : "google/gemini-3-pro";
 
     const requests = initialPreviews.map(async (entry) => {
       try {
@@ -82,6 +176,7 @@ export function EducationV0Chat() {
             message: prompt,
             modelId,
             system: SYSTEM_PROMPT,
+            images: images,
           }),
         });
 
@@ -135,15 +230,17 @@ export function EducationV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed) => {
+  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
     setInitialPrompt(prompt);
+    setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
-    generatePreviews(prompt, model);
+    setInitialImages(images);
+    generatePreviews(prompt, model, images);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel);
+      generatePreviews(initialPrompt, selectedModel, initialImages);
     }
   };
 
@@ -156,8 +253,24 @@ export function EducationV0Chat() {
     }
   };
 
+  const exportCode = (preview?: PreviewEntry) => {
+    const previewToExport = preview || previews.find((p) => p.id === selectedPreviewId);
+    if (!previewToExport?.generatedCode) return;
+
+    const previewIndex = previews.findIndex((p) => p.id === previewToExport.id);
+    const filename = `v0-generation-${previewIndex >= 0 ? previewIndex + 1 : 1}.tsx`;
+    const blob = new Blob([previewToExport.generatedCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNewSession = () => {
     setInitialPrompt(null);
+    setInitialDisplayPrompt(null);
     setPreviews([]);
     setSelectedPreviewId(null);
     setIsGenerating(false);
@@ -186,6 +299,7 @@ export function EducationV0Chat() {
   const successfulPreviews = previews.filter(p => p.status === "success");
   const allLoading = previews.every(p => p.status === "loading");
   const allFailed = previews.length > 0 && previews.every(p => p.status === "error");
+  const selectedPreview = selectedPreviewId ? previews.find((p) => p.id === selectedPreviewId) : null;
 
   if (expandedPreviewId && expandedPreview) {
     const expandedIndex = previews.findIndex(p => p.id === expandedPreviewId);
@@ -234,6 +348,17 @@ export function EducationV0Chat() {
               <Check className="h-4 w-4 mr-2" />
               {selectedPreviewId === expandedPreviewId ? "Selected" : "Select This"}
             </Button>
+            
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCode(expandedPreview)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Code
+              </Button>
+            )}
             
             {expandedPreview.previewUrl && (
               <Button
@@ -375,6 +500,15 @@ export function EducationV0Chat() {
             )}
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCode()}
+            disabled={!selectedPreview?.generatedCode}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Code
+          </Button>
+          <Button
             size="sm"
             onClick={handleDeploy}
             disabled={!selectedPreviewId || deploying}
@@ -386,11 +520,37 @@ export function EducationV0Chat() {
         </div>
       </div>
 
-      <div className="px-6 py-3 border-b bg-muted/30">
-        <p className="text-sm">
-          <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
-          <span className="text-foreground">{initialPrompt}</span>
-        </p>
+      <div className="px-6 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Prompt visibility</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserPrompt((prev) => !prev)}
+            >
+              {showUserPrompt ? "Hide your prompt" : "Show your prompt"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSystemPrompt((prev) => !prev)}
+            >
+              {showSystemPrompt ? "Hide system prompt" : "Show system prompt"}
+            </Button>
+          </div>
+        </div>
+        {showUserPrompt && initialPrompt && (
+          <p className="text-sm">
+            <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
+            <span className="text-foreground">{initialDisplayPrompt || initialPrompt}</span>
+          </p>
+        )}
+        {showSystemPrompt && (
+          <div className="rounded-md border border-dashed border-border/50 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {SYSTEM_PROMPT}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden p-6">
@@ -494,14 +654,28 @@ export function EducationV0Chat() {
                               )}
                               {getCurrentPreview()!.preview.status === "error" && (
                                 <Badge variant="destructive" className="text-xs">Failed</Badge>
-                              )}
-                            </div>
-                            {getCurrentPreview()!.preview.status === "success" && (
-                              <div className="flex items-center gap-1">
+                            )}
+                          </div>
+                          {getCurrentPreview()!.preview.status === "success" && (
+                            <div className="flex items-center gap-1">
+                              {getCurrentPreview()!.preview.generatedCode && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6"
+                                  title="Download code"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    exportCode(getCurrentPreview()!.preview);
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
                                   title="Expand preview"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -575,19 +749,35 @@ export function EducationV0Chat() {
                               <span className="text-sm font-medium">Mobile</span>
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Expand preview"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedPreviewId(getCurrentPreview()!.preview.id);
-                                  setViewportMode("mobile");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Expand preview"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreviewId(getCurrentPreview()!.preview.id);
+                                    setViewportMode("mobile");
+                                  }}
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                           

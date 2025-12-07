@@ -61,12 +61,57 @@ const DEFAULT_ACTIVE_TOOLS: ChatToolName[] = [
   "webSearch",
 ];
 
+const TOOL_DESCRIPTIONS: Partial<Record<ChatToolName, string>> = {
+  displayArtifact: "Show code, documents, or structured content in an artifact container",
+  displayWebPreview: "Render a live preview of a URL inside the chat",
+  generateHtmlPreview: "Render generated HTML/CSS/JS as a live preview",
+  webSearch: "General-purpose web search via Exa",
+  generateChart: "Create charts using Recharts",
+  generateMermaidDiagram: "Generate Mermaid diagrams",
+  generateMermaidFlowchart: "Generate Mermaid flowcharts",
+  generateMermaidERDiagram: "Generate Mermaid ER diagrams",
+  scrapeWebsite: "Scrape web pages via Firecrawl",
+  runParallelAgent: "Execute multiple AI agents in parallel",
+  executePython: "Run Python code in a sandbox",
+  analyzeDataset: "Analyze datasets with Python",
+  executeSQL: "Run SQL queries",
+  describeTable: "Describe database table schemas",
+  generateTextbookChapter: "Generate textbook content",
+  generateExercises: "Generate educational exercises",
+  generateDiagram: "Generate educational diagrams",
+  generateCodeExample: "Generate educational code examples",
+  generateKeyPoints: "Generate educational key points",
+  generateCaseStudy: "Generate educational case studies",
+  renderTemplateDocument: "Render template-based documents",
+  generateMindMap: "Generate mind maps",
+  valyuWebSearch: "Alternative real-time web search",
+  financeSearch: "Finance and stock data search",
+  paperSearch: "Academic paper search",
+  bioSearch: "Biomedical and clinical research search",
+  patentSearch: "Patent database search",
+  secSearch: "SEC filings search",
+  economicsSearch: "Economic indicators search",
+  companyResearch: "Company research",
+  searchArXiv: "Search arXiv papers",
+  getArXivPaper: "Retrieve arXiv paper details",
+  medicalResearch: "Medical research assistance",
+  appointments: "Schedule or manage appointments",
+  medications: "Medication lookup and management",
+  sendEmail: "Send email via SendGrid",
+  voiceAlert: "Trigger a voice alert",
+  healthMonitoring: "Health monitoring tools",
+  providerInsurance: "Provider insurance lookup",
+  dashboardRefresh: "Refresh dashboard data",
+};
+
 function buildChatSystemPrompt({
   useTools,
   fullToolAccess,
+  activeTools,
 }: {
   useTools: boolean;
   fullToolAccess: boolean;
+  activeTools?: ChatToolName[];
 }) {
   const systemSections: string[] = [
     `# Augment Universal Assistant
@@ -98,15 +143,16 @@ Augment offers specialized AI studios for domain-specific work. Suggest these wh
 - **Be direct** — Answer first, context second
 - **Be concise** — No filler; respect user's time
 - **Be accurate** — Use tools when uncertain
-- **Use markdown** — Structure with headings, lists, code blocks
+- **Use markdown** — Structure with headings, lists, code blocks; never use Markdown tables—use the HTML table template instead
 - **Show, don't tell** — Use charts, diagrams, and previews when they help`,
   ];
 
   if (useTools) {
-    systemSections.push(
-      `## Available Tools
+    if (fullToolAccess) {
+      systemSections.push(
+        `## Available Tools
 
-${fullToolAccess ? "You have **FULL ACCESS** to all tools listed below." : "You currently have access to core tools. Full toolbelt is available when enabled."}
+You have **FULL ACCESS** to all tools listed below.
 
 ### Search & Research Tools
 | Tool | Description | Best For |
@@ -185,8 +231,57 @@ Call multiple tools in the SAME response. They execute concurrently and you rece
 3. **Use specialized search tools** — financeSearch for stocks, paperSearch for academic work, bioSearch for medical, etc.
 4. **Prefer charts/diagrams** over describing data in text
 5. **Use artifacts** for code files, not for short snippets
-6. **Combine results** — Run parallel searches, then synthesize and visualize`
-    );
+6. **Combine results** — Run parallel searches, then synthesize and visualize
+
+### Table Formatting (2-column summaries)
+- Do not output Markdown tables or pipe-delimited rows; always use the HTML table below with no blank lines before it.
+- Keep the header color #f2f2f2, stripes #f9f9f9, borders #ccc, and adjust/add rows while preserving the alternating pattern.
+<table style="border-collapse:collapse;width:100%;font-family:sans-serif;">
+  <tr style="background:#f2f2f2;">
+    <th style="border:1px solid #ccc;padding:5px;">Attribute</th>
+    <th style="border:1px solid #ccc;padding:5px;">Details</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #ccc;padding:5px;">Full name</td>
+    <td style="border:1px solid #ccc;padding:5px;">[Full name here]</td>
+  </tr>
+  <tr style="background:#f9f9f9;">
+    <td style="border:1px solid #ccc;padding:5px;">Location</td>
+    <td style="border:1px solid #ccc;padding:5px;">[Location here]</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #ccc;padding:5px;">Education</td>
+    <td style="border:1px solid #ccc;padding:5px;">[Education details]</td>
+  </tr>
+  <tr style="background:#f9f9f9;">
+    <td style="border:1px solid #ccc;padding:5px;">Leadership</td>
+    <td style="border:1px solid #ccc;padding:5px;">[Leadership info]</td>
+  </tr>
+  <!-- Add further rows as needed, alternating the background color (no-color, #f9f9f9, no-color, …) -->
+</table>.`
+      );
+    } else {
+      const rows =
+        activeTools && activeTools.length > 0
+          ? activeTools
+              .map((toolName) => {
+                const description =
+                  TOOL_DESCRIPTIONS[toolName] ?? "Available in this chat context";
+                return `| **${toolName}** | ${description} |`;
+              })
+              .join("\n")
+          : "| None | No tools explicitly enabled |";
+
+      systemSections.push(
+        `## Available Tools
+
+You currently have access to these tools only. Do not claim access to any other tools.
+
+| Tool | Description |
+|------|-------------|
+${rows}`
+      );
+    }
   }
 
   systemSections.push(
@@ -247,6 +342,7 @@ export function createChatAgent(
   const baseSystemPrompt = buildChatSystemPrompt({
     useTools: resolved.useTools,
     fullToolAccess,
+    activeTools,
   });
   const systemPrompt = additionalSystemPrompt
     ? `${baseSystemPrompt}\n\n${additionalSystemPrompt}`

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Briefcase, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2 } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed } from "./AppCustomizationForm";
+import { Briefcase, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
+import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,22 +19,71 @@ interface PreviewEntry {
   error?: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert business application developer specializing in creating professional, data-driven business tools. Create applications with:
+const SYSTEM_PROMPT = `You are an elite business application developer. Create stunning, professional dashboards and business tools that executives would proudly present to stakeholders.
 
-- Professional, clean business aesthetics
-- Data visualization and analytics displays
-- Dashboard layouts with key metrics
-- Tables, charts, and reporting interfaces
-- Filtering, sorting, and search functionality
-- Export capabilities (CSV, PDF)
-- Responsive design for desktop and tablet
-- Role-based access considerations
+USER VISION FIRST:
+- Match the user's specific industry, brand, and requirements
+- Fintech = different from retail = different from healthcare = different from marketing
+- If they mention colors or brand identity, use THOSE colors
+- Read their description carefully - every dashboard should feel unique to their business
 
-Focus on business value, data clarity, and professional UX. Use React, Tailwind CSS, and business-appropriate color schemes. Include charts using Recharts when relevant.`;
+BUSINESS DESIGN PRINCIPLES (adapt to user's context):
+- Clean, corporate aesthetics with generous whitespace
+- Data-first layouts: key metrics prominently displayed
+- Professional color palette based on their industry/brand
+- Clear visual hierarchy: important numbers large and bold
+- Scannable layouts: users should grasp key info in 3 seconds
+
+MUST-HAVE ELEMENTS FOR DASHBOARDS:
+- KPI cards with large numbers, labels, and trend indicators (↑↓)
+- Status badges: green=good, yellow=warning, red=critical
+- Progress bars or completion indicators where relevant
+- Clear section headers and logical grouping
+- Action buttons with clear CTAs
+
+DATA DISPLAY PATTERNS:
+- Tables: alternating row colors, sticky headers, hover states
+- Metric cards: icon + large number + label + percentage change
+- Lists: clean borders, adequate padding, clear hierarchy
+- Use CSS-based charts (progress bars, simple bar charts with divs) instead of external libraries
+
+EXAMPLE - Executive Dashboard Card:
+\`\`\`jsx
+export default function MetricCard() {
+  const [trend] = useState({ value: 12.5, isUp: true });
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm font-medium text-slate-500">Total Revenue</span>
+        <span className={trend.isUp ? "text-green-600 text-sm font-medium" : "text-red-600 text-sm font-medium"}>
+          {trend.isUp ? "↑" : "↓"} {trend.value}%
+        </span>
+      </div>
+      <div className="text-3xl font-bold text-slate-900 mb-2">$2.4M</div>
+      <div className="w-full bg-slate-100 rounded-full h-2">
+        <div className="bg-indigo-600 h-2 rounded-full" style={{width: '75%'}}></div>
+      </div>
+      <p className="text-xs text-slate-500 mt-2">75% of quarterly goal</p>
+    </div>
+  );
+}
+\`\`\`
+
+COLOR TOKENS FOR BUSINESS:
+- Primary: indigo-600 (trust, professionalism)
+- Success: green-500/600 (positive metrics)
+- Warning: amber-500 (attention needed)
+- Danger: red-500/600 (critical issues)
+- Neutral: slate-50 through slate-900
+
+The user will describe what business tool they need. Build something that looks like it cost $50,000 to develop.`;
 
 export function BusinessV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
+  const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,6 +92,8 @@ export function BusinessV0Chat() {
   const [viewportMode, setViewportMode] = useState<"desktop" | "mobile">("desktop");
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const getCurrentPreview = () => {
@@ -61,7 +112,7 @@ export function BusinessV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed) => {
+  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -72,7 +123,7 @@ export function BusinessV0Chat() {
     ];
     setPreviews(initialPreviews);
 
-    const modelId = model === "fast" ? "cerebras/zai-glm-4.6" : "google/gemini-3-pro";
+    const modelId = model === "fast" ? "cerebras/gpt-oss-120b" : "google/gemini-3-pro";
 
     const requests = initialPreviews.map(async (entry) => {
       try {
@@ -83,6 +134,7 @@ export function BusinessV0Chat() {
             message: prompt,
             modelId,
             system: SYSTEM_PROMPT,
+            images: images,
           }),
         });
 
@@ -136,15 +188,17 @@ export function BusinessV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed) => {
+  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
     setInitialPrompt(prompt);
+    setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
-    generatePreviews(prompt, model);
+    setInitialImages(images);
+    generatePreviews(prompt, model, images);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel);
+      generatePreviews(initialPrompt, selectedModel, initialImages);
     }
   };
 
@@ -157,8 +211,24 @@ export function BusinessV0Chat() {
     }
   };
 
+  const exportCode = (preview?: PreviewEntry) => {
+    const previewToExport = preview || previews.find((p) => p.id === selectedPreviewId);
+    if (!previewToExport?.generatedCode) return;
+
+    const previewIndex = previews.findIndex((p) => p.id === previewToExport.id);
+    const filename = `v0-generation-${previewIndex >= 0 ? previewIndex + 1 : 1}.tsx`;
+    const blob = new Blob([previewToExport.generatedCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNewSession = () => {
     setInitialPrompt(null);
+    setInitialDisplayPrompt(null);
     setPreviews([]);
     setSelectedPreviewId(null);
     setIsGenerating(false);
@@ -187,6 +257,7 @@ export function BusinessV0Chat() {
   const successfulPreviews = previews.filter(p => p.status === "success");
   const allLoading = previews.every(p => p.status === "loading");
   const allFailed = previews.length > 0 && previews.every(p => p.status === "error");
+  const selectedPreview = selectedPreviewId ? previews.find((p) => p.id === selectedPreviewId) : null;
 
   if (expandedPreviewId && expandedPreview) {
     const expandedIndex = previews.findIndex(p => p.id === expandedPreviewId);
@@ -235,6 +306,17 @@ export function BusinessV0Chat() {
               <Check className="h-4 w-4 mr-2" />
               {selectedPreviewId === expandedPreviewId ? "Selected" : "Select This"}
             </Button>
+            
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCode(expandedPreview)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Code
+              </Button>
+            )}
             
             {expandedPreview.previewUrl && (
               <Button
@@ -376,6 +458,15 @@ export function BusinessV0Chat() {
             )}
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCode()}
+            disabled={!selectedPreview?.generatedCode}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Code
+          </Button>
+          <Button
             size="sm"
             onClick={handleDeploy}
             disabled={!selectedPreviewId || deploying}
@@ -387,11 +478,37 @@ export function BusinessV0Chat() {
         </div>
       </div>
 
-      <div className="px-6 py-3 border-b bg-muted/30">
-        <p className="text-sm">
-          <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
-          <span className="text-foreground">{initialPrompt}</span>
-        </p>
+      <div className="px-6 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Prompt visibility</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserPrompt((prev) => !prev)}
+            >
+              {showUserPrompt ? "Hide your prompt" : "Show your prompt"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSystemPrompt((prev) => !prev)}
+            >
+              {showSystemPrompt ? "Hide system prompt" : "Show system prompt"}
+            </Button>
+          </div>
+        </div>
+        {showUserPrompt && initialPrompt && (
+          <p className="text-sm">
+            <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
+            <span className="text-foreground">{initialDisplayPrompt || initialPrompt}</span>
+          </p>
+        )}
+        {showSystemPrompt && (
+          <div className="rounded-md border border-dashed border-border/50 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {SYSTEM_PROMPT}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden p-6">
@@ -495,14 +612,28 @@ export function BusinessV0Chat() {
                               )}
                               {getCurrentPreview()!.preview.status === "error" && (
                                 <Badge variant="destructive" className="text-xs">Failed</Badge>
-                              )}
-                            </div>
-                            {getCurrentPreview()!.preview.status === "success" && (
-                              <div className="flex items-center gap-1">
+                            )}
+                          </div>
+                          {getCurrentPreview()!.preview.status === "success" && (
+                            <div className="flex items-center gap-1">
+                              {getCurrentPreview()!.preview.generatedCode && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6"
+                                  title="Download code"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    exportCode(getCurrentPreview()!.preview);
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
                                   title="Expand preview"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -576,19 +707,35 @@ export function BusinessV0Chat() {
                               <span className="text-sm font-medium">Mobile</span>
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Expand preview"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedPreviewId(getCurrentPreview()!.preview.id);
-                                  setViewportMode("mobile");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Expand preview"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreviewId(getCurrentPreview()!.preview.id);
+                                    setViewportMode("mobile");
+                                  }}
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                           

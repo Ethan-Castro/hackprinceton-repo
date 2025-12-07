@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { SendIcon, PlusIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SendIcon, PlusIcon, Wrench, ChevronRight, ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { DEFAULT_MODEL } from "@/lib/constants";
@@ -86,6 +89,7 @@ import {
   parseChainOfThoughtPart,
   type MessagePart,
 } from "@/lib/ai-elements-helpers";
+import { getToolDisplayName } from "@/lib/tool-display-names";
 import type { ChartToolOutput } from "@/lib/chart-tools";
 import type { SearchToolOutput } from "@/lib/exa-search-tools";
 import type { FirecrawlToolOutput } from "@/lib/firecrawl-tools";
@@ -97,6 +101,201 @@ import type { DisplayModel } from "@/lib/display-model";
 import { useModelManager } from "@/lib/hooks/use-model-manager";
 import { ProvidersWarning } from "@/components/providers-warning";
 import { GenerationMetrics, MetricsToggle } from "@/components/generation-metrics";
+
+type ToolGuideSection = {
+  title: string;
+  example: string;
+  tools: string[];
+};
+
+const TOOL_GUIDE_SECTIONS: ToolGuideSection[] = [
+  {
+    title: "Search & research",
+    example:
+      "Grab the latest SEC filing for NVIDIA, cross-check headlines, and summarize anything new from arXiv.",
+    tools: [
+      "webSearch",
+      "valyuWebSearch",
+      "financeSearch",
+      "paperSearch",
+      "bioSearch",
+      "patentSearch",
+      "secSearch",
+      "economicsSearch",
+      "companyResearch",
+      "searchArXiv",
+      "getArXivPaper",
+      "scrapeWebsite",
+    ],
+  },
+  {
+    title: "Visualization & previews",
+    example:
+      "Turn this revenue table into a bar chart and sketch a Mermaid ER diagram for a blog database.",
+    tools: [
+      "displayArtifact",
+      "displayWebPreview",
+      "generateHtmlPreview",
+      "generateChart",
+      "generateMermaidDiagram",
+      "generateMermaidFlowchart",
+      "generateMermaidERDiagram",
+      "generateReactDashboard",
+      "refineDashboard",
+    ],
+  },
+  {
+    title: "Code & data helpers",
+    example:
+      "Run Python to cluster this CSV, then describe the orders table and list the top five states by average order size.",
+    tools: [
+      "executePython",
+      "analyzeDataset",
+      "executeSQL",
+      "describeTable",
+      "runParallelAgent",
+    ],
+  },
+  {
+    title: "Content & documents",
+    example:
+      "Draft a textbook section on Newton's laws with a quiz, mind map, and a Google Doc outline.",
+    tools: [
+      "generateTextbookChapter",
+      "generateExercises",
+      "generateDiagram",
+      "generateCodeExample",
+      "generateKeyPoints",
+      "generateCaseStudy",
+      "generateMindMap",
+      "generateGamma",
+      "createGammaFromTemplate",
+      "getGammaGeneration",
+      "listGammaThemes",
+      "listGammaFolders",
+      "readGoogleDoc",
+      "getGoogleDocMetadata",
+    ],
+  },
+  {
+    title: "Business & strategy",
+    example:
+      "Build a go-to-market plan, SWOT, and revenue model for a B2B AI analytics startup—then draft a pitch deck outline.",
+    tools: [
+      "generateBusinessPlan",
+      "generateFinancialProjections",
+      "generateSWOTAnalysis",
+      "generateBusinessModelCanvas",
+      "generateMarketAnalysis",
+      "generatePitchDeck",
+      "generateFinancialDashboard",
+      "generateMarketingPlan",
+      "generateCompetitorAnalysis",
+      "generateRevenueModel",
+    ],
+  },
+  {
+    title: "Healthcare, reminders, and coverage",
+    example:
+      "Check whether metformin conflicts with a GLP-1 prescription, pull recent trial results, and schedule follow-up reminders.",
+    tools: [
+      "searchPubMed",
+      "searchClinicalTrials",
+      "getMedicationInfo",
+      "searchHealthInformation",
+      "analyzeMedicalResearch",
+      "scheduleAppointment",
+      "listAppointments",
+      "cancelAppointment",
+      "setAppointmentReminder",
+      "addMedication",
+      "logMedicationTaken",
+      "listMedications",
+      "getMedicationAdherence",
+      "checkDrugInteractions",
+      "removeMedication",
+      "sendAppointmentReminder",
+      "sendMedicationReminder",
+      "sendLabResultNotification",
+      "sendHealthSummary",
+      "sendMedicationRefillAlert",
+      "sendVoiceAppointmentReminder",
+      "sendVoiceMedicationReminder",
+      "sendVoiceHealthAlert",
+      "sendVoiceHealthMetricReminder",
+      "logVitalSigns",
+      "logActivity",
+      "logNutrition",
+      "setHealthGoal",
+      "getHealthMetricsReport",
+      "getHealthInsights",
+      "addHealthcareProvider",
+      "listHealthcareProviders",
+      "addInsurancePlan",
+      "listInsurancePlans",
+      "checkProcedureCoverage",
+    ],
+  },
+];
+
+function ToolGuideButton({ onInsertTool }: { onInsertTool: (toolName: string) => void }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-9 w-9 shadow-border-small hover:shadow-border-medium bg-background/80 backdrop-blur-sm border-0 hover:bg-background hover:scale-[1.02] transition-all duration-150 ease"
+          title="Show available tools and a sample question"
+        >
+          <Wrench className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Tools you can use</DialogTitle>
+          <DialogDescription>
+            All tools available in this chat plus an example question to try.
+          </DialogDescription>
+        </DialogHeader>
+        <ScrollArea className="max-h-[70vh] pr-2">
+          <div className="space-y-3 pb-1">
+            {TOOL_GUIDE_SECTIONS.map((section) => (
+              <div
+                key={section.title}
+                className="rounded-2xl border border-border/60 bg-muted/30 p-4 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">{section.title}</span>
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Example
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {section.example}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {section.tools.map((toolName) => (
+                    <button
+                      key={toolName}
+                      type="button"
+                      onClick={() => onInsertTool(toolName)}
+                      className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold bg-background/80 hover:bg-primary/10 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      title={`Insert ${toolName}`}
+                    >
+                      {getToolDisplayName(toolName)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function ModelSelectorHandler({
   modelId,
@@ -158,12 +357,14 @@ export function Chat({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationFrameRef = useRef<number | null>(null);
   const lastApiEndpointRef = useRef(apiEndpoint);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [tokenUsage, setTokenUsage] = useState({
     inputTokens: 0,
     outputTokens: 0,
     totalTokens: 0,
     estimatedCost: 0,
   });
+  const [webSearchVisibility, setWebSearchVisibility] = useState<Record<string, boolean>>({});
 
   // Generation metrics state
   const [showMetrics, setShowMetrics] = useState(false);
@@ -299,7 +500,8 @@ export function Chat({
         }
     },
     body: {
-      enableAllTools: true,  // Enable all 40+ tools including Valyu search suite
+      enableAllTools: true,
+      toolScope: "all",
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
@@ -456,6 +658,21 @@ export function Chat({
     setShouldAutoscroll(true);
   };
 
+  const handleToolNameClick = (toolName: string) => {
+    setInput((prev) => {
+      const trimmed = prev.trim();
+      return trimmed ? `${trimmed} ${toolName}` : toolName;
+    });
+    inputRef.current?.focus();
+  };
+
+  const toggleWebSearch = (partKey: string) => {
+    setWebSearchVisibility((prev) => ({
+      ...prev,
+      [partKey]: !(prev[partKey] ?? false),
+    }));
+  };
+
   const renderTokenUsage = () => {
     if (tokenUsage.totalTokens <= 0) {
       return null;
@@ -520,6 +737,7 @@ export function Chat({
             enabled={showMetrics}
             onToggle={() => setShowMetrics(!showMetrics)}
           />
+          <ToolGuideButton onInsertTool={handleToolNameClick} />
         </div>
         )}
         {!hasMessages && (
@@ -542,7 +760,7 @@ export function Chat({
                   onSubmit={(e) => {
                     e.preventDefault();
                     setLiveMetrics(null);
-                    sendMessage({ text: input }, { body: { modelId: currentModelId, ...extraBody } });
+                    sendMessage({ text: input }, { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } });
                     setInput("");
                   }}
                 >
@@ -570,6 +788,7 @@ export function Chat({
                         onChange={(e) => setInput(e.target.value)}
                         value={input}
                         autoFocus
+                        ref={inputRef}
                         className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 transition-all duration-150"
                         onKeyDown={(e) => {
                           if (e.metaKey && e.key === "Enter") {
@@ -830,11 +1049,44 @@ export function Chat({
 
                         case "tool-webSearch":
                           if (anyPart.state === "output-available") {
+                            const isOpen = webSearchVisibility[partKey] ?? false;
+
                             return (
-                              <SearchResultsRenderer
+                              <div
                                 key={`${m.id}-${i}`}
-                                data={anyPart.output as SearchToolOutput}
-                              />
+                                className="rounded-xl border bg-card/60 shadow-border-medium"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => toggleWebSearch(partKey)}
+                                  className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/60 transition-colors"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    {isOpen ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
+                                    )}
+                                    Web search results
+                                  </span>
+                                  {!isOpen && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Click to expand
+                                    </span>
+                                  )}
+                                </button>
+                                {isOpen ? (
+                                  <div className="border-t">
+                                    <SearchResultsRenderer
+                                      data={anyPart.output as SearchToolOutput}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="border-t px-4 py-3 text-xs text-muted-foreground">
+                                    Hidden by default. Open the arrow to view web results.
+                                  </div>
+                                )}
+                              </div>
                             );
                           } else if (anyPart.state === "input-available") {
                             return (
@@ -1261,7 +1513,7 @@ export function Chat({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                sendMessage({ text: input }, { body: { modelId: currentModelId, ...extraBody } });
+                sendMessage({ text: input }, { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } });
                 setInput("");
               }}
               className="px-4 md:px-8 pb-6 md:pb-8"
@@ -1289,13 +1541,14 @@ export function Chat({
                     placeholder="Ask a question..."
                     onChange={(e) => setInput(e.target.value)}
                     value={input}
+                    ref={inputRef}
                     autoFocus
                     className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 font-medium transition-all duration-150"
                     onKeyDown={(e) => {
                       if (e.metaKey && e.key === "Enter") {
                         sendMessage(
                           { text: input },
-                          { body: { modelId: currentModelId, ...extraBody } },
+                          { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } },
                         );
                         setInput("");
                       }

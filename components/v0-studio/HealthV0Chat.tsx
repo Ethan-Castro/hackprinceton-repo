@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Heart, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2 } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed } from "./AppCustomizationForm";
+import { Heart, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
+import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -19,23 +19,83 @@ interface PreviewEntry {
   error?: string;
 }
 
-const SYSTEM_PROMPT = `You are an expert health application developer specializing in creating user-friendly, HIPAA-conscious health technology. Create applications with:
+const SYSTEM_PROMPT = `You are an elite health & wellness application developer. Create beautiful, calming, and trustworthy health interfaces that users feel safe using for their personal health journey.
 
-- Clear, accessible health information displays
-- Privacy-first design patterns
-- Easy-to-use tracking and logging interfaces
-- Data visualization for health metrics
-- Appointment and medication management
-- Responsive design for mobile health use
-- Empathetic, patient-centered UX
+USER VISION FIRST:
+- Fitness app = different from medical tracker = different from mental health = different from nutrition
+- Match their specific health domain, target audience, and brand
+- If they mention colors or a specific aesthetic, use THOSE
+- A children's health app looks different from an elderly care app
 
-Prioritize user safety, data privacy, and clear health information. Always include appropriate medical disclaimers. Use React and Tailwind CSS for implementation.
+HEALTH UX PRINCIPLES:
+- Calming, reassuring aesthetics (soft colors, rounded corners, breathing room)
+- Clear, readable typography (health info must be scannable)
+- Accessibility-first: high contrast, large touch targets, clear labels
+- Empathetic tone in all copy and UI elements
+- Privacy feels built-in: no scary data warnings, just reassuring design
 
-IMPORTANT: Always include disclaimers that the app is for informational purposes only and users should consult healthcare professionals for medical advice.`;
+MUST-HAVE ELEMENTS:
+- Health metric cards with clear readings and normal ranges
+- Progress tracking with encouraging visualizations
+- Status indicators: green=healthy range, yellow=attention, red=consult doctor
+- Gentle reminders and motivational elements
+- Clear navigation with intuitive icons
+
+HEALTH-SPECIFIC PATTERNS:
+- Vitals display: large number + unit + status indicator + trend
+- Medication reminders: time, pill icon, name, dosage, checkbox
+- Activity logs: date, icon, description, values
+- Progress rings or bars with percentage and goal
+- Appointment cards: date, doctor name, type, location
+
+EXAMPLE - Health Metric Card:
+\`\`\`jsx
+export default function VitalCard() {
+  const [reading] = useState({ value: 120, unit: 'mg/dL', status: 'normal' });
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
+          <svg className="w-5 h-5 text-rose-500" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        </div>
+        <span className="text-sm font-medium text-slate-600">Blood Glucose</span>
+      </div>
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-4xl font-bold text-slate-900">{reading.value}</span>
+        <span className="text-lg text-slate-500">{reading.unit}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Normal Range
+        </span>
+        <span className="text-xs text-slate-500">Target: 70-130 mg/dL</span>
+      </div>
+    </div>
+  );
+}
+\`\`\`
+
+COLOR PALETTE FOR HEALTH:
+- Primary: teal-500/600 or sky-500/600 (calm, medical trust)
+- Healthy/Good: green-500 (in range, success)
+- Caution: amber-500 (needs attention)
+- Alert: rose-500 (consult healthcare provider)
+- Background: slate-50, white (clean, clinical)
+- Accents: soft pastels for warmth
+
+REQUIRED DISCLAIMER (include in footer or appropriate location):
+"This app is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment."
+
+The user will describe what health tool they need. Create something that feels like it was designed by Apple Health's team.`;
 
 export function HealthV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
+  const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -44,6 +104,8 @@ export function HealthV0Chat() {
   const [viewportMode, setViewportMode] = useState<"desktop" | "mobile">("desktop");
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const getCurrentPreview = () => {
@@ -62,7 +124,7 @@ export function HealthV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed) => {
+  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -73,7 +135,7 @@ export function HealthV0Chat() {
     ];
     setPreviews(initialPreviews);
 
-    const modelId = model === "fast" ? "cerebras/zai-glm-4.6" : "google/gemini-3-pro";
+    const modelId = model === "fast" ? "cerebras/gpt-oss-120b" : "google/gemini-3-pro";
 
     const requests = initialPreviews.map(async (entry) => {
       try {
@@ -84,6 +146,7 @@ export function HealthV0Chat() {
             message: prompt,
             modelId,
             system: SYSTEM_PROMPT,
+            images: images,
           }),
         });
 
@@ -137,15 +200,17 @@ export function HealthV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed) => {
+  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
     setInitialPrompt(prompt);
+    setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
-    generatePreviews(prompt, model);
+    setInitialImages(images);
+    generatePreviews(prompt, model, images);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel);
+      generatePreviews(initialPrompt, selectedModel, initialImages);
     }
   };
 
@@ -158,8 +223,24 @@ export function HealthV0Chat() {
     }
   };
 
+  const exportCode = (preview?: PreviewEntry) => {
+    const previewToExport = preview || previews.find((p) => p.id === selectedPreviewId);
+    if (!previewToExport?.generatedCode) return;
+
+    const previewIndex = previews.findIndex((p) => p.id === previewToExport.id);
+    const filename = `v0-generation-${previewIndex >= 0 ? previewIndex + 1 : 1}.tsx`;
+    const blob = new Blob([previewToExport.generatedCode], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleNewSession = () => {
     setInitialPrompt(null);
+    setInitialDisplayPrompt(null);
     setPreviews([]);
     setSelectedPreviewId(null);
     setIsGenerating(false);
@@ -188,6 +269,7 @@ export function HealthV0Chat() {
   const successfulPreviews = previews.filter(p => p.status === "success");
   const allLoading = previews.every(p => p.status === "loading");
   const allFailed = previews.length > 0 && previews.every(p => p.status === "error");
+  const selectedPreview = selectedPreviewId ? previews.find((p) => p.id === selectedPreviewId) : null;
 
   if (expandedPreviewId && expandedPreview) {
     const expandedIndex = previews.findIndex(p => p.id === expandedPreviewId);
@@ -236,6 +318,17 @@ export function HealthV0Chat() {
               <Check className="h-4 w-4 mr-2" />
               {selectedPreviewId === expandedPreviewId ? "Selected" : "Select This"}
             </Button>
+            
+            {expandedPreview.generatedCode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportCode(expandedPreview)}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Code
+              </Button>
+            )}
             
             {expandedPreview.previewUrl && (
               <Button
@@ -377,6 +470,15 @@ export function HealthV0Chat() {
             )}
           </Button>
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCode()}
+            disabled={!selectedPreview?.generatedCode}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export Code
+          </Button>
+          <Button
             size="sm"
             onClick={handleDeploy}
             disabled={!selectedPreviewId || deploying}
@@ -388,11 +490,37 @@ export function HealthV0Chat() {
         </div>
       </div>
 
-      <div className="px-6 py-3 border-b bg-muted/30">
-        <p className="text-sm">
-          <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
-          <span className="text-foreground">{initialPrompt}</span>
-        </p>
+      <div className="px-6 py-3 border-b bg-muted/30 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Prompt visibility</span>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowUserPrompt((prev) => !prev)}
+            >
+              {showUserPrompt ? "Hide your prompt" : "Show your prompt"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSystemPrompt((prev) => !prev)}
+            >
+              {showSystemPrompt ? "Hide system prompt" : "Show system prompt"}
+            </Button>
+          </div>
+        </div>
+        {showUserPrompt && initialPrompt && (
+          <p className="text-sm">
+            <span className="font-medium text-muted-foreground">Your prompt:</span>{" "}
+            <span className="text-foreground">{initialDisplayPrompt || initialPrompt}</span>
+          </p>
+        )}
+        {showSystemPrompt && (
+          <div className="rounded-md border border-dashed border-border/50 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {SYSTEM_PROMPT}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-hidden p-6">
@@ -496,16 +624,30 @@ export function HealthV0Chat() {
                               )}
                               {getCurrentPreview()!.preview.status === "error" && (
                                 <Badge variant="destructive" className="text-xs">Failed</Badge>
-                              )}
-                            </div>
-                            {getCurrentPreview()!.preview.status === "success" && (
-                              <div className="flex items-center gap-1">
+                            )}
+                          </div>
+                          {getCurrentPreview()!.preview.status === "success" && (
+                            <div className="flex items-center gap-1">
+                              {getCurrentPreview()!.preview.generatedCode && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6"
-                                  title="Expand preview"
+                                  title="Download code"
                                   onClick={(e) => {
+                                    e.stopPropagation();
+                                    exportCode(getCurrentPreview()!.preview);
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                title="Expand preview"
+                                onClick={(e) => {
                                     e.stopPropagation();
                                     setExpandedPreviewId(getCurrentPreview()!.preview.id);
                                     setViewportMode("desktop");
@@ -577,19 +719,35 @@ export function HealthV0Chat() {
                               <span className="text-sm font-medium">Mobile</span>
                             </div>
                             {getCurrentPreview()!.preview.status === "success" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                title="Expand preview"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setExpandedPreviewId(getCurrentPreview()!.preview.id);
-                                  setViewportMode("mobile");
-                                }}
-                              >
-                                <Maximize2 className="h-3.5 w-3.5" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {getCurrentPreview()!.preview.generatedCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    title="Download code"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      exportCode(getCurrentPreview()!.preview);
+                                    }}
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  title="Expand preview"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedPreviewId(getCurrentPreview()!.preview.id);
+                                    setViewportMode("mobile");
+                                  }}
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                           </div>
                           

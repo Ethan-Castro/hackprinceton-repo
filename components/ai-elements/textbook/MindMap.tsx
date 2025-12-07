@@ -36,10 +36,56 @@ const palette = [
   "#0ea5e9",
 ];
 
+const TOOLBAR_STYLES_CDN =
+  "https://cdn.jsdelivr.net/npm/markmap-toolbar@0.18.12/dist/style.css";
+
 const getAccent = (node: MindMapNode, index: number) => {
   if (node.color) return node.color;
   return palette[index % palette.length];
 };
+
+function toMarkdown(
+  centralTopic: string,
+  perspective: string | undefined,
+  branches: MindMapNode[],
+  insights?: string[]
+) {
+  const lines: string[] = [];
+  lines.push(`# ${centralTopic}`);
+  if (perspective) {
+    lines.push(`_Lens: ${perspective}_`);
+  }
+
+  const renderNode = (node: MindMapNode, depth: number) => {
+    const indent = "  ".repeat(depth);
+    const label = `${node.icon ? `${node.icon} ` : ""}${node.title}${
+      node.summary ? ` — ${node.summary}` : ""
+    }`;
+    lines.push(`${indent}- ${label}`);
+
+    if (node.insights?.length) {
+      node.insights.forEach((tip) => {
+        lines.push(`${indent}  - 💡 ${tip}`);
+      });
+    }
+
+    if (node.children?.length) {
+      node.children.forEach((child) => renderNode(child, depth + 1));
+    }
+  };
+
+  branches.forEach((branch) => renderNode(branch, 0));
+
+  if (insights?.length) {
+    lines.push("");
+    lines.push("## Study sparks");
+    insights.forEach((tip, idx) => {
+      lines.push(`- ${idx + 1}. ${tip}`);
+    });
+  }
+
+  return lines.join("\n");
+}
 
 const NodeCard: React.FC<{
   node: MindMapNode;
@@ -148,6 +194,24 @@ export const MindMap: React.FC<MindMapProps> = ({
   insights,
   className,
 }) => {
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+  const toolbarRef = React.useRef<HTMLDivElement | null>(null);
+  const markmapInstanceRef = React.useRef<any>(null);
+  const markmapDepsRef = React.useRef<{
+    transformer: any;
+    markmapModule: any;
+    Markmap: any;
+    Toolbar: any;
+    loadCSS: any;
+    loadJS: any;
+  } | null>(null);
+  const toolbarInstanceRef = React.useRef<any>(null);
+  const markdown = React.useMemo(
+    () => toMarkdown(centralTopic, perspective, branches, insights),
+    [centralTopic, perspective, branches, insights]
+  );
+  const [markmapError, setMarkmapError] = React.useState<string | null>(null);
+
   const [openNodes, setOpenNodes] = React.useState<Record<string, boolean>>(() => {
     // expand first level by default
     const defaults: Record<string, boolean> = {};
@@ -171,6 +235,104 @@ export const MindMap: React.FC<MindMapProps> = ({
       [key]: !prev[key],
     }));
   };
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const renderMarkmap = async () => {
+      try {
+        if (!markmapDepsRef.current) {
+          const [{ Transformer }, markmapModule, toolbarModule] = await Promise.all([
+            import("markmap-lib"),
+            import("markmap-view"),
+            import("markmap-toolbar"),
+          ]);
+
+          const transformer = new Transformer();
+          const { styles, scripts } = transformer.getAssets();
+          const { loadCSS, loadJS } = markmapModule;
+          if (styles?.length) {
+            loadCSS(styles);
+          }
+          if (scripts?.length) {
+            await loadJS(scripts, { getMarkmap: () => markmapModule });
+          }
+          // Toolbar styles via CDN (avoids importing global CSS directly)
+          loadCSS([TOOLBAR_STYLES_CDN]);
+
+          markmapDepsRef.current = {
+            transformer,
+            markmapModule,
+            Markmap: markmapModule.Markmap,
+            Toolbar: toolbarModule.Toolbar,
+            loadCSS,
+            loadJS,
+          };
+        }
+
+        const deps = markmapDepsRef.current;
+        if (!deps || !svgRef.current) return;
+
+        const { transformer, Markmap, Toolbar, loadCSS, loadJS, markmapModule } = deps;
+        const { root, features } = transformer.transform(markdown);
+
+        if (typeof transformer.getUsedAssets === "function") {
+          const usedAssets = transformer.getUsedAssets(features);
+          if (usedAssets?.styles?.length) {
+            loadCSS(usedAssets.styles);
+          }
+          if (usedAssets?.scripts?.length) {
+            await loadJS(usedAssets.scripts, { getMarkmap: () => markmapModule });
+          }
+        }
+
+        let mm = markmapInstanceRef.current;
+        if (!mm) {
+          mm = Markmap.create(svgRef.current, undefined, root);
+          markmapInstanceRef.current = mm;
+        } else {
+          await mm.setData(root);
+        }
+        mm.fit();
+
+        if (Toolbar && toolbarRef.current) {
+          if (!toolbarInstanceRef.current) {
+            const toolbar = new Toolbar();
+            toolbar.attach(mm);
+            toolbar.setItems([...Toolbar.defaultItems]);
+            toolbarRef.current.innerHTML = "";
+            toolbarRef.current.append(toolbar.render());
+            toolbarInstanceRef.current = toolbar;
+          } else {
+            toolbarInstanceRef.current.attach(mm);
+          }
+        }
+        if (!cancelled) setMarkmapError(null);
+      } catch (error) {
+        console.error("Markmap render failed:", error);
+        if (!cancelled) {
+          setMarkmapError("Interactive mind map failed to render. Showing outline view instead.");
+        }
+      }
+    };
+
+    renderMarkmap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [markdown]);
+
+  React.useEffect(() => {
+    return () => {
+      markmapInstanceRef.current?.destroy?.();
+      markmapInstanceRef.current = null;
+      if (toolbarRef.current) {
+        toolbarRef.current.innerHTML = "";
+      }
+      toolbarInstanceRef.current = null;
+    };
+  }, []);
 
   return (
     <div
@@ -199,6 +361,24 @@ export const MindMap: React.FC<MindMapProps> = ({
       </div>
 
       <div className="p-6 space-y-8">
+        <div className="space-y-3">
+          <div className="rounded-2xl border bg-muted/40 p-4 relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-muted-foreground">Interactive mind map</p>
+              <div ref={toolbarRef} className="flex items-center gap-2" />
+            </div>
+            <div className="w-full h-[420px] rounded-xl border bg-white dark:bg-slate-950 overflow-hidden">
+              <svg ref={svgRef} className="w-full h-full" />
+            </div>
+            {markmapError && (
+              <p className="mt-3 text-xs text-destructive">{markmapError}</p>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Tip: Pan/zoom with your trackpad or mouse; use the toolbar buttons to reset or collapse.
+          </p>
+        </div>
+
         <div className="grid gap-6">
           {branches.map((branch, index) => (
             <NodeCard

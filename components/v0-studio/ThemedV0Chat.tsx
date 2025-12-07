@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Copy, ExternalLink, Check, Sparkles, ArrowRight, PanelLeftClose, PanelLeft, MessageSquare } from "lucide-react";
+import { AlertCircle, Copy, ExternalLink, Check, Sparkles, ArrowRight, PanelLeftClose, PanelLeft, MessageSquare, Paperclip, X, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   createCodeSandboxUrl,
@@ -128,6 +128,24 @@ function transformApiMessages(apiMessages: any[]): ChatMessage[] {
     );
 }
 
+// Helper to convert a File to base64 data URL
+async function fileToBase64(file: File): Promise<{ data: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Extract base64 data (remove data:image/xxx;base64, prefix)
+      const base64Data = result.split(",")[1];
+      resolve({
+        data: base64Data,
+        mediaType: file.type || "image/png",
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ThemedV0Chat({
   className,
   title,
@@ -165,6 +183,8 @@ export function ThemedV0Chat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previewPanelRef = useRef<HTMLDivElement>(null);
   const initialPromptSent = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedImages, setAttachedImages] = useState<File[]>([]);
 
   // Derived colors
   const glowColor = primaryColor;
@@ -340,21 +360,26 @@ export function ThemedV0Chat({
 
   const handleSubmit = async (promptMessage: PromptInputMessage) => {
     const hasText = Boolean(promptMessage.text);
-    const hasAttachments = Boolean(promptMessage.files?.length);
+    const hasAttachments = Boolean(promptMessage.files?.length) || attachedImages.length > 0;
 
     if (!(hasText || hasAttachments) || loading) return;
 
     const userMessage =
-      promptMessage.text?.trim() || "Sent with attachments";
+      promptMessage.text?.trim() || "Create something inspired by this image";
 
     if (isMobile) {
       setActivePanel("preview");
     }
 
+    // Display message with image indicator
+    const displayMessage = attachedImages.length > 0
+      ? `${userMessage} [${attachedImages.length} image${attachedImages.length > 1 ? 's' : ''} attached]`
+      : userMessage;
+
     const userChatMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: userMessage,
+      content: displayMessage,
       createdAt: new Date().toISOString(),
     };
 
@@ -364,9 +389,17 @@ export function ThemedV0Chat({
     setError(null);
 
     try {
+      // Convert attached images to base64
+      const imageData = await Promise.all(
+        attachedImages.map((file) => fileToBase64(file))
+      );
+
+      // Clear attached images after capturing
+      setAttachedImages([]);
+
       // Map model selection to actual model IDs
       const modelId = selectedModel === "fast"
-        ? "cerebras/zai-glm-4.6"
+        ? "cerebras/gpt-oss-120b"
         : "google/gemini-3-pro";
 
       const response = await fetch("/api/v0-chat", {
@@ -377,6 +410,7 @@ export function ThemedV0Chat({
           chatId: chatId,
           modelId: showModelSelector ? modelId : undefined,
           system: !chatId ? systemPrompt : undefined,
+          images: imageData.length > 0 ? imageData : undefined,
         }),
       });
 
@@ -454,7 +488,29 @@ export function ThemedV0Chat({
     setPreviewHtml(null);
     setError(null);
     setActivePanel("chat");
+    setAttachedImages([]);
     void fetchSavedChats();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const imageFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    
+    // Limit to 3 images max
+    setAttachedImages((prev) => [...prev, ...imageFiles].slice(0, 3));
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (status === "loading") {
@@ -684,6 +740,51 @@ export function ThemedV0Chat({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          
+          {/* Image Previews */}
+          {attachedImages.length > 0 && (
+            <div className="flex gap-2 mb-3 flex-wrap">
+              {attachedImages.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="relative group/img"
+                >
+                  <div className="w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Attached ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <button
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {attachedImages.length < 3 && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-lg border border-dashed border-border/50 bg-muted/20 flex items-center justify-center hover:bg-muted/40 transition-colors"
+                >
+                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
+          
           <div className="relative group">
             <div 
               className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" 
@@ -696,18 +797,30 @@ export function ThemedV0Chat({
                   onChange={(e) => setInput(e.target.value)}
                   value={input}
                   className="w-full min-h-[80px] p-4 bg-transparent border-none resize-none focus:ring-0 text-base font-light placeholder:text-muted-foreground/50"
-                  placeholder={placeholder}
+                  placeholder={attachedImages.length > 0 ? "Describe what you want to create based on the image..." : placeholder}
                 />
                 <div className="flex justify-between items-center p-2 pl-4 border-t border-border/30 bg-muted/10 rounded-b-xl">
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {session?.user?.email || "Guest Mode"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                      title="Attach image for inspiration"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {session?.user?.email || "Guest Mode"}
+                    </span>
+                  </div>
                   <Button 
                     size="sm" 
-                    onClick={() => handleSubmit({ text: input, files: [] })}
-                    disabled={!input.trim() || loading}
+                    onClick={() => handleSubmit({ text: input, files: attachedImages })}
+                    disabled={(!input.trim() && attachedImages.length === 0) || loading}
                     className="rounded-lg h-8 px-4 transition-all duration-300 border-none text-white"
-                    style={{ backgroundColor: !input.trim() || loading ? undefined : glowColor }}
+                    style={{ backgroundColor: (!input.trim() && attachedImages.length === 0) || loading ? undefined : glowColor }}
                   >
                     {loading ? <Loader className="mr-2 h-3 w-3" /> : <Sparkles className="mr-2 h-3 w-3" />}
                     Generate
