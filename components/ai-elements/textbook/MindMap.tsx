@@ -258,7 +258,13 @@ export const MindMap: React.FC<MindMapProps> = ({
             await loadJS(scripts, { getMarkmap: () => markmapModule });
           }
           // Toolbar styles via CDN (avoids importing global CSS directly)
-          loadCSS([TOOLBAR_STYLES_CDN]);
+          // Load CSS manually to avoid type issues with loadCSS expecting CSSItem[]
+          if (typeof document !== "undefined") {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = TOOLBAR_STYLES_CDN;
+            document.head.appendChild(link);
+          }
 
           markmapDepsRef.current = {
             transformer,
