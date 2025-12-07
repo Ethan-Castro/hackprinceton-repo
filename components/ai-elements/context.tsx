@@ -89,9 +89,11 @@ const ContextTrigger = React.forwardRef<
       <HoverCardTrigger asChild>
         <Button
           ref={ref}
+          type="button"
           variant={variant}
           size={size}
           className={className}
+          onClick={(e) => e.preventDefault()}
           {...props}
         >
           {children}
@@ -104,9 +106,11 @@ const ContextTrigger = React.forwardRef<
     <HoverCardTrigger asChild>
       <Button
         ref={ref}
+        type="button"
         variant={variant}
         size={size}
         className={cn("gap-2", className)}
+        onClick={(e) => e.preventDefault()}
         {...props}
       >
         <span className="text-xs">{percentage}%</span>

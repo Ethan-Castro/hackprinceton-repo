@@ -21,6 +21,8 @@ export async function GET(request: Request) {
       );
     }
 
+    console.log(`[Generation API] Fetching metrics for ID: ${generationId}`);
+
     const response = await fetch(
       `https://ai-gateway.vercel.sh/v1/generation?id=${generationId}`,
       {
@@ -33,10 +35,17 @@ export async function GET(request: Request) {
     );
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Generation API] Error response: ${response.status} - ${errorText}`);
       throw new Error(`Failed to fetch generation: ${response.statusText}`);
     }
 
     const generation = await response.json();
+    console.log(`[Generation API] Got metrics:`, {
+      id: generation.id,
+      latency: generation.latency,
+      generation_time: generation.generation_time,
+    });
     return NextResponse.json(generation);
   } catch (error) {
     console.error("Error fetching generation:", error);

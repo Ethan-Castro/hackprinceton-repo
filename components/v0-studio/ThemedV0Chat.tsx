@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Copy, ExternalLink, Check, Sparkles, ArrowRight } from "lucide-react";
+import { AlertCircle, Copy, ExternalLink, Check, Sparkles, ArrowRight, PanelLeftClose, PanelLeft, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   createCodeSandboxUrl,
@@ -61,6 +61,8 @@ export interface ThemedV0ChatProps {
   placeholder?: string;
   primaryColor?: string; // New prop for color theming
   showModelSelector?: boolean; // Enable model selector for specific studios
+  initialPrompt?: string;
+  initialModel?: "fast" | "amazing";
 }
 
 function normalizeMessageContent(content: any): string {
@@ -139,6 +141,8 @@ export function ThemedV0Chat({
   placeholder = "Describe what you want to create...",
   primaryColor = "hsl(var(--primary))", // Default to primary if not provided
   showModelSelector = false,
+  initialPrompt,
+  initialModel = "fast",
 }: ThemedV0ChatProps) {
   const { data: session, status } = useSession();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -153,12 +157,18 @@ export function ThemedV0Chat({
   const [loadingSavedChats, setLoadingSavedChats] = useState(false);
   const [loadingChatDetail, setLoadingChatDetail] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<"fast" | "amazing">("fast");
+  const [selectedModel, setSelectedModel] = useState<"fast" | "amazing">(initialModel);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [activePanel, setActivePanel] = useState<"chat" | "preview">("chat");
+  const [chatCollapsed, setChatCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  const initialPromptSent = useRef(false);
 
   // Derived colors
   const glowColor = primaryColor;
+  const previewGenerating = loading || loadingChatDetail;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -295,6 +305,36 @@ export function ThemedV0Chat({
   }, [messages]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const handleChange = () => setIsMobile(mediaQuery.matches);
+
+    handleChange();
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener("change", handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobile && activePanel === "preview") {
+      previewPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [activePanel, isMobile]);
+
+  useEffect(() => {
     void fetchSavedChats();
   }, [fetchSavedChats]);
 
@@ -306,6 +346,10 @@ export function ThemedV0Chat({
 
     const userMessage =
       promptMessage.text?.trim() || "Sent with attachments";
+
+    if (isMobile) {
+      setActivePanel("preview");
+    }
 
     const userChatMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -396,12 +440,20 @@ export function ThemedV0Chat({
     }
   };
 
+  useEffect(() => {
+    if (initialPrompt && !messages.length && !loading && !chatId && !initialPromptSent.current) {
+      initialPromptSent.current = true;
+      void handleSubmit({ text: initialPrompt, files: [] });
+    }
+  }, [initialPrompt]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleNewChat = () => {
     setMessages([]);
     setChatId(null);
     setPreviewUrl(null);
     setPreviewHtml(null);
     setError(null);
+    setActivePanel("chat");
     void fetchSavedChats();
   };
 
@@ -414,9 +466,36 @@ export function ThemedV0Chat({
   }
 
   return (
-    <div className={cn("flex h-full bg-background", className)}>
-      {/* Chat Panel - Improved UI */}
-      <div className="flex w-1/2 flex-col border-r bg-background/50 backdrop-blur-xl relative">
+    <div className={cn("flex h-full min-h-screen flex-col bg-background lg:flex-row", className)}>
+      {isMobile && (
+        <div className="lg:hidden flex items-center gap-2 px-6 pt-4">
+          <Button
+            variant={activePanel === "chat" ? "default" : "outline"}
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={() => setActivePanel("chat")}
+          >
+            Chat
+          </Button>
+          <Button
+            variant={activePanel === "preview" ? "default" : "outline"}
+            size="sm"
+            className="flex-1 rounded-full"
+            onClick={() => setActivePanel("preview")}
+          >
+            Preview
+          </Button>
+        </div>
+      )}
+
+      {/* Chat Panel - Narrow sidebar */}
+      <div
+        className={cn(
+          "relative flex min-h-0 w-full flex-col bg-background/50 backdrop-blur-xl lg:border-r transition-all duration-300",
+          chatCollapsed ? "lg:w-0 lg:overflow-hidden lg:opacity-0" : "lg:w-[380px] lg:min-w-[380px]",
+          isMobile && activePanel !== "chat" && "hidden"
+        )}
+      >
         {/* Background decorative elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
            <div 
@@ -501,7 +580,7 @@ export function ThemedV0Chat({
         )}
 
         {/* Messages Area */}
-        <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="relative z-10 flex-1 min-h-0 overflow-y-auto p-6 pb-24 space-y-6">
           {messages.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
@@ -639,11 +718,40 @@ export function ThemedV0Chat({
         </div>
       </div>
 
-      {/* Preview Panel */}
-      <div className="w-1/2 flex flex-col bg-muted/10 relative">
+      {/* Preview Panel - Takes most of the screen */}
+      <div
+        ref={previewPanelRef}
+        className={cn(
+          "relative flex min-h-0 flex-1 w-full flex-col bg-muted/10",
+          isMobile && activePanel !== "preview" && "hidden"
+        )}
+      >
          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none" />
+        {previewGenerating && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-sm">
+            <Loader />
+            <p className="text-sm text-muted-foreground">Generating preview...</p>
+          </div>
+        )}
         <WebPreview>
           <WebPreviewNavigation className="border-b border-border/50 bg-background/50 backdrop-blur-sm px-4 py-2">
+            {/* Toggle Chat Panel Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChatCollapsed(!chatCollapsed)}
+              className="h-8 mr-2 hidden lg:flex"
+              title={chatCollapsed ? "Show chat panel" : "Hide chat panel"}
+            >
+              {chatCollapsed ? (
+                <>
+                  <PanelLeft className="h-4 w-4 mr-1" />
+                  <MessageSquare className="h-3 w-3" />
+                </>
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </Button>
             <WebPreviewUrl
               readOnly
               placeholder="Preview will appear here..."
@@ -699,6 +807,12 @@ export function ThemedV0Chat({
           <WebPreviewBody
             src={previewUrl || undefined}
             srcDoc={previewHtml || undefined}
+            loading={
+              <div className="flex flex-col items-center gap-2">
+                <Loader />
+                <p className="text-xs text-muted-foreground">Loading preview...</p>
+              </div>
+            }
             className="bg-background shadow-2xl m-4 rounded-xl border border-border/50 overflow-hidden"
           />
         </WebPreview>

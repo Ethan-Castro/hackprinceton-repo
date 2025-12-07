@@ -96,6 +96,7 @@ import type { CanvasToolOutput } from "@/lib/canvas-tools";
 import type { DisplayModel } from "@/lib/display-model";
 import { useModelManager } from "@/lib/hooks/use-model-manager";
 import { ProvidersWarning } from "@/components/providers-warning";
+import { GenerationMetrics, MetricsToggle } from "@/components/generation-metrics";
 
 function ModelSelectorHandler({
   modelId,
@@ -164,10 +165,61 @@ export function Chat({
     estimatedCost: 0,
   });
 
+  // Generation metrics state
+  const [showMetrics, setShowMetrics] = useState(false);
+  const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null);
+  const [liveMetrics, setLiveMetrics] = useState<any | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Load metrics preference from localStorage
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem('showGenerationMetrics');
+    if (saved === 'true') setShowMetrics(true);
+  }, []);
+
+  // Save metrics preference to localStorage
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('showGenerationMetrics', String(showMetrics));
+    }
+  }, [showMetrics, mounted]);
+
   const { messages, error, sendMessage, regenerate, setMessages, stop, status } = useChat({
     api: currentApiEndpoint,
     id: `chat-${currentApiEndpoint}`,
     onFinish: (message: any) => {
+        // Log full message for debugging
+        console.log("[Chat] onFinish - fetching generation ID from server");
+
+        // Fetch the latest generation ID from the server
+        // The server stores it during the chat request
+        fetch('/api/usage/latest-id')
+          .then(response => response.json())
+          .then(data => {
+            if (data.generationId) {
+              console.log("[Chat] Fetched generation ID:", data.generationId);
+              setCurrentGenerationId(data.generationId);
+            }
+          })
+          .catch(error => {
+            console.error("[Chat] Failed to fetch generation ID:", error);
+          });
+
+        // Also read any locally streamed metrics from message metadata
+        if (message?.metadata?.localMetrics) {
+          const m = message.metadata.localMetrics;
+          if (m.generationId) {
+            setCurrentGenerationId(m.generationId);
+          }
+          setLiveMetrics({
+            ...m,
+            isLoading: false,
+            error: null,
+          });
+          console.log("[Chat] Set live metrics from message.metadata:", m);
+        }
+
         // Inspect message for tool calls to notify parent
         if (onToolCall && message.parts) {
             message.parts.forEach((part: any) => {
@@ -178,6 +230,72 @@ export function Chat({
                    }
                 }
             });
+        }
+    },
+    onData: (rawDataPart: any) => {
+        // Log all data parts for debugging
+        console.log("[Chat] onData received:", JSON.stringify(rawDataPart, null, 2));
+
+        // Normalize shapes: sometimes data is nested under .data or under message-metadata
+        const dataPart = (() => {
+          if (rawDataPart && typeof rawDataPart === "object") {
+            if ("data" in rawDataPart) return (rawDataPart as any).data;
+            if (
+              (rawDataPart as any).type === "message-metadata" &&
+              (rawDataPart as any).metadata
+            ) {
+              return (rawDataPart as any).metadata;
+            }
+          }
+          return rawDataPart;
+        })();
+
+        // Capture generation ID and local metrics from server-sent data
+        // The data may come as an array: [{ generationId: "..." }, { kind: "local-metrics", metrics: {...}}]
+        if (Array.isArray(dataPart)) {
+            for (const item of dataPart) {
+                if (item?.kind === "local-metrics" && item.metrics) {
+                    if (item.metrics.generationId) {
+                        setCurrentGenerationId(item.metrics.generationId);
+                    }
+                    setLiveMetrics({
+                        ...item.metrics,
+                        isLoading: false,
+                        error: null,
+                    });
+                    console.log("[Chat] Set live metrics (array item):", item.metrics);
+                }
+                if (item?.generationId) {
+                    setCurrentGenerationId(item.generationId);
+                    console.log("[Chat] Received generation ID from array:", item.generationId);
+                    break;
+                }
+            }
+        } else if (dataPart?.localMetrics) {
+            const m = dataPart.localMetrics;
+            if (m.generationId) {
+                setCurrentGenerationId(m.generationId);
+            }
+            setLiveMetrics({
+                ...m,
+                isLoading: false,
+                error: null,
+            });
+            console.log("[Chat] Set live metrics (message-metadata):", m);
+        } else if (dataPart?.generationId) {
+            // Direct object format
+            setCurrentGenerationId(dataPart.generationId);
+            console.log("[Chat] Received generation ID (direct):", dataPart.generationId);
+        } else if (dataPart?.kind === "local-metrics" && dataPart.metrics) {
+            if (dataPart.metrics.generationId) {
+                setCurrentGenerationId(dataPart.metrics.generationId);
+            }
+            setLiveMetrics({
+                ...dataPart.metrics,
+                isLoading: false,
+                error: null,
+            });
+            console.log("[Chat] Set live metrics (object):", dataPart.metrics);
         }
     },
     body: {
@@ -192,6 +310,20 @@ export function Chat({
 
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role !== 'assistant' || !lastMessage.parts) return;
+
+    // Capture live metrics from any message metadata for the latest assistant message
+    if ((lastMessage as any).metadata?.localMetrics) {
+      const m: any = (lastMessage as any).metadata.localMetrics;
+      if (m.generationId) {
+        setCurrentGenerationId(m.generationId);
+      }
+      setLiveMetrics({
+        ...m,
+        isLoading: false,
+        error: null,
+      });
+      console.log("[Chat] Set live metrics from lastMessage.metadata:", m);
+    }
 
     lastMessage.parts.forEach((part: any) => {
        // Depending on AI SDK version, part structure varies. 
@@ -320,6 +452,7 @@ export function Chat({
     stop();
     setMessages([]);
     setInput("");
+    setLiveMetrics(null);
     setShouldAutoscroll(true);
   };
 
@@ -383,6 +516,10 @@ export function Chat({
             <PlusIcon className="h-4 w-4" />
           </Button>
           <ThemeToggle />
+          <MetricsToggle
+            enabled={showMetrics}
+            onToggle={() => setShowMetrics(!showMetrics)}
+          />
         </div>
         )}
         {!hasMessages && (
@@ -404,6 +541,7 @@ export function Chat({
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
+                    setLiveMetrics(null);
                     sendMessage({ text: input }, { body: { modelId: currentModelId, ...extraBody } });
                     setInput("");
                   }}
@@ -418,6 +556,12 @@ export function Chat({
                         modelsError={modelsError}
                       />
                       {renderTokenUsage()}
+                      {showMetrics && (
+                        <GenerationMetrics
+                          generationId={currentGenerationId}
+                          metricsOverride={liveMetrics}
+                        />
+                      )}
                     </div>
                     <div className="flex flex-1 items-center">
                       <Input
@@ -1132,6 +1276,12 @@ export function Chat({
                     modelsError={modelsError}
                   />
                   {renderTokenUsage()}
+                  {showMetrics && (
+                    <GenerationMetrics
+                      generationId={currentGenerationId}
+                      metricsOverride={liveMetrics}
+                    />
+                  )}
                 </div>
                 <div className="flex flex-1 items-center">
                   <Input
