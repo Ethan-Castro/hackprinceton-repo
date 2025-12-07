@@ -82,7 +82,6 @@ const TOOL_DESCRIPTIONS: Partial<Record<ChatToolName, string>> = {
   generateCodeExample: "Generate educational code examples",
   generateKeyPoints: "Generate educational key points",
   generateCaseStudy: "Generate educational case studies",
-  renderTemplateDocument: "Render template-based documents",
   generateMindMap: "Generate mind maps",
   valyuWebSearch: "Alternative real-time web search",
   financeSearch: "Finance and stock data search",
@@ -94,14 +93,6 @@ const TOOL_DESCRIPTIONS: Partial<Record<ChatToolName, string>> = {
   companyResearch: "Company research",
   searchArXiv: "Search arXiv papers",
   getArXivPaper: "Retrieve arXiv paper details",
-  medicalResearch: "Medical research assistance",
-  appointments: "Schedule or manage appointments",
-  medications: "Medication lookup and management",
-  sendEmail: "Send email via SendGrid",
-  voiceAlert: "Trigger a voice alert",
-  healthMonitoring: "Health monitoring tools",
-  providerInsurance: "Provider insurance lookup",
-  dashboardRefresh: "Refresh dashboard data",
 };
 
 function buildChatSystemPrompt({
