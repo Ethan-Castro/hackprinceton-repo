@@ -150,7 +150,8 @@ async function gatherExternalContext(options?: ExternalDataOptions): Promise<Ext
         notes.push(`Firecrawl scrape returned empty content for ${normalized.scrapeUrl}`);
       }
     } catch (error: any) {
-      notes.push(`Firecrawl scrape failed for ${normalized.scrapeUrl}: ${error?.message || "unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : (error?.message || "unknown error");
+      notes.push(`Firecrawl scrape failed for ${normalized.scrapeUrl}: ${errorMessage}`);
       console.error("[v0-chat] Firecrawl scrape error:", error);
     }
   }
@@ -173,7 +174,8 @@ async function gatherExternalContext(options?: ExternalDataOptions): Promise<Ext
         }
       }
     } catch (error) {
-      notes.push(`Exa search failed: ${error?.message || "unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : "unknown error";
+      notes.push(`Exa search failed: ${errorMessage}`);
       console.error("[v0-chat] Exa search error, falling back to Firecrawl search:", error);
     }
 
@@ -256,7 +258,8 @@ ${logos || "N/A"}`
         notes.push(`brand.dev returned no brand data for ${normalized.brandDomain}`);
       }
     } catch (error: any) {
-      notes.push(`brand.dev error for ${normalized.brandDomain}: ${error?.message || "unknown error"}`);
+      const errorMessage = error instanceof Error ? error.message : (error?.message || "unknown error");
+      notes.push(`brand.dev error for ${normalized.brandDomain}: ${errorMessage}`);
       console.error("[v0-chat] brand.dev error:", error);
     }
   }
@@ -784,13 +787,14 @@ export default function GeneratedComponent() {
     });
   } catch (error: any) {
     console.error("[v0-chat] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : (error?.message || "Unknown error");
     try {
       const fallbackId =
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : `cerebras-${Date.now()}`;
       
-      const fallbackHtml = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script></head><body class="p-4 text-red-500"><h1>Generation Failed</h1><p>${error?.message || "Unknown error"}</p></body></html>`;
+      const fallbackHtml = `<!DOCTYPE html><html><head><script src="https://cdn.tailwindcss.com"></script></head><body class="p-4 text-red-500"><h1>Generation Failed</h1><p>${errorMessage}</p></body></html>`;
       const encodedFallback = Buffer.from(fallbackHtml, "utf8").toString("base64url");
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : request.nextUrl.origin);
       const fallbackDemo = `${baseUrl}/api/v0-chat/preview?data=${encodedFallback}&id=${encodeURIComponent(fallbackId)}`;
@@ -800,15 +804,16 @@ export default function GeneratedComponent() {
           id: fallbackId,
           demo: fallbackDemo,
           error: "Failed to generate React component with Cerebras",
-          details: error?.message || "Unknown error",
+          details: errorMessage,
         },
         { status: 500 }
       );
-    } catch {
+    } catch (innerError) {
+      const innerErrorMessage = innerError instanceof Error ? innerError.message : "Unknown error";
       return NextResponse.json(
         {
           error: "Failed to generate React component with Cerebras",
-          details: error?.message || "Unknown error",
+          details: innerErrorMessage,
         },
         { status: 500 }
       );
