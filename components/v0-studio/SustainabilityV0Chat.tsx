@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Leaf, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Sparkles, Download } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
+import { AppCustomizationForm, type ModelSpeed, type ImageData, type ExternalDataOptions } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -107,6 +107,7 @@ COLOR PALETTE FOR SUSTAINABILITY:
 - Warning: orange-500 (needs attention, off-track)
 - Background: slate-50 with subtle green tints
 - Earth tones: stone, warm grays for grounding
+- Neutral inks: slate-900/800 for headings, slate-600/500 for body text
 
 IMPACT VISUALIZATION:
 - Use progress bars showing goal completion
@@ -121,13 +122,36 @@ ESG SCORE DISPLAY:
 - G (Governance): violet badge
 - Overall: combined score with letter grade (A, B+, etc.)
 
-The user will describe what sustainability tool they need. Create something that would make a Fortune 500 CSO proud to present to the board.`;
+The user will describe what sustainability tool they need. Create something that would make a Fortune 500 CSO proud to present to the board.
+
+CODE STYLE FOR NEXT.JS APP ROUTER:
+- Output as a page component like \`export default function Page()\` (or \`ComponentName\`) suitable for \`app/.../page.tsx\`.
+- No imports or external deps; React hooks are globals in preview. Use Tailwind + shadcn/ui utility classes only.
+- Include meaningful sections: hero, metrics, charts (CSS-based), and CTA. Vary layout each generation—avoid repeating the same structure.
+- Respect brand/search/scrape context injected into the prompt: use supplied colors, logos, typography cues, and content themes. Ground the design in that context, not a generic template.
+
+DESIGN TOOLKIT (USE THESE PATTERNS):
+- Cards: glassmorphic (\`bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.4)]\`) or soft gradient (\`bg-gradient-to-br from-emerald-50 via-teal-50 to-white border border-emerald-100/70\`).
+- Hero treatments: gradient overlays (\`bg-gradient-to-br from-emerald-500/15 via-teal-400/10 to-amber-300/10\`), subtle noise (\`bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_55%)]\`), and layered rounded blobs with \`absolute blur-3xl opacity-50\`.
+- Buttons: bold, rounded \`rounded-full px-5 py-2.5 font-semibold\` with \`bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:translate-y-[-1px]\`.
+- Shadows/outline: combine \`shadow-xl shadow-emerald-500/15\` with a 1px border \`border border-white/60\` for depth without heaviness.
+- Typography: pair a confident display (tracking-tight, leading-tight, weight 700) with relaxed body (leading-7, weight 400–500). Use \`text-emerald-900\` for headings and \`text-slate-600\` for body.
+
+CSS-ONLY CHART PRIMITIVES (NO LIBS):
+- Bar blocks: \`<div className="h-2 w-full rounded-full bg-emerald-100"><div className="h-2 rounded-full bg-emerald-500" style={{width: '68%'}} /></div>\`
+- Sparkline: map values to tiny bars \`flex items-end gap-1\` with \`h-[value] w-1.5 rounded-full bg-emerald-500/80\`.
+- Radial progress: ring using conic gradients \`bg-[conic-gradient(var(--fill),var(--fill)_calc(var(--pct)*1%),#e5e7eb_0)] rounded-full\` with an inner circle for label.
+- KPI chips: pill badges \`rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-3 py-1 text-xs font-semibold\`.
+
+VARIETY RULE:
+- Each generation must feel distinct: change hero layout (left image/right text vs. split grid vs. centered), vary card shapes (rounded-xl vs. pill), shuffle gradients/accent colors within the brand palette, and alternate chart styles (bars vs. radial vs. sparkline). Avoid repeating the same pattern across options.`; 
 
 export function SustainabilityV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
   const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
+  const [initialExternalData, setInitialExternalData] = useState<ExternalDataOptions | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -165,7 +189,8 @@ export function SustainabilityV0Chat() {
     model: ModelSpeed,
     baseCode?: string,
     refinementInstructions?: string,
-    images?: ImageData[]
+    images?: ImageData[],
+    externalData?: ExternalDataOptions
   ) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
@@ -204,13 +229,14 @@ Keep the parts that work but modify the design/functionality according to the in
         const response = await fetch("/api/v0-chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: finalPrompt,
-            modelId,
-            system: SYSTEM_PROMPT,
-            images: images,
-          }),
-        });
+            body: JSON.stringify({
+              message: finalPrompt,
+              modelId,
+              system: SYSTEM_PROMPT,
+              images: images,
+              externalData,
+            }),
+          });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -264,17 +290,24 @@ Keep the parts that work but modify the design/functionality according to the in
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
+  const handleFormSubmit = (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    userPrompt?: string,
+    externalData?: ExternalDataOptions
+  ) => {
     setInitialPrompt(prompt);
     setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
     setInitialImages(images);
-    generatePreviews(prompt, model, undefined, undefined, images);
+    setInitialExternalData(externalData);
+    generatePreviews(prompt, model, undefined, undefined, images, externalData);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel, undefined, undefined, initialImages);
+      generatePreviews(initialPrompt, selectedModel, undefined, undefined, initialImages, initialExternalData);
     }
   };
 
@@ -322,7 +355,9 @@ Keep the parts that work but modify the design/functionality according to the in
       initialPrompt || "Sustainability App",
       selectedModel,
       previewToRefine.generatedCode,
-      refinePrompt
+      refinePrompt,
+      initialImages,
+      initialExternalData
     );
   };
 

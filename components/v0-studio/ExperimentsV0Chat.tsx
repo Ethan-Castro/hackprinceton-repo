@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Sparkles, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
+import { AppCustomizationForm, type ModelSpeed, type ImageData, type ExternalDataOptions } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -89,13 +89,36 @@ ICON APPROACH:
 - Keep icons minimal and consistent in style
 - Match icon stroke width to your design weight
 
-The user will describe what they want. Create something that stops them mid-scroll and makes them want to share it.`;
+The user will describe what they want. Create something that stops them mid-scroll and makes them want to share it.
+
+CODE STYLE FOR NEXT.JS APP ROUTER:
+- Output as a page component like \`export default function Page()\` (or \`ComponentName\`) suitable for \`app/.../page.tsx\`.
+- No imports or external deps; React hooks are globals in preview. Use Tailwind + shadcn/ui utility classes only.
+- Include meaningful sections: hero, feature cards, data viz (CSS-based), and CTA. Vary layout each generation—avoid repeating the same structure.
+- Respect brand/search/scrape context injected into the prompt: use supplied colors, logos, typography cues, and content themes. Ground the design in that context, not a generic template.
+
+DESIGN TOOLKIT (USE THESE PATTERNS):
+- Cards: glassmorphic (\`bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.4)]\`) or bold gradients (\`bg-gradient-to-br from-violet-600 via-fuchsia-500 to-amber-400 text-white\` with light outline).
+- Hero treatments: gradient overlays (\`bg-gradient-to-br from-violet-500/15 via-fuchsia-400/10 to-amber-300/10\`), subtle noise (\`bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_55%)]\`), and layered rounded blobs with \`absolute blur-3xl opacity-50\`.
+- Buttons: bold, rounded \`rounded-full px-5 py-2.5 font-semibold\` with \`bg-violet-600 text-white shadow-lg shadow-violet-500/30 hover:translate-y-[-1px]\`.
+- Shadows/outline: combine \`shadow-xl shadow-violet-500/20\` with a 1px border \`border border-white/60\` for depth without heaviness.
+- Typography: expressive display (tracking-tight, leading-tight, weight 700) with clean body (leading-7, weight 400–500). Use \`text-slate-900\` / \`text-white\` depending on background; keep body \`text-slate-600\` or \`text-white/80\`.
+
+CSS-ONLY CHART PRIMITIVES (NO LIBS):
+- Progress bar: \`<div className="h-2 w-full rounded-full bg-violet-100"><div className="h-2 rounded-full bg-violet-500" style={{width: '72%'}} /></div>\`
+- Sparkline: tiny bars \`flex items-end gap-1\` with \`h-[value] w-1.5 rounded-full bg-violet-500/80\`.
+- Radial progress: conic gradient ring \`bg-[conic-gradient(var(--fill),var(--fill)_calc(var(--pct)*1%),#e5e7eb_0)] rounded-full\` with inner label.
+- Badge chips: \`rounded-full bg-violet-50 text-violet-700 border border-violet-100 px-3 py-1 text-xs font-semibold\` (invert to white/opacity on dark backgrounds).
+
+VARIETY RULE:
+- Each generation must feel distinct: change hero layout (left image/right text vs. split grid vs. centered), vary card shapes (rounded-xl vs. pill), shuffle gradients/accent colors within the palette, and alternate chart styles (bars vs. radial vs. sparkline). Avoid repeating the same pattern across options.`;
 
 export function ExperimentsV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
   const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
+  const [initialExternalData, setInitialExternalData] = useState<ExternalDataOptions | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -124,7 +147,12 @@ export function ExperimentsV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
+  const generatePreviews = async (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    externalData?: ExternalDataOptions
+  ) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -147,6 +175,7 @@ export function ExperimentsV0Chat() {
             modelId,
             system: SYSTEM_PROMPT,
             images: images,
+            externalData,
           }),
         });
 
@@ -200,17 +229,24 @@ export function ExperimentsV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
+  const handleFormSubmit = (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    userPrompt?: string,
+    externalData?: ExternalDataOptions
+  ) => {
     setInitialPrompt(prompt);
     setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
     setInitialImages(images);
-    generatePreviews(prompt, model, images);
+    setInitialExternalData(externalData);
+    generatePreviews(prompt, model, images, externalData);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel, initialImages);
+      generatePreviews(initialPrompt, selectedModel, initialImages, initialExternalData);
     }
   };
 

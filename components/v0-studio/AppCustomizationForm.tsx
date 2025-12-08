@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, MessageSquare, Settings2, Zap, Monitor, Smartphone, Layers, Paperclip, X, ImageIcon } from "lucide-react";
+import { Sparkles, MessageSquare, Settings2, Zap, Monitor, Smartphone, Layers, Paperclip, X, ImageIcon, Globe2, Link2, Palette, ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ModelSpeed = "fast" | "amazing";
@@ -29,8 +29,20 @@ export interface ImageData {
   publicId?: string;
 }
 
+export interface ExternalDataOptions {
+  scrapeUrl?: string;
+  searchQuery?: string;
+  brandDomain?: string;
+}
+
 export interface AppCustomizationFormProps {
-  onSubmit: (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => void;
+  onSubmit: (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    userPrompt?: string,
+    externalData?: ExternalDataOptions
+  ) => void;
   title?: string;
   description?: string;
   domain?: string;
@@ -96,6 +108,10 @@ export function AppCustomizationForm({
   const [details, setDetails] = useState("");
   const [inspiration, setInspiration] = useState("");
   const [extraInfo, setExtraInfo] = useState("");
+  const [showDataOptions, setShowDataOptions] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [brandDomain, setBrandDomain] = useState("");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const target = e.target;
@@ -182,13 +198,21 @@ export function AppCustomizationForm({
     }));
   };
 
+  const buildDataContext = (): ExternalDataOptions | undefined => {
+    const data: ExternalDataOptions = {};
+    if (scrapeUrl.trim()) data.scrapeUrl = scrapeUrl.trim();
+    if (searchQuery.trim()) data.searchQuery = searchQuery.trim();
+    if (brandDomain.trim()) data.brandDomain = brandDomain.trim();
+    return Object.keys(data).length ? data : undefined;
+  };
+
   const handleFreeformSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (freeformPrompt.trim() || inspirationUploads.length > 0 || assetUploads.length > 0) {
       const prompt = freeformPrompt.trim() || "Create something inspired by the attached images";
       const userPromptPreview = freeformPrompt.trim() || "(No text provided)";
       const imageData = buildImagePayload();
-      onSubmit(prompt, selectedModel, imageData, userPromptPreview);
+      onSubmit(prompt, selectedModel, imageData, userPromptPreview, buildDataContext());
       setInspirationUploads([]);
       setAssetUploads([]);
       setFreeformPrompt("");
@@ -202,7 +226,7 @@ export function AppCustomizationForm({
       : deviceFocus === "mobile" 
         ? "mobile-first design optimized for smartphones" 
         : "desktop-focused design optimized for larger screens";
-    
+
     const userPromptPreview = [
       purpose && `Purpose: ${purpose}`,
       details && `Details: ${details}`,
@@ -225,7 +249,7 @@ Additional Information: ${extraInfo}
 
 Please build this ${domain} with ${deviceFocusText}.`;
     const imageData = buildImagePayload();
-    onSubmit(prompt, selectedModel, imageData, userPromptPreview);
+    onSubmit(prompt, selectedModel, imageData, userPromptPreview, buildDataContext());
     setInspirationUploads([]);
     setAssetUploads([]);
   };
@@ -387,6 +411,59 @@ Please build this ${domain} with ${deviceFocusText}.`;
               6
             )}
             {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+            <div className="rounded-lg border p-4 bg-muted/30 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowDataOptions((prev) => !prev)}
+                className="flex w-full items-center justify-between text-sm font-medium"
+              >
+                <span className="flex items-center gap-2">
+                  <Globe2 className="h-4 w-4" />
+                  Enrich with external context (optional)
+                </span>
+                {showDataOptions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+              {showDataOptions && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Link2 className="h-4 w-4 text-muted-foreground" />
+                      Scrape a page (Firecrawl)
+                    </Label>
+                    <Input
+                      placeholder="https://example.com/page-to-scrape"
+                      value={scrapeUrl}
+                      onChange={(e) => setScrapeUrl(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <SearchIcon className="h-4 w-4 text-muted-foreground" />
+                      Web search query (Firecrawl + Exa)
+                    </Label>
+                    <Input
+                      placeholder="e.g., renewable energy dashboard benchmarks"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="flex items-center gap-2 text-sm">
+                      <Palette className="h-4 w-4 text-muted-foreground" />
+                      Brand assets via brand.dev
+                    </Label>
+                    <Input
+                      placeholder="company.com"
+                      value={brandDomain}
+                      onChange={(e) => setBrandDomain(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Uses BRAND_DEV_API_KEY on the server to pull logos, colors, and typography if available.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as "freeform" | "guided")}>

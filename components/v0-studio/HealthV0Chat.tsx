@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Heart, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
+import { AppCustomizationForm, type ModelSpeed, type ImageData, type ExternalDataOptions } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -85,17 +85,41 @@ COLOR PALETTE FOR HEALTH:
 - Alert: rose-500 (consult healthcare provider)
 - Background: slate-50, white (clean, clinical)
 - Accents: soft pastels for warmth
+- Neutral inks: slate-900/800 for headings, slate-600/500 for body text
 
 REQUIRED DISCLAIMER (include in footer or appropriate location):
 "This app is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment."
 
-The user will describe what health tool they need. Create something that feels like it was designed by Apple Health's team.`;
+The user will describe what health tool they need. Create something that feels like it was designed by Apple Health's team.
+
+CODE STYLE FOR NEXT.JS APP ROUTER:
+- Output as a page component like \`export default function Page()\` (or \`ComponentName\`) suitable for \`app/.../page.tsx\`.
+- No imports or external deps; React hooks are globals in preview. Use Tailwind + shadcn/ui utility classes only.
+- Include meaningful sections: hero, vitals/metrics, charts (CSS-based), logs/reminders, CTA. Vary layout each generation—avoid repeating the same structure.
+- Respect brand/search/scrape context injected into the prompt: use supplied colors, logos, typography cues, and content themes. Ground the design in that context, not a generic template.
+
+DESIGN TOOLKIT (USE THESE PATTERNS):
+- Cards: glassmorphic (\`bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.4)]\`) or soft gradient (\`bg-gradient-to-br from-sky-50 via-teal-50 to-white border border-sky-100/70\`).
+- Hero treatments: gradient overlays (\`bg-gradient-to-br from-teal-500/15 via-sky-400/10 to-emerald-300/10\`), subtle noise (\`bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_55%)]\`), and layered rounded blobs with \`absolute blur-3xl opacity-50\`.
+- Buttons: bold, rounded \`rounded-full px-5 py-2.5 font-semibold\` with \`bg-teal-600 text-white shadow-lg shadow-teal-500/30 hover:translate-y-[-1px]\`.
+- Shadows/outline: combine \`shadow-xl shadow-teal-500/15\` with a 1px border \`border border-white/60\` for depth without heaviness.
+- Typography: calm display (tracking-tight, leading-tight, weight 700) with relaxed body (leading-7, weight 400–500). Use \`text-slate-900\` for headings and \`text-slate-600\` for body.
+
+CSS-ONLY CHART PRIMITIVES (NO LIBS):
+- Progress bar: \`<div className="h-2 w-full rounded-full bg-teal-100"><div className="h-2 rounded-full bg-teal-500" style={{width: '72%'}} /></div>\`
+- Sparkline: tiny bars \`flex items-end gap-1\` with \`h-[value] w-1.5 rounded-full bg-teal-500/80\`.
+- Radial progress: conic gradient ring \`bg-[conic-gradient(var(--fill),var(--fill)_calc(var(--pct)*1%),#e5e7eb_0)] rounded-full\` with inner label.
+- Badge chips: \`rounded-full bg-teal-50 text-teal-700 border border-teal-100 px-3 py-1 text-xs font-semibold\`.
+
+VARIETY RULE:
+- Each generation must feel distinct: change hero layout (left image/right text vs. split grid vs. centered), vary card shapes (rounded-xl vs. pill), shuffle gradients/accent colors within the brand palette, and alternate chart styles (bars vs. radial vs. sparkline). Avoid repeating the same pattern across options.`;
 
 export function HealthV0Chat() {
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
   const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
+  const [initialExternalData, setInitialExternalData] = useState<ExternalDataOptions | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -124,7 +148,12 @@ export function HealthV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
+  const generatePreviews = async (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    externalData?: ExternalDataOptions
+  ) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -147,6 +176,7 @@ export function HealthV0Chat() {
             modelId,
             system: SYSTEM_PROMPT,
             images: images,
+            externalData,
           }),
         });
 
@@ -200,17 +230,24 @@ export function HealthV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
+  const handleFormSubmit = (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    userPrompt?: string,
+    externalData?: ExternalDataOptions
+  ) => {
     setInitialPrompt(prompt);
     setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
     setInitialImages(images);
-    generatePreviews(prompt, model, images);
+    setInitialExternalData(externalData);
+    generatePreviews(prompt, model, images, externalData);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel, initialImages);
+      generatePreviews(initialPrompt, selectedModel, initialImages, initialExternalData);
     }
   };
 

@@ -113,6 +113,9 @@ importers:
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
+      brand.dev:
+        specifier: ^0.17.0
+        version: 0.17.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -3268,6 +3271,9 @@ packages:
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
+
+  brand.dev@0.17.0:
+    resolution: {integrity: sha512-eQ+vliBdx4feFaqBMl//xhFY3zdm7oLJ1nRWIlyIvMnABqmv4sahrTPFYqQJclwAmJkt2Bdc56EHJC0FiUD2/g==}
 
   browserslist@4.27.0:
     resolution: {integrity: sha512-AXVQwdhot1eqLihwasPElhX2tAZiBjWdJ9i/Zcj2S6QYIjkx62OKSfnobkriB81C3l4w0rVy3Nt4jaTBltYEpw==}
@@ -10916,6 +10922,8 @@ snapshots:
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
+
+  brand.dev@0.17.0: {}
 
   browserslist@4.27.0:
     dependencies:

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Briefcase, Check, Rocket, RefreshCw, AlertCircle, ExternalLink, ChevronLeft, ChevronRight, Maximize2, X, Monitor, Smartphone, Link2, Download } from "lucide-react";
-import { AppCustomizationForm, type ModelSpeed, type ImageData } from "./AppCustomizationForm";
+import { AppCustomizationForm, type ModelSpeed, type ImageData, type ExternalDataOptions } from "./AppCustomizationForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -77,6 +77,27 @@ COLOR TOKENS FOR BUSINESS:
 - Danger: red-500/600 (critical issues)
 - Neutral: slate-50 through slate-900
 
+CODE STYLE FOR NEXT.JS APP ROUTER:
+- Output as a page component like \`export default function Page()\` (or \`ComponentName\`) suitable for \`app/.../page.tsx\`.
+- No imports or external deps; React hooks are globals in preview. Use Tailwind + shadcn/ui utility classes only.
+- Include meaningful sections: hero, KPI grid, charts (CSS-based), table/list, CTA. Vary layout each generation—avoid repeating the same structure.
+- Respect brand/search/scrape context injected into the prompt: use supplied colors, logos, typography cues, and content themes. Ground the design in that context, not a generic template.
+
+DESIGN TOOLKIT (USE THESE PATTERNS):
+- Cards: glassmorphic (\`bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.4)]\`) or soft gradient (\`bg-gradient-to-br from-indigo-50 via-slate-50 to-white border border-indigo-100/70\`).
+- Hero treatments: gradient overlays (\`bg-gradient-to-br from-indigo-500/15 via-sky-400/10 to-amber-300/10\`), subtle noise (\`bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.8),_transparent_55%)]\`), and layered rounded blobs with \`absolute blur-3xl opacity-50\`.
+- Buttons: bold, rounded \`rounded-full px-5 py-2.5 font-semibold\` with \`bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:translate-y-[-1px]\`.
+- Shadows/outline: combine \`shadow-xl shadow-indigo-500/15\` with a 1px border \`border border-white/60\` for depth without heaviness.
+- Typography: confident display (tracking-tight, leading-tight, weight 700) + relaxed body (leading-7, weight 400–500). Use \`text-slate-900\` for headings and \`text-slate-600\` for body.
+
+CSS-ONLY CHART PRIMITIVES (NO LIBS):
+- Bar blocks: \`<div className="h-2 w-full rounded-full bg-slate-100"><div className="h-2 rounded-full bg-indigo-500" style={{width: '72%'}} /></div>\`
+- Sparkline: map values to tiny bars \`flex items-end gap-1\` with \`h-[value] w-1.5 rounded-full bg-indigo-500/80\`.
+- Radial progress: ring using conic gradients \`bg-[conic-gradient(var(--fill),var(--fill)_calc(var(--pct)*1%),#e5e7eb_0)] rounded-full\` with an inner circle for label.
+- KPI chips: pill badges \`rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 text-xs font-semibold\`.
+
+VARIETY RULE:
+- Each generation must feel distinct: change hero layout (left image/right text vs. split grid vs. centered), vary card shapes (rounded-xl vs. pill), shuffle gradients/accent colors within the brand palette, and alternate chart styles (bars vs. radial vs. sparkline). Avoid repeating the same pattern across options.
 The user will describe what business tool they need. Build something that looks like it cost $50,000 to develop.`;
 
 export function BusinessV0Chat() {
@@ -84,6 +105,7 @@ export function BusinessV0Chat() {
   const [initialDisplayPrompt, setInitialDisplayPrompt] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
   const [initialImages, setInitialImages] = useState<ImageData[] | undefined>(undefined);
+  const [initialExternalData, setInitialExternalData] = useState<ExternalDataOptions | undefined>(undefined);
   const [previews, setPreviews] = useState<PreviewEntry[]>([]);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -112,7 +134,12 @@ export function BusinessV0Chat() {
     setCurrentPreviewIndex((prev) => (prev + 1) % previews.length);
   };
 
-  const generatePreviews = async (prompt: string, model: ModelSpeed, images?: ImageData[]) => {
+  const generatePreviews = async (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    externalData?: ExternalDataOptions
+  ) => {
     setIsGenerating(true);
     setSelectedPreviewId(null);
     
@@ -135,6 +162,7 @@ export function BusinessV0Chat() {
             modelId,
             system: SYSTEM_PROMPT,
             images: images,
+            externalData,
           }),
         });
 
@@ -188,17 +216,24 @@ export function BusinessV0Chat() {
     setIsGenerating(false);
   };
 
-  const handleFormSubmit = (prompt: string, model: ModelSpeed, images?: ImageData[], userPrompt?: string) => {
+  const handleFormSubmit = (
+    prompt: string,
+    model: ModelSpeed,
+    images?: ImageData[],
+    userPrompt?: string,
+    externalData?: ExternalDataOptions
+  ) => {
     setInitialPrompt(prompt);
     setInitialDisplayPrompt(userPrompt || prompt);
     setSelectedModel(model);
     setInitialImages(images);
-    generatePreviews(prompt, model, images);
+    setInitialExternalData(externalData);
+    generatePreviews(prompt, model, images, externalData);
   };
 
   const handleRetry = () => {
     if (initialPrompt) {
-      generatePreviews(initialPrompt, selectedModel, initialImages);
+      generatePreviews(initialPrompt, selectedModel, initialImages, initialExternalData);
     }
   };
 

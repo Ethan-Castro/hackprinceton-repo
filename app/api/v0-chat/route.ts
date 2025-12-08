@@ -5,6 +5,9 @@ import { gateway } from "@/lib/gateway";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { query } from "@/lib/neon";
+import FirecrawlApp from "@mendable/firecrawl-js";
+import Exa from "exa-js";
+import BrandDev from "brand.dev";
 
 const cerebras = createCerebras({
   apiKey: process.env.CEREBRAS_API_KEY ?? "",
@@ -43,6 +46,222 @@ interface ImageData {
   role?: "inspiration" | "asset";
   name?: string;
   publicId?: string;
+}
+
+interface ExternalDataOptions {
+  scrapeUrl?: string;
+  searchQuery?: string;
+  brandDomain?: string;
+}
+
+let firecrawlClient: FirecrawlApp | null = null;
+let brandDevClient: BrandDev | null = null;
+let exaClient: Exa | null = null;
+
+function getFirecrawlClient(): FirecrawlApp {
+  if (!firecrawlClient) {
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) {
+      throw new Error("FIRECRAWL_API_KEY environment variable is not set");
+    }
+    firecrawlClient = new FirecrawlApp({ apiKey });
+  }
+  return firecrawlClient;
+}
+
+function getBrandDevClient(): BrandDev {
+  if (!brandDevClient) {
+    const apiKey = process.env.BRAND_DEV_API_KEY;
+    if (!apiKey) {
+      throw new Error("BRAND_DEV_API_KEY environment variable is not set");
+    }
+    brandDevClient = new BrandDev({ apiKey });
+  }
+  return brandDevClient;
+}
+
+function getExaClient(): Exa {
+  if (!exaClient) {
+    const apiKey = process.env.EXA_API_KEY;
+    if (!apiKey) {
+      throw new Error("EXA_API_KEY environment variable is not set");
+    }
+    exaClient = new Exa(apiKey);
+  }
+  return exaClient;
+}
+
+function truncate(text: string, maxLength = 2500) {
+  if (!text) return "";
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+type ExternalContextResult = {
+  context: string;
+  notes: string[];
+};
+
+function normalizeExternalData(options?: ExternalDataOptions): ExternalDataOptions | undefined {
+  if (!options) return undefined;
+  const normalized: ExternalDataOptions = {};
+
+  if (options.scrapeUrl?.trim()) {
+    const url = options.scrapeUrl.trim();
+    normalized.scrapeUrl = url.startsWith("http") ? url : `https://${url}`;
+  }
+
+  if (options.searchQuery?.trim()) {
+    normalized.searchQuery = options.searchQuery.trim();
+  }
+
+  if (options.brandDomain?.trim()) {
+    const cleaned = options.brandDomain.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+    normalized.brandDomain = cleaned;
+  }
+
+  return Object.keys(normalized).length ? normalized : undefined;
+}
+
+async function gatherExternalContext(options?: ExternalDataOptions): Promise<ExternalContextResult> {
+  const normalized = normalizeExternalData(options);
+  if (!normalized) return { context: "", notes: [] };
+
+  const sections: string[] = [];
+  const notes: string[] = [];
+
+  if (normalized.scrapeUrl) {
+    try {
+      const firecrawl = getFirecrawlClient();
+      const result = await firecrawl.scrape(normalized.scrapeUrl, {
+        formats: ["markdown"],
+        onlyMainContent: true,
+      } as any);
+      const content =
+        (result as any).markdown ||
+        (result as any).content ||
+        "";
+      if (content) {
+        sections.push(
+          `SCRAPED CONTENT FROM ${normalized.scrapeUrl} (Firecrawl):\n${truncate(
+            content
+          )}`
+        );
+      } else {
+        notes.push(`Firecrawl scrape returned empty content for ${normalized.scrapeUrl}`);
+      }
+    } catch (error: any) {
+      notes.push(`Firecrawl scrape failed for ${normalized.scrapeUrl}: ${error?.message || "unknown error"}`);
+      console.error("[v0-chat] Firecrawl scrape error:", error);
+    }
+  }
+
+  if (normalized.searchQuery) {
+    let searchAdded = false;
+    try {
+      const exa = getExaClient();
+      const res = await exa.searchAndContents(normalized.searchQuery, { numResults: 5 });
+      if (res && Array.isArray(res.results)) {
+        const formatted = res.results
+          .map((r: any, idx: number) => {
+            const snippet = r.text || r.content || "";
+            return `${idx + 1}. ${r.title || r.url}\n${r.url}\n${truncate(snippet, 600)}`;
+          })
+          .join("\n\n");
+        if (formatted) {
+          sections.push(`WEB SEARCH (Exa) for "${normalized.searchQuery}":\n${formatted}`);
+          searchAdded = true;
+        }
+      }
+    } catch (error) {
+      notes.push(`Exa search failed: ${error?.message || "unknown error"}`);
+      console.error("[v0-chat] Exa search error, falling back to Firecrawl search:", error);
+    }
+
+    if (!searchAdded) {
+      const apiKey = process.env.FIRECRAWL_API_KEY;
+      if (apiKey) {
+        try {
+          const searchResponse = await fetch("https://api.firecrawl.dev/v1/search", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              query: normalized.searchQuery,
+              limit: 5,
+              scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
+            }),
+          });
+
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            const results =
+              searchData.data?.map((result: any, idx: number) => {
+                const snippet = result.markdown || result.description || "";
+                return `${idx + 1}. ${result.title || result.url}\n${result.url}\n${truncate(
+                  snippet,
+                  600
+                )}`;
+              }) ?? [];
+            if (results.length) {
+              sections.push(
+                `WEB SEARCH (Firecrawl) for "${normalized.searchQuery}":\n${results.join("\n\n")}`
+              );
+              searchAdded = true;
+            }
+          } else {
+            notes.push(`Firecrawl search failed (${searchResponse.status})`);
+          }
+        } catch (error) {
+          notes.push(`Firecrawl search error: ${error instanceof Error ? error.message : "unknown"}`);
+          console.error("[v0-chat] Firecrawl search error:", error);
+        }
+      } else {
+        notes.push("FIRECRAWL_API_KEY not set; search fallback skipped");
+      }
+    }
+  }
+
+  if (normalized.brandDomain) {
+    try {
+      const client = getBrandDevClient();
+      const response = await client.brand.retrieve({ domain: normalized.brandDomain });
+      const brand = response?.brand;
+      if (brand) {
+        const brandAny = brand as any;
+        const colors = (brandAny.colors || []).map((c: any) => c.hex).filter(Boolean).join(", ");
+        const logos = (brandAny.logos || [])
+          .map((l: any) => l.url)
+          .filter(Boolean)
+          .slice(0, 5)
+          .join("\n");
+        const fonts =
+          (brandAny.fonts || [])
+            .map((f: any) => f.font || f.name)
+            .filter(Boolean)
+            .slice(0, 5)
+            .join(", ") || "";
+
+        sections.push(
+          `BRAND ASSETS (brand.dev) for ${normalized.brandDomain}:
+Title: ${brandAny.title || "N/A"}
+Description: ${brandAny.description || "N/A"}
+Colors: ${colors || "N/A"}
+Fonts: ${fonts || "N/A"}
+Logos:
+${logos || "N/A"}`
+        );
+      } else {
+        notes.push(`brand.dev returned no brand data for ${normalized.brandDomain}`);
+      }
+    } catch (error: any) {
+      notes.push(`brand.dev error for ${normalized.brandDomain}: ${error?.message || "unknown error"}`);
+      console.error("[v0-chat] brand.dev error:", error);
+    }
+  }
+
+  return { context: sections.filter(Boolean).join("\n\n"), notes };
 }
 
 // System prompt for React component generation - generates JSX that works in browser
@@ -89,6 +308,8 @@ DESIGN FLEXIBILITY (choose based on user's request):
 - Style: minimal, bold, playful, corporate, dark mode, glassmorphic - whatever fits
 - Layout: cards, lists, grids, heroes, sidebars - whatever the content needs
 - Personality: serious, fun, elegant, techy, warm - read the user's intent
+- External context: When scrape/search/brand data is provided, treat it as the primary style and content reference. Use brand colors, logos, typography, and any scraped insights. Do not ignore or summarize it away—ground the design in that context.
+- Variety: Avoid repeating the same layout patterns across generations. Change structure, hero treatments, card designs, and accents so each run feels bespoke.
 
 DEFAULT PATTERNS (only if user doesn't specify):
 - Container: max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
@@ -235,7 +456,7 @@ function createPreviewHTML(componentCode: string, componentName: string): string
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, chatId, modelId, system, images } = await request.json();
+    const { message, chatId, modelId, system, images, externalData } = await request.json();
 
     console.log("[v0-chat] Request received:", {
       preview: message?.slice(0, 80),
@@ -243,6 +464,8 @@ export async function POST(request: NextRequest) {
       modelId,
       hasImages: Array.isArray(images) && images.length > 0,
       imageCount: Array.isArray(images) ? images.length : 0,
+      hasExternalData: !!externalData,
+      externalData,
     });
 
     const hasImages = Array.isArray(images) && images.length > 0;
@@ -387,6 +610,28 @@ Requirements:
       }
     }
 
+    const { context: externalContext, notes: externalNotes } = await gatherExternalContext(
+      externalData as ExternalDataOptions | undefined
+    );
+    if (externalContext) {
+      augmentedMessage = `${augmentedMessage}
+
+Additional grounded context (scraped/search/brand):
+${externalContext}`;
+    } else if (externalNotes.length) {
+      augmentedMessage = `${augmentedMessage}
+
+Additional context attempted but unavailable:
+- ${externalNotes.join("\n- ")}`;
+    }
+    console.log("[v0-chat] External data summary:", {
+      hasExternalData: !!externalData,
+      externalData,
+      hasExternalContext: !!externalContext,
+      externalContextLength: externalContext?.length || 0,
+      externalNotes,
+    });
+
     const combinedSystem = system
       ? `${system}\n\n${SYSTEM_PROMPT}`
       : SYSTEM_PROMPT;
@@ -519,6 +764,8 @@ export default function GeneratedComponent() {
       demo: demoHttpUrl,
       deployment: permanentPreviewUrl ? { webUrl: permanentPreviewUrl } : null,
       model: usedModelId,
+      externalContext: externalContext || null,
+      externalNotes: externalNotes || [],
       files: [
         {
           object: "file",
