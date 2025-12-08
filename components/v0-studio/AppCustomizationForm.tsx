@@ -23,6 +23,10 @@ export type DeviceFocus = "desktop" | "mobile" | "both";
 export interface ImageData {
   data: string; // base64 encoded
   mediaType: string;
+  url?: string;
+  role?: "inspiration" | "asset";
+  name?: string;
+  publicId?: string;
 }
 
 export interface AppCustomizationFormProps {
@@ -72,10 +76,18 @@ export function AppCustomizationForm({
   const [mode, setMode] = useState<"freeform" | "guided">("freeform");
   const [freeformPrompt, setFreeformPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState<ModelSpeed>("fast");
-  
-  // Image upload state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachedImages, setAttachedImages] = useState<File[]>([]);
+  const [uploadingRole, setUploadingRole] = useState<"inspiration" | "asset" | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Image upload state (uploaded to Cloudinary + base64 for vision)
+  const inspirationInputRef = useRef<HTMLInputElement>(null);
+  const assetInputRef = useRef<HTMLInputElement>(null);
+  const [inspirationUploads, setInspirationUploads] = useState<
+    { url: string; base64: string; mediaType: string; name: string; publicId?: string; role: "inspiration" }[]
+  >([]);
+  const [assetUploads, setAssetUploads] = useState<
+    { url: string; base64: string; mediaType: string; name: string; publicId?: string; role: "asset" }[]
+  >([]);
   
   // Guided form state
   const [theme, setTheme] = useState(themeOptions[0]?.value || "light");
@@ -86,37 +98,100 @@ export function AppCustomizationForm({
   const [extraInfo, setExtraInfo] = useState("");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    
-    const imageFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/")
-    );
-    
-    // Limit to 3 images max
-    setAttachedImages((prev) => [...prev, ...imageFiles].slice(0, 3));
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    const target = e.target;
+    const files = target.files;
+    const role = target.dataset.role as "inspiration" | "asset";
+    if (!files || !role) return;
+
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) return;
+
+    void handleUploads(imageFiles, role);
+
+    // Reset file input so same file can be reselected
+    target.value = "";
+  };
+
+  const handleUploads = async (files: File[], role: "inspiration" | "asset") => {
+    setUploadError(null);
+    setUploadingRole(role);
+    try {
+      const uploads = await Promise.all(
+        files.map(async (file) => {
+          const base64Data = await fileToBase64(file);
+
+          const body = new FormData();
+          body.append("file", file);
+          const res = await fetch("/api/upload", { method: "POST", body });
+          const json = await res.json();
+          if (!res.ok) {
+            throw new Error(json.error || "Upload failed");
+          }
+
+          return {
+            url: json.url as string,
+            base64: base64Data.data,
+            mediaType: base64Data.mediaType,
+            name: file.name,
+            publicId: json.publicId as string | undefined,
+            role,
+          };
+        })
+      );
+
+      if (role === "inspiration") {
+        const inspirationUploadsNext = uploads.map((u) => ({
+          ...u,
+          role: "inspiration" as const,
+        }));
+        setInspirationUploads((prev) => [...prev, ...inspirationUploadsNext].slice(0, 2));
+      } else {
+        const assetUploadsNext = uploads.map((u) => ({
+          ...u,
+          role: "asset" as const,
+        }));
+        setAssetUploads((prev) => [...prev, ...assetUploadsNext].slice(0, 6));
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      setUploadError(message);
+    } finally {
+      setUploadingRole(null);
     }
   };
 
-  const removeImage = (index: number) => {
-    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = (role: "inspiration" | "asset", index: number) => {
+    if (role === "inspiration") {
+      setInspirationUploads((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setAssetUploads((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const buildImagePayload = () => {
+    const allImages = [...inspirationUploads, ...assetUploads];
+    if (allImages.length === 0) return undefined;
+
+    return allImages.map((img) => ({
+      data: img.base64,
+      mediaType: img.mediaType,
+      url: img.url,
+      role: img.role,
+      name: img.name,
+      publicId: img.publicId,
+    }));
   };
 
   const handleFreeformSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (freeformPrompt.trim() || attachedImages.length > 0) {
-      // Convert images to base64
-      const imageData = await Promise.all(
-        attachedImages.map((file) => fileToBase64(file))
-      );
-      const prompt = freeformPrompt.trim() || "Create something inspired by the attached image";
+    if (freeformPrompt.trim() || inspirationUploads.length > 0 || assetUploads.length > 0) {
+      const prompt = freeformPrompt.trim() || "Create something inspired by the attached images";
       const userPromptPreview = freeformPrompt.trim() || "(No text provided)";
-      onSubmit(prompt, selectedModel, imageData.length > 0 ? imageData : undefined, userPromptPreview);
-      setAttachedImages([]); // Clear after submit
+      const imageData = buildImagePayload();
+      onSubmit(prompt, selectedModel, imageData, userPromptPreview);
+      setInspirationUploads([]);
+      setAssetUploads([]);
+      setFreeformPrompt("");
     }
   };
 
@@ -128,11 +203,6 @@ export function AppCustomizationForm({
         ? "mobile-first design optimized for smartphones" 
         : "desktop-focused design optimized for larger screens";
     
-    // Convert images to base64
-    const imageData = await Promise.all(
-      attachedImages.map((file) => fileToBase64(file))
-    );
-
     const userPromptPreview = [
       purpose && `Purpose: ${purpose}`,
       details && `Details: ${details}`,
@@ -154,8 +224,83 @@ Inspiration: ${inspiration}
 Additional Information: ${extraInfo}
 
 Please build this ${domain} with ${deviceFocusText}.`;
-    onSubmit(prompt, selectedModel, imageData.length > 0 ? imageData : undefined, userPromptPreview);
-    setAttachedImages([]); // Clear after submit
+    const imageData = buildImagePayload();
+    onSubmit(prompt, selectedModel, imageData, userPromptPreview);
+    setInspirationUploads([]);
+    setAssetUploads([]);
+  };
+
+  const renderImageSection = (
+    title: string,
+    description: string,
+    role: "inspiration" | "asset",
+    images: { url: string; name: string; role: "inspiration" | "asset"; mediaType: string; base64: string }[],
+    inputRef: React.RefObject<HTMLInputElement | null>,
+    max: number
+  ) => {
+    const isUploading = uploadingRole === role;
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label>{title}</Label>
+            <p className="text-xs text-muted-foreground">{description}</p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+            className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+            disabled={isUploading}
+          >
+            <Paperclip className="h-4 w-4" />
+            {isUploading ? "Uploading..." : "Attach"}
+          </Button>
+        </div>
+
+        {images.length > 0 ? (
+          <div className="flex gap-2 flex-wrap p-3 bg-muted/30 rounded-lg border border-dashed border-border/50">
+            {images.map((img, index) => (
+              <div key={`${role}-${img.name}-${index}`} className="relative group/img">
+                <div className="w-20 h-20 rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+                  <img src={img.url} alt={`${role} ${index + 1}`} className="w-full h-full object-cover" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeImage(role, index)}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {images.length < max && (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className="w-20 h-20 rounded-lg border border-dashed border-border/50 bg-muted/20 flex items-center justify-center hover:bg-muted/40 transition-colors"
+                disabled={isUploading}
+              >
+                <ImageIcon className="h-5 w-5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="w-full h-24 rounded-lg border border-dashed border-border/50 bg-muted/10 flex flex-col items-center justify-center gap-2 hover:bg-muted/20 transition-colors"
+            disabled={isUploading}
+          >
+            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              {isUploading ? "Uploading..." : "Click to upload"}
+            </span>
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -204,15 +349,45 @@ Please build this ${domain} with ${deviceFocusText}.`;
             </p>
           </div>
 
-          {/* Shared file input so both tabs can trigger uploads */}
+          {/* Shared file inputs so both tabs can trigger uploads */}
           <input
-            ref={fileInputRef}
+            ref={inspirationInputRef}
             type="file"
             accept="image/*"
             multiple
+            data-role="inspiration"
             onChange={handleFileSelect}
             className="hidden"
           />
+          <input
+            ref={assetInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            data-role="asset"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          <div className="space-y-4 mb-6">
+            {renderImageSection(
+              "Website inspiration",
+              "Upload 1-2 reference shots to guide layout and style. We’ll describe them with Gemini 2.5 Flash.",
+              "inspiration",
+              inspirationUploads,
+              inspirationInputRef,
+              2
+            )}
+            {renderImageSection(
+              "Images to place in the site",
+              "Upload visuals that must appear in the generated site (e.g., hero photo, team headshots).",
+              "asset",
+              assetUploads,
+              assetInputRef,
+              6
+            )}
+            {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+          </div>
 
           <Tabs value={mode} onValueChange={(v) => setMode(v as "freeform" | "guided")}>
             <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -228,70 +403,32 @@ Please build this ${domain} with ${deviceFocusText}.`;
             
             <TabsContent value="freeform">
               <form onSubmit={handleFreeformSubmit} className="space-y-4">
-                {/* Image Previews */}
-                {attachedImages.length > 0 && (
-                  <div className="flex gap-2 flex-wrap p-3 bg-muted/30 rounded-lg border border-dashed border-border/50">
-                    {attachedImages.map((file, index) => (
-                      <div
-                        key={`${file.name}-${index}`}
-                        className="relative group/img"
-                      >
-                        <div className="w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-muted/30">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`Attached ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                    {attachedImages.length < 3 && (
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-16 h-16 rounded-lg border border-dashed border-border/50 bg-muted/20 flex items-center justify-center hover:bg-muted/40 transition-colors"
-                      >
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                      </button>
-                    )}
-                  </div>
-                )}
-                
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="freeform">Describe your {domain}</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                      Attach Image
-                    </Button>
-                  </div>
+                  <Label htmlFor="freeform">Describe your {domain}</Label>
                   <Textarea 
-                    id="freeform" 
-                    placeholder={attachedImages.length > 0 ? "Describe what you want based on the image..." : freeformPlaceholder}
+                    id="freeform"
+                    placeholder={
+                      inspirationUploads.length > 0 || assetUploads.length > 0
+                        ? "Describe how to use the uploaded images or add extra guidance..."
+                        : freeformPlaceholder
+                    }
                     value={freeformPrompt}
                     onChange={(e) => setFreeformPrompt(e.target.value)}
                     className="min-h-[200px]"
                   />
-                  {attachedImages.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {attachedImages.length} image{attachedImages.length > 1 ? 's' : ''} attached for inspiration
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Inspiration images guide style; site images are placed in the generated layout with alt text.
+                  </p>
                 </div>
-                <Button type="submit" className="w-full" disabled={!freeformPrompt.trim() && attachedImages.length === 0}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={
+                    !freeformPrompt.trim() &&
+                    inspirationUploads.length === 0 &&
+                    assetUploads.length === 0
+                  }
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
                   Generate
                 </Button>
@@ -300,69 +437,6 @@ Please build this ${domain} with ${deviceFocusText}.`;
             
             <TabsContent value="guided">
               <form onSubmit={handleGuidedSubmit} className="space-y-4">
-                {/* Reference Image Upload */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Reference Image (Optional)</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Paperclip className="h-4 w-4" />
-                      Attach Image
-                    </Button>
-                  </div>
-                  {attachedImages.length > 0 ? (
-                    <div className="flex gap-2 flex-wrap p-3 bg-muted/30 rounded-lg border border-dashed border-border/50">
-                      {attachedImages.map((file, index) => (
-                        <div
-                          key={`guided-${file.name}-${index}`}
-                          className="relative group/img"
-                        >
-                          <div className="w-16 h-16 rounded-lg overflow-hidden border border-border/50 bg-muted/30">
-                            <img
-                              src={URL.createObjectURL(file)}
-                              alt={`Reference ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-sm"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                      {attachedImages.length < 3 && (
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="w-16 h-16 rounded-lg border border-dashed border-border/50 bg-muted/20 flex items-center justify-center hover:bg-muted/40 transition-colors"
-                        >
-                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-20 rounded-lg border border-dashed border-border/50 bg-muted/10 flex flex-col items-center justify-center gap-2 hover:bg-muted/20 transition-colors"
-                    >
-                      <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Click to upload reference images</span>
-                    </button>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Upload screenshots or designs for visual inspiration
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="theme">Theme Preference</Label>

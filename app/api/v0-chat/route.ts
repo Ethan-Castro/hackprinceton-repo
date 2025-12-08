@@ -39,6 +39,10 @@ Be specific and actionable. A developer should be able to recreate the essence o
 interface ImageData {
   data: string; // base64 encoded
   mediaType: string;
+  url?: string;
+  role?: "inspiration" | "asset";
+  name?: string;
+  publicId?: string;
 }
 
 // System prompt for React component generation - generates JSX that works in browser
@@ -281,52 +285,100 @@ export async function POST(request: NextRequest) {
     
     if (hasImages) {
       console.log("[v0-chat] Processing images with vision model...");
-      
+
       // Select vision model based on selected model tier
-      const visionModel = isGatewayModel && modelId?.includes("gemini-3") 
-        ? VISION_MODEL_AMAZING 
+      const visionModel = isGatewayModel && modelId?.includes("gemini-3")
+        ? VISION_MODEL_AMAZING
         : VISION_MODEL_FAST;
-      
+
       console.log("[v0-chat] Using vision model:", visionModel);
 
       try {
-        // Build the content array with text and images for multimodal input
-        const imageContents = (images as ImageData[]).map((img) => ({
-          type: "image" as const,
-          image: img.data, // base64 data
-          mimeType: img.mediaType,
-        }));
+        const typedImages = images as ImageData[];
 
-        const visionResult = await generateText({
-          model: gateway(visionModel),
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: IMAGE_DESCRIPTION_PROMPT },
-                ...imageContents,
-              ],
-            },
-          ],
-          temperature: 0.3,
-          maxOutputTokens: 4000,
-        });
+        const descriptions = await Promise.all(
+          typedImages.map(async (img, idx) => {
+            try {
+              const visionResult = await generateText({
+                model: gateway(visionModel),
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: `${IMAGE_DESCRIPTION_PROMPT}
 
-        const imageDescription = visionResult?.text || "";
-        
-        if (imageDescription) {
-          console.log("[v0-chat] Image description generated, length:", imageDescription.length);
-          
-          // Augment the user message with the image description
-          augmentedMessage = `The user sent this image for inspiration. Here is a detailed description of what they want to recreate or be inspired by:
+Label this image clearly. Provide a short title line first (e.g., "Image ${idx + 1} - Solar hero").`,
+                      },
+                      {
+                        type: "image",
+                        image: img.mediaType
+                          ? `data:${img.mediaType};base64,${img.data}`
+                          : img.data,
+                      },
+                    ],
+                  },
+                ],
+                temperature: 0.25,
+                maxOutputTokens: 2000,
+              });
 
----IMAGE DESCRIPTION START---
-${imageDescription}
----IMAGE DESCRIPTION END---
+              return {
+                role: img.role || "inspiration",
+                name: img.name || `Image ${idx + 1}`,
+                url: img.url,
+                description: visionResult?.text || "",
+              };
+            } catch (err) {
+              console.error("[v0-chat] Vision model error on image", idx, err);
+              return {
+                role: img.role || "inspiration",
+                name: img.name || `Image ${idx + 1}`,
+                url: img.url,
+                description: "",
+              };
+            }
+          })
+        );
 
-User's additional instructions: ${message || "Create a similar design with this inspiration."}
+        const inspirationDescriptions = descriptions
+          .filter((d) => d.role === "inspiration")
+          .map((d, i) => `Inspiration ${i + 1}${d.url ? ` (URL: ${d.url})` : ""}: ${d.description}`)
+          .join("\n\n");
 
-Based on the image description above, create a React component that captures the essence, style, colors, and layout of the reference image while being a complete, functional UI.`;
+        const assetDescriptions = descriptions
+          .filter((d) => d.role === "asset")
+          .map((d, i) => `Asset ${i + 1}${d.url ? ` (URL: ${d.url})` : ""}: ${d.description}`)
+          .join("\n\n");
+
+        const assetUrlList = typedImages
+          .filter((img) => img.role === "asset" && img.url)
+          .map((img, i) => `Asset ${i + 1}: ${img.url}`)
+          .join("\n");
+
+        const descriptionBlock = [
+          inspirationDescriptions && `REFERENCE / INSPIRATION IMAGES:\n${inspirationDescriptions}`,
+          assetDescriptions && `IMAGES TO PLACE IN THE SITE:\n${assetDescriptions}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+
+        if (descriptionBlock) {
+          augmentedMessage = `The user provided images for this build.
+
+${descriptionBlock}
+
+Asset image URLs (use these directly in the UI where appropriate):
+${assetUrlList || "None provided"}
+
+User's additional instructions: ${message || "Create a design based on the references above."}
+
+Requirements:
+- Match the style and layout cues from the inspiration images.
+- Place the asset images in the generated UI using their URLs (e.g., <img src="..." alt="..."> or as backgrounds).
+- Write meaningful alt text derived from the descriptions.
+- Ensure the result is a complete, functional UI.`;
         }
       } catch (visionError: any) {
         console.error("[v0-chat] Vision model error:", visionError);

@@ -4,13 +4,13 @@ import { useChat } from "@ai-sdk/react";
 import { useRouter } from "next/navigation";
 import { ModelSelector } from "@/components/model-selector";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SendIcon, PlusIcon, Wrench, ChevronRight, ChevronDown } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type KeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import { DEFAULT_MODEL } from "@/lib/constants";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -238,6 +238,9 @@ const TOOL_GUIDE_SECTIONS: ToolGuideSection[] = [
   },
 ];
 
+const MAX_TEXTAREA_ROWS = 4;
+const FALLBACK_LINE_HEIGHT = 24;
+
 function ToolGuideButton({ onInsertTool }: { onInsertTool: (toolName: string) => void }) {
   return (
     <Dialog>
@@ -357,7 +360,7 @@ export function Chat({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationFrameRef = useRef<number | null>(null);
   const lastApiEndpointRef = useRef(apiEndpoint);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [tokenUsage, setTokenUsage] = useState({
     inputTokens: 0,
     outputTokens: 0,
@@ -563,6 +566,27 @@ export function Chat({
 
   const [shouldAutoscroll, setShouldAutoscroll] = useState(true);
 
+  // Auto-size the input up to four lines and then enable vertical scrolling.
+  useEffect(() => {
+    const textarea = inputRef.current;
+    if (!textarea) return;
+
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeightValue = parseFloat(computedStyle.lineHeight);
+    const resolvedLineHeight = Number.isFinite(lineHeightValue) ? lineHeightValue : FALLBACK_LINE_HEIGHT;
+    const paddingTop = parseFloat(computedStyle.paddingTop);
+    const paddingBottom = parseFloat(computedStyle.paddingBottom);
+    const paddingOffset =
+      (Number.isFinite(paddingTop) ? paddingTop : 0) +
+      (Number.isFinite(paddingBottom) ? paddingBottom : 0);
+    const maxHeight = resolvedLineHeight * MAX_TEXTAREA_ROWS + paddingOffset;
+
+    textarea.style.height = "auto";
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [input, hasMessages]);
+
   useEffect(() => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -649,6 +673,27 @@ export function Chat({
       estimatedCost,
     });
   }, [messages]);
+
+  const submitMessage = () => {
+    if (!input.trim() || modelsUnavailable) {
+      return;
+    }
+
+    setLiveMetrics(null);
+    sendMessage(
+      { text: input },
+      { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } }
+    );
+    setInput("");
+  };
+
+  const handleTextareaKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    const isComposing = e.nativeEvent.isComposing;
+    if (e.key === "Enter" && !e.shiftKey && !isComposing) {
+      e.preventDefault();
+      submitMessage();
+    }
+  };
 
   const handleNewChat = () => {
     stop();
@@ -759,9 +804,7 @@ export function Chat({
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    setLiveMetrics(null);
-                    sendMessage({ text: input }, { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } });
-                    setInput("");
+                    submitMessage();
                   }}
                 >
                   <div className="flex flex-wrap items-center gap-2 md:gap-3 p-3 md:p-4 rounded-2xl glass-effect shadow-border-medium transition-all duration-200 ease-out bg-muted/30 border border-muted-foreground/10">
@@ -782,23 +825,17 @@ export function Chat({
                       )}
                     </div>
                     <div className="flex flex-1 items-center">
-                      <Input
+                      <Textarea
                         name="prompt"
                         placeholder="Ask a question..."
                         onChange={(e) => setInput(e.target.value)}
                         value={input}
                         autoFocus
                         ref={inputRef}
-                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 transition-all duration-150"
-                        onKeyDown={(e) => {
-                          if (e.metaKey && e.key === "Enter") {
-                            sendMessage(
-                              { text: input },
-                              { body: { modelId: currentModelId, ...extraBody } },
-                            );
-                            setInput("");
-                          }
-                        }}
+                        rows={1}
+                        onKeyDown={handleTextareaKeyDown}
+                        className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 transition-all duration-150 resize-none leading-relaxed"
+                        style={{ minHeight: "44px", background: "transparent", border: 0 }}
                         disabled={modelsUnavailable}
                       />
                       <VoiceInput
@@ -834,7 +871,7 @@ export function Chat({
                   <div
                     key={`${m.id}-${messageIndex}`}
                     className={cn(
-                      "whitespace-pre-wrap transition-all duration-200 ease-out",
+                      "whitespace-pre-wrap break-words transition-all duration-200 ease-out",
                       m.role === "user" &&
                         "bg-accent text-foreground rounded-2xl p-3 md:p-4 ml-auto max-w-[90%] md:max-w-[75%] shadow-border-medium font-medium text-sm md:text-base border border-border",
                       m.role === "assistant" && "max-w-full text-foreground leading-relaxed text-sm md:text-base space-y-4"
@@ -1513,8 +1550,7 @@ export function Chat({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                sendMessage({ text: input }, { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } });
-                setInput("");
+                submitMessage();
               }}
               className="px-4 md:px-8 pb-6 md:pb-8"
             >
@@ -1536,23 +1572,17 @@ export function Chat({
                   )}
                 </div>
                 <div className="flex flex-1 items-center">
-                  <Input
+                  <Textarea
                     name="prompt"
                     placeholder="Ask a question..."
                     onChange={(e) => setInput(e.target.value)}
                     value={input}
                     ref={inputRef}
                     autoFocus
-                    className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 font-medium transition-all duration-150"
-                    onKeyDown={(e) => {
-                      if (e.metaKey && e.key === "Enter") {
-                        sendMessage(
-                          { text: input },
-                          { body: { ...extraBody, modelId: currentModelId, enableAllTools: true, toolScope: "all" } },
-                        );
-                        setInput("");
-                      }
-                    }}
+                    rows={1}
+                    onKeyDown={handleTextareaKeyDown}
+                    className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-base placeholder:text-muted-foreground/50 font-medium transition-all duration-150 resize-none leading-relaxed"
+                    style={{ minHeight: "44px", background: "transparent", border: 0 }}
                     disabled={modelsUnavailable}
                   />
                   <VoiceInput
